@@ -126,6 +126,19 @@ The stage 3 commit contains only the three access transformations corresponding 
 - Final `clean build`: `BUILD SUCCESSFUL`; `test` remains `NO-SOURCE`, matching upstream. The built JAR contains NeoForge metadata, both mixin configs and `ClientModEvents`, contains no `fabric.mod.json` or access widener, and no longer contains the obsolete Fabric client initializer classes.
 - No live NeoPack files have been modified or deployed. Runtime/bootstrap and in-game validation remain Stage 8.
 
+### Stage 8 final hardening / runtime status
+
+- A final forced `clean build --rerun-tasks` remained `BUILD SUCCESSFUL` on Java 25 / NeoForge `26.3.0.43-beta` before runtime validation.
+- Dedicated-server dev bootstrap reached `Done`, loaded and saved `the_sift:the_sift`, and idled normally without loading client-only classes or reporting required mixin failures.
+- Client dev bootstrap reached full resource reload, initialized The Sift, OpenAL and all vanilla atlases, and GeckoLib loaded all 5 models / 5 animations. The only class-not-found warnings in the bare dev runtime are the optional `@Pseudo` Iris/Sodium targets, because those optional mods are not on the development runtime classpath.
+- Runtime exposed a NeoForge-only resource gap for `the_sift:ichor`: all 16 `LiquidBlock` level states warned about a missing block model even though the separate fluid model was correctly registered. The final resources now mirror vanilla water: an empty-variant blockstate points at a geometry-free block model whose only texture is the Ichor still particle texture. A repeated client bootstrap reduced these warnings from 16 to 0 without changing fluid rendering.
+- Vanilla 26.3 biome environment attributes require biome-local natural spawn settings to carry an explicit modifier. All ten Sift biome files now wrap their existing, byte-semantically unchanged spawn settings in `{ "argument": ..., "modifier": "overlay" }`, matching `BiomeBuilder#mobSpawnSettings` and the 26.3 environment-attribute primer. Automated comparison confirms 10/10 inner spawn settings are identical to the reconstructed 1.1.1 values.
+- Vanilla Sniffer/Warden runtime flags no longer inject extra `SynchedEntityData` parameters into Minecraft-owned entity classes. NeoForge explicitly warns against doing that for entities a mod does not own because accessor ids may desynchronize. The equivalent booleans are now registered synced data attachments; Sniffer infection persistence remains handled by the existing saved infection-tick field, while the Warden petting flag intentionally remains transient.
+- FML metadata now uses `iconFile` instead of deprecated `logoFile`, matching the current 26.x mod-list metadata contract.
+- Final independent mixin review confirms no required injection mismatch on patched `.43-beta`; the attachment migration removes two formerly hard `defineSynchedData` injection points from vanilla entities.
+- VisualVM / JMC profiling was prepared but not used to justify code changes because bootstrap tests exposed no measurable CPU, heap, GC or stall problem; no speculative performance changes were introduced.
+- Live NeoPack deployment and live optional-mod validation (Iris/Sodium/LambDynamicLights) are the remaining production smoke step after this final hardening commit.
+
 ## Porting rules
 
 1. Preserve Minecraft 26.3 gameplay/data/render behavior from the reconstructed 1.1.1 source.

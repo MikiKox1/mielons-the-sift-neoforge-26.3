@@ -2,12 +2,9 @@ package mielon.thesift.mixin;
 
 import java.util.Comparator;
 import mielon.thesift.entity.DarkSnifferEntity;
+import mielon.thesift.entity.ModAttachments;
 import mielon.thesift.entity.WardenPettingAccess;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
@@ -24,8 +21,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Warden.class)
 public abstract class WardenDarkSnifferMixin implements WardenPettingAccess {
    @Unique
-   private static final EntityDataAccessor<Boolean> THE_SIFT$PETTING = SynchedEntityData.defineId(Warden.class, EntityDataSerializers.BOOLEAN);
-   @Unique
    private static final double THE_SIFT$SEARCH_RANGE = 18.0;
    @Unique
    private static final double THE_SIFT$PETTING_DISTANCE_SQUARED = 12.25;
@@ -39,11 +34,6 @@ public abstract class WardenDarkSnifferMixin implements WardenPettingAccess {
    private int theSift$approachTicks;
    @Unique
    private int theSift$pettingSearchCooldown = -1;
-
-   @Inject(method = "defineSynchedData", at = @At("TAIL"))
-   private void theSift$definePettingFlag(Builder builder, CallbackInfo ci) {
-      builder.define(THE_SIFT$PETTING, false);
-   }
 
    @Inject(method = "canTargetEntity", at = @At("HEAD"), cancellable = true)
    private void theSift$neverTargetDarkSniffer(Entity entity, CallbackInfoReturnable<Boolean> cir) {
@@ -93,7 +83,7 @@ public abstract class WardenDarkSnifferMixin implements WardenPettingAccess {
          target.beginWardenPetting(warden, 12);
          if (!(warden.distanceToSqr(target) > 12.25)) {
             warden.getNavigation().stop();
-            warden.getEntityData().set(THE_SIFT$PETTING, true);
+            this.theSift$setPettingFlag(warden, true);
             if (this.theSift$pettingTicks % 20 == 8) {
                serverLevel.sendParticles(
                   ParticleTypes.HEART, target.getX(), target.getY() + target.getBbHeight() + 0.35, target.getZ(), 1, 0.18, 0.08, 0.18, 0.0
@@ -137,8 +127,22 @@ public abstract class WardenDarkSnifferMixin implements WardenPettingAccess {
       this.theSift$pettingTarget = null;
       this.theSift$pettingTicks = 0;
       this.theSift$approachTicks = 0;
-      warden.getEntityData().set(THE_SIFT$PETTING, false);
+      this.theSift$setPettingFlag(warden, false);
       this.theSift$pettingSearchCooldown = completed ? theSift$randomDelay(warden, 2400, 2400) : theSift$randomDelay(warden, 600, 600);
+   }
+
+   @Unique
+   private void theSift$setPettingFlag(Warden warden, boolean petting) {
+      boolean current = Boolean.TRUE.equals(warden.getExistingDataOrNull(ModAttachments.WARDEN_PETTING));
+      if (current == petting) {
+         return;
+      }
+
+      if (petting) {
+         warden.setData(ModAttachments.WARDEN_PETTING, true);
+      } else {
+         warden.removeData(ModAttachments.WARDEN_PETTING);
+      }
    }
 
    @Unique
@@ -148,6 +152,6 @@ public abstract class WardenDarkSnifferMixin implements WardenPettingAccess {
 
    @Override
    public boolean theSift$isPettingDarkSniffer() {
-      return (Boolean)((Warden)(Object)this).getEntityData().get(THE_SIFT$PETTING);
+      return Boolean.TRUE.equals(((Warden)(Object)this).getExistingDataOrNull(ModAttachments.WARDEN_PETTING));
    }
 }

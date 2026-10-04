@@ -6,6 +6,7 @@ import mielon.thesift.block.SiftPlantInteractions;
 import mielon.thesift.entity.BlubEntity;
 import mielon.thesift.entity.DarkSnifferEntity;
 import mielon.thesift.entity.EchoGolemEntity;
+import mielon.thesift.entity.ModAttachments;
 import mielon.thesift.entity.ModEntities;
 import mielon.thesift.entity.SifterEntity;
 import mielon.thesift.entity.SingerEntity;
@@ -51,6 +52,7 @@ import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operatio
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.RegisterCauldronFluidContentEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +91,8 @@ public final class TheSiftMod {
          BlubItems.initialize();
       } else if (event.getRegistryKey().equals(BuiltInRegistries.FEATURE_TYPE.key())) {
          ModWorldgen.initialize();
+      } else if (event.getRegistryKey().equals(NeoForgeRegistries.Keys.ATTACHMENT_TYPES)) {
+         ModAttachments.initialize();
       }
 
       ModRegistration.onRegister(event);

@@ -13,41 +13,44 @@
       "modifier": "append"
     },
     "minecraft:gameplay/natural_mob_spawns": {
-      "spawn_costs": {},
-      "spawns_by_category": {
-        "ambient": [],
-        "axolotls": [],
-        "creature": [
-          {
-            "type": "the_sift:echo_golem",
-            "count": 1,
-            "weight": 1
-          },
-          {
-            "type": "minecraft:sniffer",
-            "count": {
-              "type": "minecraft:uniform",
-              "min_inclusive": 1,
-              "max_inclusive": 2
+      "argument": {
+        "spawn_costs": {},
+        "spawns_by_category": {
+          "ambient": [],
+          "axolotls": [],
+          "creature": [
+            {
+              "type": "the_sift:echo_golem",
+              "count": 1,
+              "weight": 1
             },
-            "weight": 2
-          },
-          {
-            "type": "the_sift:blub",
-            "count": {
-              "type": "minecraft:uniform",
-              "min_inclusive": 1,
-              "max_inclusive": 3
+            {
+              "type": "minecraft:sniffer",
+              "count": {
+                "type": "minecraft:uniform",
+                "min_inclusive": 1,
+                "max_inclusive": 2
+              },
+              "weight": 2
             },
-            "weight": 2
-          }
-        ],
-        "misc": [],
-        "monster": [],
-        "underground_water_creature": [],
-        "water_ambient": [],
-        "water_creature": []
-      }
+            {
+              "type": "the_sift:blub",
+              "count": {
+                "type": "minecraft:uniform",
+                "min_inclusive": 1,
+                "max_inclusive": 3
+              },
+              "weight": 2
+            }
+          ],
+          "misc": [],
+          "monster": [],
+          "underground_water_creature": [],
+          "water_ambient": [],
+          "water_creature": []
+        }
+      },
+      "modifier": "overlay"
     },
     "minecraft:gameplay/creature_world_gen_spawn_probability": 0.018
   },

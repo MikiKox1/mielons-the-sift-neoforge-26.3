@@ -2,15 +2,12 @@ package mielon.thesift.mixin;
 
 import java.util.Comparator;
 import mielon.thesift.entity.DarkSnifferEntity;
+import mielon.thesift.entity.ModAttachments;
 import mielon.thesift.entity.ModEntities;
 import mielon.thesift.entity.SnifferInfectionAccess;
 import mielon.thesift.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -38,8 +35,6 @@ public abstract class SnifferInfectionMixin implements SnifferInfectionAccess {
    @Unique
    private static final int THE_SIFT$CONVERSION_TICKS = 600;
    @Unique
-   private static final EntityDataAccessor<Boolean> THE_SIFT$INFECTED = SynchedEntityData.defineId(Sniffer.class, EntityDataSerializers.BOOLEAN);
-   @Unique
    private static final ResourceKey<LootTable> THE_SIFT$DARK_DIGGING_LOOT = ResourceKey.create(
       Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("the_sift", "gameplay/dark_sniffer_digging")
    );
@@ -51,11 +46,6 @@ public abstract class SnifferInfectionMixin implements SnifferInfectionAccess {
    private int theSift$infectionTicks;
    @Unique
    private static final double THE_SIFT$DARK_SNIFFER_FLEE_RANGE = 20.0;
-
-   @Inject(method = "defineSynchedData", at = @At("TAIL"))
-   private void theSift$defineInfectionFlag(Builder builder, CallbackInfo ci) {
-      builder.define(THE_SIFT$INFECTED, false);
-   }
 
    @Redirect(
       method = "canDig(Lnet/minecraft/core/BlockPos;)Z",
@@ -130,7 +120,7 @@ public abstract class SnifferInfectionMixin implements SnifferInfectionAccess {
    @Override
    public boolean theSift$isSculkInfected() {
       Sniffer sniffer = (Sniffer)(Object)this;
-      return (Boolean)sniffer.getEntityData().get(THE_SIFT$INFECTED);
+      return Boolean.TRUE.equals(sniffer.getExistingDataOrNull(ModAttachments.SNIFFER_INFECTED));
    }
 
    @Override
@@ -142,6 +132,6 @@ public abstract class SnifferInfectionMixin implements SnifferInfectionAccess {
    public void theSift$setSculkInfectionTicks(int ticks) {
       this.theSift$infectionTicks = Math.max(0, ticks);
       Sniffer sniffer = (Sniffer)(Object)this;
-      sniffer.getEntityData().set(THE_SIFT$INFECTED, this.theSift$infectionTicks > 0);
+      sniffer.setData(ModAttachments.SNIFFER_INFECTED, this.theSift$infectionTicks > 0);
    }
 }
