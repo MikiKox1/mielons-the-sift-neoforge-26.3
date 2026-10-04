@@ -45,3 +45,6 @@ type="optional"
 versionRange="[${lambdynlights_version},)"
 ordering="AFTER"
 side="CLIENT"
+
+[modproperties.${mod_id}."yumi:entrypoints"]
+"lambdynlights:initializer"="mielon.thesift.client.light.TheSiftDynamicLightsInitializer"

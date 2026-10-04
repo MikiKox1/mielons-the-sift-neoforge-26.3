@@ -3,7 +3,7 @@ package mielon.thesift.client.compat;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import java.lang.reflect.Method;
 import mielon.thesift.TheSiftMod;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.fml.ModList;
 
 public final class SiftShaderCompat {
    private static boolean initialized;
@@ -19,7 +19,7 @@ public final class SiftShaderCompat {
    public static void initialize() {
       if (!initialized) {
          initialized = true;
-         irisPresent = FabricLoader.getInstance().isModLoaded("iris");
+         irisPresent = ModList.get().isLoaded("iris");
          if (irisPresent) {
             try {
                Class<?> apiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
