@@ -7,12 +7,12 @@ import net.minecraft.util.ParticleUtils;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.TintedParticleLeavesBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public final class OvergrownWillowFoliageBlock extends TintedParticleLeavesBlock {
    private static final int FALLING_LEAF_COLOR = 4063205;
 
-   public OvergrownWillowFoliageBlock(float leafParticleChance, BlockBehaviour.Properties properties) {
+   public OvergrownWillowFoliageBlock(float leafParticleChance, Properties properties) {
       super(leafParticleChance, properties);
    }
 

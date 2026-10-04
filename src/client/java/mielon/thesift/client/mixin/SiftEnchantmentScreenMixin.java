@@ -15,10 +15,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({EnchantmentScreen.class})
-public abstract class SiftEnchantmentScreenMixin extends AbstractContainerScreen {
+@Mixin(EnchantmentScreen.class)
+public abstract class SiftEnchantmentScreenMixin extends AbstractContainerScreen<EnchantmentMenu> {
    @Unique
-   private static final List THE_SIFT$FUEL_ICONS = List.of(Identifier.withDefaultNamespace("container/slot/lapis_lazuli"), Identifier.fromNamespaceAndPath("the_sift", "container/slot/charoite"));
+   private static final List<Identifier> THE_SIFT$FUEL_ICONS = List.of(
+      Identifier.withDefaultNamespace("container/slot/lapis_lazuli"), Identifier.fromNamespaceAndPath("the_sift", "container/slot/charoite")
+   );
    @Unique
    private final CyclingSlotBackground theSift$fuelIcon = new CyclingSlotBackground(1);
 
@@ -26,30 +28,20 @@ public abstract class SiftEnchantmentScreenMixin extends AbstractContainerScreen
       super(menu, inventory, title);
    }
 
-   @Inject(
-      method = {"containerTick"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "containerTick", at = @At("TAIL"))
    private void theSift$tickFuelIcon(CallbackInfo ci) {
       this.theSift$fuelIcon.tick(THE_SIFT$FUEL_ICONS);
    }
 
-   @Inject(
-      method = {"extractBackground"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "extractBackground", at = @At("TAIL"))
    private void theSift$renderFuelIcon(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
       this.theSift$fuelIcon.extractRenderState(this.menu, graphics, partialTick, this.leftPos, this.topPos);
    }
 
-   @Inject(
-      method = {"extractRenderState"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "extractRenderState", at = @At("TAIL"))
    private void theSift$renderFuelTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
       if (this.hoveredSlot != null && this.hoveredSlot.index == 1 && !this.hoveredSlot.hasItem()) {
          graphics.setTooltipForNextFrame(this.font, Component.translatable("container.the_sift.enchanting_fuel"), mouseX, mouseY);
       }
-
    }
 }

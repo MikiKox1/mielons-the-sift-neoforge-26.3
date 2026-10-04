@@ -10,31 +10,19 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({Animal.class})
+@Mixin(Animal.class)
 public abstract class AnimalSnifferInfectionSaveMixin {
-   @Inject(
-      method = {"addAdditionalSaveData"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
    private void theSift$saveSnifferInfection(ValueOutput output, CallbackInfo ci) {
-      if ((Object)this instanceof Sniffer && (Object)this instanceof SnifferInfectionAccess) {
-         SnifferInfectionAccess access = (SnifferInfectionAccess)this;
-         if (access.theSift$getSculkInfectionTicks() > 0) {
-            output.putInt("TheSiftSculkInfection", access.theSift$getSculkInfectionTicks());
-         }
+      if ((Object)this instanceof Sniffer && (Object)this instanceof SnifferInfectionAccess access && access.theSift$getSculkInfectionTicks() > 0) {
+         output.putInt("TheSiftSculkInfection", access.theSift$getSculkInfectionTicks());
       }
-
    }
 
-   @Inject(
-      method = {"readAdditionalSaveData"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
    private void theSift$loadSnifferInfection(ValueInput input, CallbackInfo ci) {
-      if ((Object)this instanceof Sniffer && (Object)this instanceof SnifferInfectionAccess) {
-         SnifferInfectionAccess access = (SnifferInfectionAccess)this;
+      if ((Object)this instanceof Sniffer && (Object)this instanceof SnifferInfectionAccess access) {
          access.theSift$setSculkInfectionTicks(input.getIntOr("TheSiftSculkInfection", 0));
       }
-
    }
 }

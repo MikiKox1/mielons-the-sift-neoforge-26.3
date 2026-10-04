@@ -8,32 +8,20 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({WeatherCommand.class})
+@Mixin(WeatherCommand.class)
 public abstract class WeatherCommandMixin {
-   @Inject(
-      method = {"setClear"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private static void theSift$setClearInSourceDimension(CommandSourceStack source, int duration, CallbackInfoReturnable cir) {
+   @Inject(method = "setClear", at = @At("HEAD"), cancellable = true)
+   private static void theSift$setClearInSourceDimension(CommandSourceStack source, int duration, CallbackInfoReturnable<Integer> cir) {
       cir.setReturnValue(SiftWeatherCommand.setCurrent(source, SiftWeatherCommand.Mode.CLEAR, duration));
    }
 
-   @Inject(
-      method = {"setRain"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private static void theSift$setRainInSourceDimension(CommandSourceStack source, int duration, CallbackInfoReturnable cir) {
+   @Inject(method = "setRain", at = @At("HEAD"), cancellable = true)
+   private static void theSift$setRainInSourceDimension(CommandSourceStack source, int duration, CallbackInfoReturnable<Integer> cir) {
       cir.setReturnValue(SiftWeatherCommand.setCurrent(source, SiftWeatherCommand.Mode.RAIN, duration));
    }
 
-   @Inject(
-      method = {"setThunder"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private static void theSift$setThunderInSourceDimension(CommandSourceStack source, int duration, CallbackInfoReturnable cir) {
+   @Inject(method = "setThunder", at = @At("HEAD"), cancellable = true)
+   private static void theSift$setThunderInSourceDimension(CommandSourceStack source, int duration, CallbackInfoReturnable<Integer> cir) {
       cir.setReturnValue(SiftWeatherCommand.setCurrent(source, SiftWeatherCommand.Mode.THUNDER, duration));
    }
 }

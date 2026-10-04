@@ -1,134 +1,114 @@
 package mielon.thesift.client.loading;
 
-import mielon.thesift.block.ModBlocks;
-import mielon.thesift.entity.RiftEntity;
+import mielon.thesift.network.RiftLoadingPayload;
+import mielon.thesift.world.SiftTeleportManager;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 
 public final class SiftClientPortalTransition {
-   private static LocalPlayer lastPlayer;
-   private static boolean initialized;
-   private static boolean waitingForExit;
-   private static boolean suppressPortalUntilExit;
-   private static ResourceKey riftSourceDimension;
+   private static ResourceKey<Level> lastDimension;
+   private static boolean contactLatched;
+   private static boolean awaitingServer;
+   private static long contactStartedAtNanos;
+   private static boolean arrivalGuard;
+   private static int clearContactTicks;
 
    private SiftClientPortalTransition() {
    }
 
-   public static void beginRiftTransition(LocalPlayer player) {
-      suppressPortalUntilExit = true;
-      riftSourceDimension = player.level().dimension();
-      waitingForExit = true;
-   }
-
-   public static void endRiftTransition(LocalPlayer player) {
-      if (suppressPortalUntilExit && (riftSourceDimension == null || player.level().dimension().equals(riftSourceDimension))) {
-         clearRiftSuppression();
-      }
-
-   }
-
-   public static void tick(LocalPlayer player) {
+   public static void handle(RiftLoadingPayload payload) {
       Minecraft minecraft = Minecraft.getInstance();
-      if (SiftLoadingScreenState.isActive()) {
-         Screen currentScreen = minecraft.gui.screen();
-         boolean validTransitionScreen = currentScreen instanceof SiftTransitionScreen || currentScreen instanceof LevelLoadingScreen;
-         if (!validTransitionScreen || SiftLoadingScreenState.isOlderThanSeconds((double)45.0F)) {
-            SiftLoadingScreenState.clear();
-         }
+      if (!payload.start()) {
+         awaitingServer = false;
       }
 
-      if (SiftLoadingScreenState.isActive() && minecraft.gui.screen() instanceof LevelLoadingScreen) {
-         ResourceKey<Level> source = SiftLoadingScreenState.sourceDimension();
-         if (source != null && !player.level().dimension().equals(source)) {
-            SiftLoadingScreenState.clear();
-            minecraft.gui.setScreen((Screen)null);
-            return;
-         }
-      }
-
-      if (player != lastPlayer) {
-         lastPlayer = player;
-         initialized = false;
-         waitingForExit = suppressPortalUntilExit;
-      }
-
-      boolean supportedDimension = player.level().dimension().equals(Level.OVERWORLD) || player.level().dimension().equals(TheSiftDimension.LEVEL_KEY);
-      boolean touchingPortal = supportedDimension && isTouchingPortal(player);
-      boolean touchingAny = touchingPortal || !player.level().getEntitiesOfClass(RiftEntity.class, player.getBoundingBox().inflate((double)5.0F), (rift) -> rift.getPortalBounds().intersects(player.getBoundingBox())).isEmpty();
-      if (suppressPortalUntilExit) {
-         boolean changedDimension = riftSourceDimension != null && !player.level().dimension().equals(riftSourceDimension);
-         if (!changedDimension || touchingAny) {
-            waitingForExit = true;
+      if (payload.start()) {
+         awaitingServer = false;
+         if (minecraft.player == null) {
             return;
          }
 
-         clearRiftSuppression();
-         waitingForExit = false;
-      }
-
-      if (player.isSpectator()) {
-         if (touchingPortal) {
-            waitingForExit = true;
-         }
-
-         if (minecraft.gui.screen() instanceof SiftTransitionScreen) {
-            SiftLoadingScreenState.clear();
-            minecraft.gui.setScreen((Screen)null);
-         }
-
-      } else if (!initialized) {
-         initialized = true;
-         waitingForExit = touchingAny;
-      } else if (waitingForExit) {
-         if (!touchingAny) {
-            waitingForExit = false;
-         }
-
-      } else if (touchingPortal) {
-         waitingForExit = true;
-         SiftLoadingScreenState.begin(player.level().dimension());
-         if (!(minecraft.gui.screen() instanceof SiftTransitionScreen)) {
+         SiftLoadingScreenState.begin(minecraft.player.level().dimension(), payload.rift());
+         if (!(minecraft.gui.screen() instanceof LevelLoadingScreen) && !(minecraft.gui.screen() instanceof SiftTransitionScreen)) {
             minecraft.gui.setScreen(new SiftTransitionScreen());
          }
-
+      } else if (minecraft.gui.screen() instanceof SiftTransitionScreen) {
+         awaitingServer = false;
+         SiftLoadingScreenState.clear();
+         minecraft.gui.setScreen(null);
+      } else if (!(minecraft.gui.screen() instanceof LevelLoadingScreen)) {
+         SiftLoadingScreenState.clear();
       }
    }
 
-   private static void clearRiftSuppression() {
-      suppressPortalUntilExit = false;
-      riftSourceDimension = null;
-   }
-
-   private static boolean isTouchingPortal(LocalPlayer player) {
-      AABB box = player.getBoundingBox().deflate(1.0E-7);
-      int minX = Mth.floor(box.minX);
-      int minY = Mth.floor(box.minY);
-      int minZ = Mth.floor(box.minZ);
-      int maxX = Mth.floor(box.maxX);
-      int maxY = Mth.floor(box.maxY);
-      int maxZ = Mth.floor(box.maxZ);
-      BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-
-      for (int x = minX; x <= maxX; ++x) {
-         for (int y = minY; y <= maxY; ++y) {
-            for (int z = minZ; z <= maxZ; ++z) {
-               pos.set(x, y, z);
-               if (player.level().getBlockState(pos).is(ModBlocks.SIFT_PORTAL)) {
-                  return true;
-               }
-            }
+   public static void tick() {
+      Minecraft minecraft = Minecraft.getInstance();
+      checkPortalContact(minecraft);
+      SiftIntroClient.tick();
+      if (SiftLoadingScreenState.isActive()) {
+         Screen screen = minecraft.gui.screen();
+         if (!(screen instanceof SiftTransitionScreen) && !(screen instanceof LevelLoadingScreen)) {
+            SiftLoadingScreenState.clear();
+         } else if (SiftLoadingScreenState.isOlderThanSeconds(35.0)) {
+            SiftLoadingScreenState.clear();
+            screen.onClose();
          }
       }
+   }
 
-      return false;
+   private static void checkPortalContact(Minecraft minecraft) {
+      if (minecraft.player != null && minecraft.level != null) {
+         ResourceKey<Level> dimension = minecraft.level.dimension();
+         boolean touching = !minecraft.player.isSpectator()
+            && (dimension.equals(Level.OVERWORLD) || dimension.equals(TheSiftDimension.LEVEL_KEY))
+            && SiftTeleportManager.isTouchingPortal(minecraft.player);
+         if (!dimension.equals(lastDimension)) {
+            lastDimension = dimension;
+            contactLatched = true;
+            awaitingServer = false;
+            arrivalGuard = true;
+            clearContactTicks = 0;
+         }
+
+         if (!arrivalGuard) {
+            if (!touching) {
+               contactLatched = false;
+            }
+
+            if (awaitingServer && System.nanoTime() - contactStartedAtNanos > 2000000000L && minecraft.gui.screen() instanceof SiftTransitionScreen) {
+               awaitingServer = false;
+               SiftLoadingScreenState.clear();
+               minecraft.gui.setScreen(null);
+            }
+
+            if (touching && !contactLatched && minecraft.gui.screen() == null && !SiftLoadingScreenState.isActive()) {
+               contactLatched = true;
+               awaitingServer = true;
+               contactStartedAtNanos = System.nanoTime();
+               SiftLoadingScreenState.begin(dimension, false);
+               minecraft.gui.setScreen(new SiftTransitionScreen());
+            }
+         } else {
+            if (touching
+               || !minecraft.level.hasChunkAt(minecraft.player.blockPosition())
+               || minecraft.gui.screen() != null
+               || SiftLoadingScreenState.isActive()) {
+               clearContactTicks = 0;
+            } else if (++clearContactTicks >= 5) {
+               arrivalGuard = false;
+               contactLatched = false;
+            }
+         }
+      } else {
+         lastDimension = null;
+         contactLatched = false;
+         awaitingServer = false;
+         arrivalGuard = false;
+         clearContactTicks = 0;
+      }
    }
 }

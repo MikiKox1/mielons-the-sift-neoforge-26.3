@@ -5,15 +5,17 @@ import net.minecraft.client.renderer.entity.state.WardenRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin({WardenRenderState.class})
+@Mixin(WardenRenderState.class)
 public abstract class WardenRenderStateMixin implements WardenPettingRenderState {
    @Unique
    private boolean theSift$pettingDarkSniffer;
 
+   @Override
    public boolean theSift$isPettingDarkSniffer() {
       return this.theSift$pettingDarkSniffer;
    }
 
+   @Override
    public void theSift$setPettingDarkSniffer(boolean petting) {
       this.theSift$pettingDarkSniffer = petting;
    }

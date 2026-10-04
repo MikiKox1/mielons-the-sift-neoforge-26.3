@@ -15,28 +15,21 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({AgeableMob.class})
+@Mixin(AgeableMob.class)
 public abstract class SnifferBabyMixin {
-   @Inject(
-      method = {"finalizeSpawn"},
-      at = {@At("RETURN")}
-   )
-   private void theSift$rollNaturalSnifferAge(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason, SpawnGroupData spawnData, CallbackInfoReturnable cir) {
-      if ((Object)this instanceof Sniffer sniffer) {
-         if (level.getLevel().dimension().equals(TheSiftDimension.LEVEL_KEY)) {
-            if (isIchorSpawn(level, sniffer.blockPosition())) {
-               sniffer.discard();
-               return;
-            }
-
+   @Inject(method = "finalizeSpawn", at = @At("RETURN"))
+   private void theSift$rollNaturalSnifferAge(
+      ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason, SpawnGroupData spawnData, CallbackInfoReturnable<SpawnGroupData> cir
+   ) {
+      if ((Object)this instanceof Sniffer sniffer && level.getLevel().dimension().equals(TheSiftDimension.LEVEL_KEY)) {
+         if (isIchorSpawn(level, sniffer.blockPosition())) {
+            sniffer.discard();
+         } else {
             if ((reason == EntitySpawnReason.NATURAL || reason == EntitySpawnReason.CHUNK_GENERATION) && isBabyRoll(sniffer, level)) {
                sniffer.setBaby(true);
             }
-
-            return;
          }
       }
-
    }
 
    private static boolean isIchorSpawn(ServerLevelAccessor level, BlockPos pos) {

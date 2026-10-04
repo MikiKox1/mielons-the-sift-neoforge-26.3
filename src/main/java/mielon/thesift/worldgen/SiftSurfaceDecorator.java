@@ -29,10 +29,18 @@ public final class SiftSurfaceDecorator {
          Block plant;
          if (floor.is(ModBlocks.SIFTSLATE_GROWTH)) {
             chance = 0.255F;
-            plant = roll < 0.43F ? ModBlocks.OVERGROWN_FRONDS : (roll < 0.68F ? ModBlocks.OVERGROWN_STALKS : (roll < 0.86F ? ModBlocks.OVERGROWN_CHARD : ModBlocks.SIFTSLATE_STALKS));
+            plant = roll < 0.43F
+               ? ModBlocks.OVERGROWN_FRONDS
+               : (roll < 0.68F ? ModBlocks.OVERGROWN_STALKS : (roll < 0.86F ? ModBlocks.OVERGROWN_CHARD : ModBlocks.SIFTSLATE_STALKS));
          } else if (floor.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)) {
             chance = 0.235F;
-            plant = roll < 0.34F ? ModBlocks.DRY_HEALTHY_SCULK_SPROUTS : (roll < 0.59F ? ModBlocks.OVERGROWN_FRONDS : (roll < 0.8F ? ModBlocks.OVERGROWN_STALKS : (roll < 0.93F ? ModBlocks.OVERGROWN_CHARD : ModBlocks.SIFTSLATE_STALKS)));
+            plant = roll < 0.34F
+               ? ModBlocks.DRY_HEALTHY_SCULK_SPROUTS
+               : (
+                  roll < 0.59F
+                     ? ModBlocks.OVERGROWN_FRONDS
+                     : (roll < 0.8F ? ModBlocks.OVERGROWN_STALKS : (roll < 0.93F ? ModBlocks.OVERGROWN_CHARD : ModBlocks.SIFTSLATE_STALKS))
+               );
          } else if (floor.is(ModBlocks.HEALTHY_SCULK)) {
             chance = 0.225F;
             plant = roll < 0.76F ? ModBlocks.HEALTHY_SCULK_SPROUTS : (roll < 0.92F ? ModBlocks.SIFTSLATE_STALKS : ModBlocks.OVERGROWN_FRONDS);
@@ -50,25 +58,25 @@ public final class SiftSurfaceDecorator {
 
          if (random.nextFloat() >= chance * densityScale) {
             return false;
-         } else {
-            BlockState plantState = plant.defaultBlockState();
-            if (!plantState.canSurvive(level, plantPos)) {
-               return false;
-            } else {
-               level.setBlock(plantPos, plantState, updateFlags);
-               return true;
-            }
          }
+
+         BlockState plantState = plant.defaultBlockState();
+         if (!plantState.canSurvive(level, plantPos)) {
+            return false;
+         }
+
+         level.setBlock(plantPos, plantState, updateFlags);
+         return true;
       } else {
          return false;
       }
    }
 
-   public static void decorateLakeShore(WorldGenLevel level, RandomSource random, List shore, int updateFlags) {
+   public static void decorateLakeShore(WorldGenLevel level, RandomSource random, List<BlockPos> shore, int updateFlags) {
       if (!shore.isEmpty()) {
-         List<BlockPos> flowerFloors = new ArrayList();
+         List<BlockPos> flowerFloors = new ArrayList<>();
 
-         for (BlockPos floorPos : (Iterable<BlockPos>) shore) {
+         for (BlockPos floorPos : shore) {
             if (SiftFlowerPatchFeature.isLakeFlowerSoil(level.getBlockState(floorPos))) {
                flowerFloors.add(floorPos);
             }
@@ -76,9 +84,9 @@ public final class SiftSurfaceDecorator {
 
          int batches = Math.max(2, Math.min(12, 2 + flowerFloors.size() / 30));
          int firstSpecies = random.nextInt(6);
-         List<BlockPos> anchors = new ArrayList();
+         List<BlockPos> anchors = new ArrayList<>();
 
-         for (int batch = 0; batch < batches && !flowerFloors.isEmpty(); ++batch) {
+         for (int batch = 0; batch < batches && !flowerFloors.isEmpty(); batch++) {
             BlockPos anchor = chooseSeparatedAnchor(flowerFloors, anchors, random);
             if (anchor == null) {
                break;
@@ -88,9 +96,11 @@ public final class SiftSurfaceDecorator {
             placeFlowerBatch(level, random, flowerFloors, anchor, (firstSpecies + batch) % 6, updateFlags);
          }
 
-         for (BlockPos floorPos : (Iterable<BlockPos>) shore) {
+         for (BlockPos floorPos : shore) {
             BlockState floor = level.getBlockState(floorPos);
-            float chance = !floor.is(ModBlocks.SIFTSLATE_GROWTH) && !floor.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH) ? (floor.is(ModBlocks.HEALTHY_SCULK) ? 0.6F : (floor.is(ModBlocks.DRY_HEALTHY_SCULK) ? 0.5F : (floor.is(ModBlocks.SIFTSLATE) ? 0.45F : 0.0F))) : 0.68F;
+            float chance = !floor.is(ModBlocks.SIFTSLATE_GROWTH) && !floor.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)
+               ? (floor.is(ModBlocks.HEALTHY_SCULK) ? 0.6F : (floor.is(ModBlocks.DRY_HEALTHY_SCULK) ? 0.5F : (floor.is(ModBlocks.SIFTSLATE) ? 0.45F : 0.0F)))
+               : 0.68F;
             if (!(random.nextFloat() >= chance)) {
                BlockPos plantPos = floorPos.above();
                if (level.isEmptyBlock(plantPos) && level.ensureCanWrite(plantPos)) {
@@ -119,16 +129,15 @@ public final class SiftSurfaceDecorator {
                }
             }
          }
-
       }
    }
 
-   private static BlockPos chooseSeparatedAnchor(List candidates, List used, RandomSource random) {
-      for (int attempt = 0; attempt < 32; ++attempt) {
-         BlockPos candidate = (BlockPos)candidates.get(random.nextInt(candidates.size()));
+   private static BlockPos chooseSeparatedAnchor(List<BlockPos> candidates, List<BlockPos> used, RandomSource random) {
+      for (int attempt = 0; attempt < 32; attempt++) {
+         BlockPos candidate = candidates.get(random.nextInt(candidates.size()));
          boolean separated = true;
 
-         for (BlockPos anchor : (Iterable<BlockPos>) used) {
+         for (BlockPos anchor : used) {
             int dx = candidate.getX() - anchor.getX();
             int dz = candidate.getZ() - anchor.getZ();
             if (dx * dx + dz * dz < 16) {
@@ -145,69 +154,67 @@ public final class SiftSurfaceDecorator {
       return null;
    }
 
-   private static void placeFlowerBatch(WorldGenLevel level, RandomSource random, List candidates, BlockPos anchor, int species, int updateFlags) {
+   private static void placeFlowerBatch(WorldGenLevel level, RandomSource random, List<BlockPos> candidates, BlockPos anchor, int species, int updateFlags) {
       int target = 3 + random.nextInt(2);
-      List<BlockPos> nearby = new ArrayList();
+      List<BlockPos> nearby = new ArrayList<>();
 
-      for (BlockPos candidate : (Iterable<BlockPos>) candidates) {
-         if (Math.abs(candidate.getX() - anchor.getX()) <= 2 && Math.abs(candidate.getZ() - anchor.getZ()) <= 2 && Math.abs(candidate.getY() - anchor.getY()) <= 1) {
+      for (BlockPos candidate : candidates) {
+         if (Math.abs(candidate.getX() - anchor.getX()) <= 2
+            && Math.abs(candidate.getZ() - anchor.getZ()) <= 2
+            && Math.abs(candidate.getY() - anchor.getY()) <= 1) {
             nearby.add(candidate);
          }
       }
 
       int placed = 0;
 
-      while(placed < target && !nearby.isEmpty()) {
-         BlockPos floorPos = (BlockPos)nearby.remove(random.nextInt(nearby.size()));
+      while (placed < target && !nearby.isEmpty()) {
+         BlockPos floorPos = nearby.remove(random.nextInt(nearby.size()));
          if (placeOasisFlower(level, random, floorPos.above(), species, updateFlags)) {
-            ++placed;
+            placed++;
          }
       }
-
    }
 
    private static boolean placeOasisFlower(WorldGenLevel level, RandomSource random, BlockPos plantPos, int species, int updateFlags) {
-      if (SiftFlowerPatchFeature.isLakeFlowerSoil(level.getBlockState(plantPos.below())) && level.isEmptyBlock(plantPos) && level.ensureCanWrite(plantPos)) {
-         if (species == 4) {
-            if (level.isEmptyBlock(plantPos.above()) && level.ensureCanWrite(plantPos.above())) {
-               BlockState pitcher = (BlockState)Blocks.PITCHER_CROP.defaultBlockState().setValue(PitcherCropBlock.AGE, 3 + random.nextInt(2));
-               if (!pitcher.canSurvive(level, plantPos)) {
-                  return false;
-               } else {
-                  DoublePlantBlock.placeAt(level, pitcher, plantPos, updateFlags);
-                  return true;
-               }
-            } else {
+      if (!SiftFlowerPatchFeature.isLakeFlowerSoil(level.getBlockState(plantPos.below())) || !level.isEmptyBlock(plantPos) || !level.ensureCanWrite(plantPos)) {
+         return false;
+      }
+
+      if (species == 4) {
+         if (level.isEmptyBlock(plantPos.above()) && level.ensureCanWrite(plantPos.above())) {
+            BlockState pitcher = (BlockState)Blocks.PITCHER_CROP.defaultBlockState().setValue(PitcherCropBlock.AGE, 3 + random.nextInt(2));
+            if (!pitcher.canSurvive(level, plantPos)) {
                return false;
-            }
-         } else if (species == 5) {
-            BlockState wildflowers = SiftFlowerPatchFeature.wildflowersState(random);
-            if (!wildflowers.canSurvive(level, plantPos)) {
-               return false;
-            } else {
-               level.setBlock(plantPos, wildflowers, updateFlags);
-               return true;
-            }
-         } else {
-            Block var10000;
-            switch (species) {
-               case 0 -> var10000 = ModBlocks.OVERGROWN_LOTUS;
-               case 1 -> var10000 = ModBlocks.SUNBURST_PLANT;
-               case 2 -> var10000 = ModBlocks.WHISPERBLOOM;
-               default -> var10000 = Blocks.TORCHFLOWER;
             }
 
-            Block flower = var10000;
-            BlockState state = flower.defaultBlockState();
-            if (!state.canSurvive(level, plantPos)) {
-               return false;
-            } else {
-               level.setBlock(plantPos, state, updateFlags);
-               return true;
-            }
+            DoublePlantBlock.placeAt(level, pitcher, plantPos, updateFlags);
+            return true;
+         } else {
+            return false;
          }
+      } else if (species == 5) {
+         BlockState wildflowers = SiftFlowerPatchFeature.wildflowersState(random);
+         if (!wildflowers.canSurvive(level, plantPos)) {
+            return false;
+         }
+
+         level.setBlock(plantPos, wildflowers, updateFlags);
+         return true;
       } else {
-         return false;
+         Block flower = switch (species) {
+            case 0 -> ModBlocks.OVERGROWN_LOTUS;
+            case 1 -> ModBlocks.SUNBURST_PLANT;
+            case 2 -> ModBlocks.WHISPERBLOOM;
+            default -> Blocks.TORCHFLOWER;
+         };
+         BlockState state = flower.defaultBlockState();
+         if (!state.canSurvive(level, plantPos)) {
+            return false;
+         }
+
+         level.setBlock(plantPos, state, updateFlags);
+         return true;
       }
    }
 
@@ -218,37 +225,35 @@ public final class SiftSurfaceDecorator {
          float roll = random.nextFloat();
          float chance;
          Block plant;
-         if (!floor.is(ModBlocks.SIFTSLATE_GROWTH) && !floor.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)) {
-            if (floor.is(ModBlocks.SIFTSLATE)) {
-               chance = 0.36F;
-               plant = ModBlocks.SIFTSLATE_STALKS;
-            } else if (floor.is(ModBlocks.HEALTHY_SCULK)) {
-               chance = 0.42F;
-               plant = ModBlocks.HEALTHY_SCULK_SPROUTS;
-            } else {
-               if (!floor.is(ModBlocks.DRY_HEALTHY_SCULK)) {
-                  return false;
-               }
-
-               chance = 0.3F;
-               plant = ModBlocks.DRY_HEALTHY_SCULK_SPROUTS;
-            }
-         } else {
+         if (floor.is(ModBlocks.SIFTSLATE_GROWTH) || floor.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)) {
             chance = 0.72F;
             plant = roll < 0.4F ? ModBlocks.OVERGROWN_FRONDS : (roll < 0.72F ? ModBlocks.OVERGROWN_STALKS : ModBlocks.OVERGROWN_CHARD);
+         } else if (floor.is(ModBlocks.SIFTSLATE)) {
+            chance = 0.36F;
+            plant = ModBlocks.SIFTSLATE_STALKS;
+         } else if (floor.is(ModBlocks.HEALTHY_SCULK)) {
+            chance = 0.42F;
+            plant = ModBlocks.HEALTHY_SCULK_SPROUTS;
+         } else {
+            if (!floor.is(ModBlocks.DRY_HEALTHY_SCULK)) {
+               return false;
+            }
+
+            chance = 0.3F;
+            plant = ModBlocks.DRY_HEALTHY_SCULK_SPROUTS;
          }
 
          if (random.nextFloat() >= chance * densityScale) {
             return false;
-         } else {
-            BlockState plantState = plant.defaultBlockState();
-            if (!plantState.canSurvive(level, plantPos)) {
-               return false;
-            } else {
-               level.setBlock(plantPos, plantState, updateFlags);
-               return true;
-            }
          }
+
+         BlockState plantState = plant.defaultBlockState();
+         if (!plantState.canSurvive(level, plantPos)) {
+            return false;
+         }
+
+         level.setBlock(plantPos, plantState, updateFlags);
+         return true;
       } else {
          return false;
       }

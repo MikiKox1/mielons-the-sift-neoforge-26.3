@@ -16,9 +16,9 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
 
 public final class SiftFlowerPatchFeature implements Feature {
-   public static final MapCodec CODEC = MapCodec.unit(SiftFlowerPatchFeature::new);
+   public static final MapCodec<SiftFlowerPatchFeature> CODEC = MapCodec.unit(SiftFlowerPatchFeature::new);
 
-   public MapCodec codec() {
+   public MapCodec<SiftFlowerPatchFeature> codec() {
       return CODEC;
    }
 
@@ -31,16 +31,14 @@ public final class SiftFlowerPatchFeature implements Feature {
       boolean overgrown = TheSiftDimension.isOvergrownBiome(level.getBiome(new BlockPos(centerX, surfaceY, centerZ)));
       int selection = random.nextInt(overgrown ? 6 : 24);
       boolean wildflowers = selection < 3;
-      Block var10000;
-      switch (selection % 3) {
-         case 0 -> var10000 = ModBlocks.OVERGROWN_LOTUS;
-         case 1 -> var10000 = ModBlocks.SUNBURST_PLANT;
-         default -> var10000 = ModBlocks.WHISPERBLOOM;
-      }
 
-      Block flower = var10000;
+      Block flower = switch (selection % 3) {
+         case 0 -> ModBlocks.OVERGROWN_LOTUS;
+         case 1 -> ModBlocks.SUNBURST_PLANT;
+         default -> ModBlocks.WHISPERBLOOM;
+      };
 
-      for (int attempt = 0; attempt < 24 && placed < target; ++attempt) {
+      for (int attempt = 0; attempt < 24 && placed < target; attempt++) {
          int x = centerX + random.nextInt(7) - 3;
          int z = centerZ + random.nextInt(7) - 3;
          int y = level.getHeight(Types.WORLD_SURFACE_WG, x, z);
@@ -50,7 +48,7 @@ public final class SiftFlowerPatchFeature implements Feature {
             BlockState flowerState = wildflowers ? wildflowersState(random) : flower.defaultBlockState();
             if (flowerState.canSurvive(level, plantPos)) {
                level.setBlock(plantPos, flowerState, 2);
-               ++placed;
+               placed++;
             }
          }
       }
@@ -59,7 +57,10 @@ public final class SiftFlowerPatchFeature implements Feature {
    }
 
    static boolean isFlowerSoil(BlockState floor) {
-      return floor.is(ModBlocks.SIFTSLATE) || floor.is(ModBlocks.SIFTSLATE_GROWTH) || floor.is(ModBlocks.DRY_HEALTHY_SCULK) || floor.is(ModBlocks.HEALTHY_SCULK);
+      return floor.is(ModBlocks.SIFTSLATE)
+         || floor.is(ModBlocks.SIFTSLATE_GROWTH)
+         || floor.is(ModBlocks.DRY_HEALTHY_SCULK)
+         || floor.is(ModBlocks.HEALTHY_SCULK);
    }
 
    static boolean isLakeFlowerSoil(BlockState floor) {
@@ -67,6 +68,7 @@ public final class SiftFlowerPatchFeature implements Feature {
    }
 
    static BlockState wildflowersState(RandomSource random) {
-      return (BlockState)((BlockState)Blocks.WILDFLOWERS.defaultBlockState().setValue(FlowerBedBlock.FACING, Direction.from2DDataValue(random.nextInt(4)))).setValue(FlowerBedBlock.AMOUNT, 1 + random.nextInt(4));
+      return (BlockState)((BlockState)Blocks.WILDFLOWERS.defaultBlockState().setValue(FlowerBedBlock.FACING, Direction.from2DDataValue(random.nextInt(4))))
+         .setValue(FlowerBedBlock.AMOUNT, 1 + random.nextInt(4));
    }
 }

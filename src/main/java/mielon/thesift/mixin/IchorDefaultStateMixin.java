@@ -10,24 +10,17 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({Block.class})
+@Mixin(Block.class)
 public abstract class IchorDefaultStateMixin {
    @Shadow
    private BlockState defaultBlockState;
 
-   @Inject(
-      method = {"<init>"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "<init>", at = @At("RETURN"))
    private void theSift$initialDefault(CallbackInfo ci) {
       this.defaultBlockState = IchorState.dryDefault(this.defaultBlockState);
    }
 
-   @ModifyVariable(
-      method = {"registerDefaultState"},
-      at = {@At("HEAD")},
-      argsOnly = true
-   )
+   @ModifyVariable(method = "registerDefaultState", at = @At("HEAD"), argsOnly = true)
    private BlockState theSift$dryDefault(BlockState state) {
       return IchorState.dryDefault(state);
    }

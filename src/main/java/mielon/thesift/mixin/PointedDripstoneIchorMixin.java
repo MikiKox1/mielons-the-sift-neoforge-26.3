@@ -13,13 +13,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({PointedDripstoneBlock.class})
+@Mixin(PointedDripstoneBlock.class)
 public abstract class PointedDripstoneIchorMixin {
-   @Inject(
-      method = {"maybeTransferFluid"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "maybeTransferFluid", at = @At("HEAD"), cancellable = true)
    private static void theSift$transferIchor(BlockState state, ServerLevel level, BlockPos pos, float chance, CallbackInfo ci) {
       if (theSift$hasIchorSourceAbove(level, pos)) {
          ci.cancel();
@@ -36,20 +32,15 @@ public abstract class PointedDripstoneIchorMixin {
       }
    }
 
-   @Inject(
-      method = {"getCauldronFillFluidType"},
-      at = {@At("RETURN")},
-      cancellable = true
-   )
-   private static void theSift$resolveIchorDrip(ServerLevel level, BlockPos tip, CallbackInfoReturnable cir) {
+   @Inject(method = "getCauldronFillFluidType", at = @At("RETURN"), cancellable = true)
+   private static void theSift$resolveIchorDrip(ServerLevel level, BlockPos tip, CallbackInfoReturnable<Fluid> cir) {
       if (cir.getReturnValue() == Fluids.EMPTY && theSift$hasIchorSourceAbove(level, tip)) {
          cir.setReturnValue(ModFluids.ICHOR);
       }
-
    }
 
    private static boolean theSift$hasIchorSourceAbove(ServerLevel level, BlockPos start) {
-      for (int offset = 1; offset <= 13; ++offset) {
+      for (int offset = 1; offset <= 13; offset++) {
          Fluid fluid = level.getFluidState(start.above(offset)).getType();
          if (fluid == ModFluids.ICHOR || fluid == ModFluids.FLOWING_ICHOR) {
             return level.getFluidState(start.above(offset)).isSource();

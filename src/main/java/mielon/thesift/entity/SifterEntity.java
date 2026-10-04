@@ -2,11 +2,12 @@ package mielon.thesift.entity;
 
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animatable.manager.AnimatableManager.ControllerRegistrar;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
+import mielon.thesift.block.ModBlocks;
 import mielon.thesift.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,8 +21,8 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -43,24 +44,43 @@ public final class SifterEntity extends Monster implements GeoEntity {
    private static final int BITE_SOUND_TICK = 8;
    private static final int BITE_DAMAGE_TICK = 13;
    private static final int BITE_DURATION_TICKS = 14;
-   private static final double BITE_REACH = (double)2.5F;
+   private static final double BITE_REACH = 2.5;
    private static final RawAnimation RUNNING = RawAnimation.begin().thenLoop("running");
    private static final RawAnimation BITE = RawAnimation.begin().thenPlay("attack");
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private Entity biteTarget;
    private int biteAge = -1;
 
-   public SifterEntity(EntityType type, Level level) {
+   public SifterEntity(EntityType<? extends Monster> type, Level level) {
       super(type, level);
       this.xpReward = 7;
    }
 
-   public static AttributeSupplier.Builder createAttributes() {
-      return Monster.createMonsterAttributes().add(Attributes.MAX_HEALTH, (double)40.0F).add(Attributes.MOVEMENT_SPEED, 0.31).add(Attributes.ATTACK_DAMAGE, (double)10.0F).add(Attributes.FOLLOW_RANGE, (double)28.0F).add(Attributes.STEP_HEIGHT, (double)1.0F);
+   public static Builder createAttributes() {
+      return Monster.createMonsterAttributes()
+         .add(Attributes.MAX_HEALTH, 40.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.31)
+         .add(Attributes.ATTACK_DAMAGE, 10.0)
+         .add(Attributes.FOLLOW_RANGE, 28.0)
+         .add(Attributes.STEP_HEIGHT, 1.0);
    }
 
-   public static boolean checkSifterSpawnRules(EntityType type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random) {
-      return level.getLevel().getDifficulty() != Difficulty.PEACEFUL && Mob.checkMobSpawnRules(type, level, reason, pos, random) && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP) && (pos.getY() >= level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1 || random.nextFloat() < 0.2F);
+   public static boolean canSpawnOn(BlockState floor) {
+      return floor.is(ModBlocks.SIFTSLATE)
+         || floor.is(ModBlocks.SIFTSLATE_GROWTH)
+         || floor.is(ModBlocks.HEALTHY_SCULK)
+         || floor.is(ModBlocks.DRY_HEALTHY_SCULK)
+         || floor.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH);
+   }
+
+   public static boolean checkSifterSpawnRules(
+      EntityType<SifterEntity> type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random
+   ) {
+      return level.getLevel().getDifficulty() != Difficulty.PEACEFUL
+         && Mob.checkMobSpawnRules(type, level, reason, pos, random)
+         && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+         && canSpawnOn(level.getBlockState(pos.below()))
+         && (pos.getY() >= level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1 || random.nextFloat() < 0.2F);
    }
 
    protected void registerGoals() {
@@ -78,67 +98,56 @@ public final class SifterEntity extends Monster implements GeoEntity {
    }
 
    public boolean doHurtTarget(ServerLevel level, Entity target) {
-      if (this.biteAge < 0 && target instanceof LivingEntity living) {
-         if (living.isAlive() && this.canAttack(living)) {
-            this.biteTarget = target;
-            this.biteAge = 0;
-            this.getNavigation().stop();
-            this.getLookControl().setLookAt(target, 30.0F, 30.0F);
-            this.triggerAnim("attack_controller", "bite");
-            return true;
-         }
+      if (this.biteAge < 0 && target instanceof LivingEntity living && living.isAlive() && this.canAttack(living)) {
+         this.biteTarget = target;
+         this.biteAge = 0;
+         this.getNavigation().stop();
+         this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+         this.triggerAnim("attack_controller", "bite");
+         return true;
+      } else {
+         return false;
       }
-
-      return false;
    }
 
    public void tick() {
       super.tick();
       if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
-         this.setTarget((LivingEntity)null);
+         this.setTarget(null);
          this.setAggressive(false);
          this.biteAge = -1;
          this.biteTarget = null;
-      } else {
-         Level var2 = this.level();
-         if (var2 instanceof ServerLevel) {
-            ServerLevel level = (ServerLevel)var2;
-            if (this.biteAge >= 0) {
-               ++this.biteAge;
-               this.getNavigation().stop();
-               if (this.biteTarget != null && this.biteTarget.isAlive()) {
-                  this.getLookControl().setLookAt(this.biteTarget, 30.0F, 30.0F);
-               }
-
-               if (this.biteAge == 8) {
-                  this.playSound(ModSounds.SIFTER_ATTACK, 0.9F, 1.15F + this.random.nextFloat() * 0.15F);
-               }
-
-               if (this.biteAge == 13) {
-                  this.applyBiteDamage(level);
-               }
-
-               if (this.biteAge >= 14) {
-                  this.biteAge = -1;
-                  this.biteTarget = null;
-               }
-
-               return;
-            }
+      } else if (this.level() instanceof ServerLevel level && this.biteAge >= 0) {
+         this.biteAge++;
+         this.getNavigation().stop();
+         if (this.biteTarget != null && this.biteTarget.isAlive()) {
+            this.getLookControl().setLookAt(this.biteTarget, 30.0F, 30.0F);
          }
 
+         if (this.biteAge == 8) {
+            this.playSound(ModSounds.SIFTER_ATTACK, 0.9F, 1.15F + this.random.nextFloat() * 0.15F);
+         }
+
+         if (this.biteAge == 13) {
+            this.applyBiteDamage(level);
+         }
+
+         if (this.biteAge >= 14) {
+            this.biteAge = -1;
+            this.biteTarget = null;
+         }
       }
    }
 
    private void applyBiteDamage(ServerLevel level) {
-      Entity var3 = this.biteTarget;
-      if (var3 instanceof LivingEntity living) {
-         if (living.level() == this.level() && living.isAlive() && this.canAttack(living) && !(this.distanceToSqr(living) > (double)6.25F) && this.getSensing().hasLineOfSight(living)) {
-            super.doHurtTarget(level, living);
-            return;
-         }
+      if (this.biteTarget instanceof LivingEntity living
+         && living.level() == this.level()
+         && living.isAlive()
+         && this.canAttack(living)
+         && !(this.distanceToSqr(living) > 6.25)
+         && this.getSensing().hasLineOfSight(living)) {
+         super.doHurtTarget(level, living);
       }
-
    }
 
    public int getMaxSpawnClusterSize() {
@@ -161,12 +170,12 @@ public final class SifterEntity extends Monster implements GeoEntity {
       this.playSound(ModSounds.SIFTER_STEP, 0.12F, 0.9F + this.random.nextFloat() * 0.2F);
    }
 
-   public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add((new AnimationController("attack_controller", 3, (state) -> {
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(new AnimationController("attack_controller", 3, state -> {
          AnimationController<SifterEntity> controller = state.controller();
          if (controller.isTriggeredAnimation("bite")) {
-            controller.setAnimationSpeed((double)1.0F);
-            if (controller.getCurrentTimelineTime() != (double)-2.0F) {
+            controller.setAnimationSpeed(1.0);
+            if (controller.getCurrentTimelineTime() != -2.0) {
                return PlayState.CONTINUE;
             }
 
@@ -174,15 +183,15 @@ public final class SifterEntity extends Monster implements GeoEntity {
          }
 
          if (this.getDeltaMovement().horizontalDistanceSqr() > 0.001) {
-            controller.setAnimationSpeed((double)2.5F);
+            controller.setAnimationSpeed(2.5);
             controller.setAnimation(RUNNING);
             return PlayState.CONTINUE;
          } else {
-            controller.setAnimationSpeed((double)1.0F);
+            controller.setAnimationSpeed(1.0);
             controller.reset();
             return PlayState.STOP;
          }
-      })).triggerableAnim("bite", BITE).receiveTriggeredAnimations());
+      }).triggerableAnim("bite", BITE).receiveTriggeredAnimations());
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {

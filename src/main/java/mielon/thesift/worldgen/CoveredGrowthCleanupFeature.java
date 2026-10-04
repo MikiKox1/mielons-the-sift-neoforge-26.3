@@ -5,6 +5,7 @@ import mielon.thesift.block.ModBlocks;
 import mielon.thesift.block.SiftslateGrowthBlock;
 import mielon.thesift.fluid.ModFluids;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
@@ -14,9 +15,9 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
 
 public final class CoveredGrowthCleanupFeature implements Feature {
-   public static final MapCodec CODEC = MapCodec.unit(CoveredGrowthCleanupFeature::new);
+   public static final MapCodec<CoveredGrowthCleanupFeature> CODEC = MapCodec.unit(CoveredGrowthCleanupFeature::new);
 
-   public MapCodec codec() {
+   public MapCodec<CoveredGrowthCleanupFeature> codec() {
       return CODEC;
    }
 
@@ -24,17 +25,17 @@ public final class CoveredGrowthCleanupFeature implements Feature {
       int minX = origin.getX() & -16;
       int minZ = origin.getZ() & -16;
       int maxY = level.getMaxY() - 1;
-      BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-      BlockPos.MutableBlockPos above = new BlockPos.MutableBlockPos();
+      MutableBlockPos cursor = new MutableBlockPos();
+      MutableBlockPos above = new MutableBlockPos();
       boolean changed = false;
 
-      for (int x = minX; x < minX + 16; ++x) {
-         for (int z = minZ; z < minZ + 16; ++z) {
+      for (int x = minX; x < minX + 16; x++) {
+         for (int z = minZ; z < minZ + 16; z++) {
             int surface = level.getHeight(Types.WORLD_SURFACE_WG, x, z);
             int minY = Math.max(level.getMinY(), surface - 56);
             int columnMaxY = Math.min(maxY, surface);
 
-            for (int y = minY; y <= columnMaxY; ++y) {
+            for (int y = minY; y <= columnMaxY; y++) {
                cursor.set(x, y, z);
                BlockState state = level.getBlockState(cursor);
                if (theSift$isLakePlant(state) && theSift$hasUnsupportedIchorBelow(level, cursor)) {
@@ -64,13 +65,26 @@ public final class CoveredGrowthCleanupFeature implements Feature {
    }
 
    private static boolean theSift$isLakePlant(BlockState state) {
-      return state.is(ModBlocks.OVERGROWN_CHARD) || state.is(ModBlocks.OVERGROWN_STALKS) || state.is(ModBlocks.OVERGROWN_FRONDS) || state.is(ModBlocks.OVERGROWN_LOTUS) || state.is(ModBlocks.SUNBURST_PLANT) || state.is(ModBlocks.WHISPERBLOOM) || state.is(ModBlocks.SIFTSLATE_STALKS) || state.is(ModBlocks.HEALTHY_SCULK_SPROUTS) || state.is(ModBlocks.DRY_HEALTHY_SCULK_SPROUTS) || state.is(Blocks.WILDFLOWERS) || state.is(Blocks.TORCHFLOWER) || state.is(Blocks.TORCHFLOWER_CROP) || state.is(Blocks.PITCHER_CROP) || state.is(Blocks.PITCHER_PLANT);
+      return state.is(ModBlocks.OVERGROWN_CHARD)
+         || state.is(ModBlocks.OVERGROWN_STALKS)
+         || state.is(ModBlocks.OVERGROWN_FRONDS)
+         || state.is(ModBlocks.OVERGROWN_LOTUS)
+         || state.is(ModBlocks.SUNBURST_PLANT)
+         || state.is(ModBlocks.WHISPERBLOOM)
+         || state.is(ModBlocks.SIFTSLATE_STALKS)
+         || state.is(ModBlocks.HEALTHY_SCULK_SPROUTS)
+         || state.is(ModBlocks.DRY_HEALTHY_SCULK_SPROUTS)
+         || state.is(Blocks.WILDFLOWERS)
+         || state.is(Blocks.TORCHFLOWER)
+         || state.is(Blocks.TORCHFLOWER_CROP)
+         || state.is(Blocks.PITCHER_CROP)
+         || state.is(Blocks.PITCHER_PLANT);
    }
 
    private static boolean theSift$hasUnsupportedIchorBelow(WorldGenLevel level, BlockPos plantPos) {
-      BlockPos.MutableBlockPos below = new BlockPos.MutableBlockPos();
+      MutableBlockPos below = new MutableBlockPos();
 
-      for (int offset = 1; offset <= 6; ++offset) {
+      for (int offset = 1; offset <= 6; offset++) {
          below.set(plantPos.getX(), plantPos.getY() - offset, plantPos.getZ());
          BlockState state = level.getBlockState(below);
          if (!state.getFluidState().isEmpty()) {

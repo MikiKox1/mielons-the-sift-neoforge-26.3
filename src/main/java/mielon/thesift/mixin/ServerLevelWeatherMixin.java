@@ -23,14 +23,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({ServerLevel.class})
+@Mixin(ServerLevel.class)
 public abstract class ServerLevelWeatherMixin {
    @Redirect(
-      method = {"tickPrecipitation"},
-      at = {@At(
-   value = "FIELD",
-   target = "Lnet/minecraft/world/level/block/Blocks;SNOW:Lnet/minecraft/world/level/block/Block;"
-)}
+      method = "tickPrecipitation",
+      at = @At(value = "FIELD", target = "Lnet/minecraft/world/level/block/Blocks;SNOW:Lnet/minecraft/world/level/block/Block;")
    )
    private Block theSift$useIchorSnowDuringPrecipitation() {
       ServerLevel self = (ServerLevel)(Object)this;
@@ -38,56 +35,53 @@ public abstract class ServerLevelWeatherMixin {
    }
 
    @Redirect(
-      method = {"tickPrecipitation"},
-      at = {@At(
-   value = "INVOKE",
-   target = "Lnet/minecraft/world/level/biome/Biome;shouldSnow(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z"
-)}
+      method = "tickPrecipitation",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/world/level/biome/Biome;shouldSnow(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z"
+      )
    )
    private boolean theSift$restrictSnowToIchorSnowyPeaks(Biome biome, LevelReader level, BlockPos pos) {
       ServerLevel self = (ServerLevel)(Object)this;
       if (self.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
          if (!self.getBiome(pos).is(TheSiftDimension.ICHOR_SNOWY_PEAKS)) {
             return false;
-         } else {
-            BlockState state = level.getBlockState(pos);
-            return level.isInsideBuildHeight(pos.getY()) && level.getBrightness(LightLayer.BLOCK, pos) < 10 && (state.isAir() || state.is(ModBlocks.ICHOR_SNOW)) && ModBlocks.ICHOR_SNOW.defaultBlockState().canSurvive(level, pos);
          }
+
+         BlockState state = level.getBlockState(pos);
+         return level.isInsideBuildHeight(pos.getY())
+            && level.getBrightness(LightLayer.BLOCK, pos) < 10
+            && (state.isAir() || state.is(ModBlocks.ICHOR_SNOW))
+            && ModBlocks.ICHOR_SNOW.defaultBlockState().canSurvive(level, pos);
       } else {
          return biome.shouldSnow(level, pos);
       }
    }
 
    @ModifyArg(
-      method = {"tickPrecipitation"},
-      at = {@At(
-   value = "INVOKE",
-   target = "Lnet/minecraft/server/level/ServerLevel;setBlockAndUpdate(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)Z"
-)},
+      method = "tickPrecipitation",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/server/level/ServerLevel;setBlockAndUpdate(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)Z"
+      ),
       index = 1
    )
    private BlockState theSift$capIchorSnowLayers(BlockState state) {
       ServerLevel self = (ServerLevel)(Object)this;
-      return self.dimension().equals(TheSiftDimension.LEVEL_KEY) && state.is(ModBlocks.ICHOR_SNOW) && (Integer)state.getValue(SnowLayerBlock.LAYERS) > 2 ? (BlockState)state.setValue(SnowLayerBlock.LAYERS, 2) : state;
+      return self.dimension().equals(TheSiftDimension.LEVEL_KEY) && state.is(ModBlocks.ICHOR_SNOW) && state.getValue(SnowLayerBlock.LAYERS) > 2
+         ? (BlockState)state.setValue(SnowLayerBlock.LAYERS, 2)
+         : state;
    }
 
-   @Inject(
-      method = {"getWeatherData"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private void theSift$getPerDimensionWeather(CallbackInfoReturnable cir) {
+   @Inject(method = "getWeatherData", at = @At("HEAD"), cancellable = true)
+   private void theSift$getPerDimensionWeather(CallbackInfoReturnable<WeatherData> cir) {
       ServerLevel self = (ServerLevel)(Object)this;
       if (!self.dimension().equals(Level.OVERWORLD)) {
          cir.setReturnValue((WeatherData)self.getDataStorage().computeIfAbsent(WeatherData.TYPE));
       }
-
    }
 
-   @Inject(
-      method = {"<init>"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "<init>", at = @At("RETURN"))
    private void theSift$initializePerDimensionWeatherLevels(CallbackInfo ci) {
       ServerLevel self = (ServerLevel)(Object)this;
       if (!self.dimension().equals(Level.OVERWORLD)) {
@@ -98,13 +92,10 @@ public abstract class ServerLevelWeatherMixin {
    }
 
    @Redirect(
-      method = {"advanceWeatherCycle"},
-      at = {@At(
-   value = "INVOKE",
-   target = "Lnet/minecraft/server/players/PlayerList;broadcastAll(Lnet/minecraft/network/protocol/Packet;)V"
-)}
+      method = "advanceWeatherCycle",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;broadcastAll(Lnet/minecraft/network/protocol/Packet;)V")
    )
-   private void theSift$broadcastWeatherInsideDimension(PlayerList players, Packet packet) {
+   private void theSift$broadcastWeatherInsideDimension(PlayerList players, Packet<?> packet) {
       ServerLevel self = (ServerLevel)(Object)this;
       players.broadcastAll(packet, self.dimension());
    }

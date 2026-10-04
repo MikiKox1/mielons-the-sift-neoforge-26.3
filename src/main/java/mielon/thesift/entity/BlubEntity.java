@@ -2,7 +2,7 @@ package mielon.thesift.entity;
 
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animatable.manager.AnimatableManager.ControllerRegistrar;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
@@ -34,8 +34,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder;
 import net.minecraft.world.entity.ai.control.JumpControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -62,16 +62,16 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class BlubEntity extends TamableAnimal implements GeoEntity {
-   private static final double PACK_ALERT_RANGE = (double)16.0F;
+   private static final double PACK_ALERT_RANGE = 16.0;
    private static final int PACK_ANGER_TICKS = 600;
    private static final int FLAPPING_TICKS = 20;
    private static final String BODY_CONTROLLER = "body";
    private static final String HAPPY_TRIGGER = "happy";
-   private static final EntityDataAccessor DATA_FLAPPING;
-   private static final EntityDataAccessor DATA_SITTING;
-   private static final RawAnimation HOPPING;
-   private static final RawAnimation HAPPY;
-   private static final RawAnimation FLAPPING;
+   private static final EntityDataAccessor<Boolean> DATA_FLAPPING = SynchedEntityData.defineId(BlubEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> DATA_SITTING = SynchedEntityData.defineId(BlubEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final RawAnimation HOPPING = RawAnimation.begin().thenLoop("hopping");
+   private static final RawAnimation HAPPY = RawAnimation.begin().thenPlay("happy");
+   private static final RawAnimation FLAPPING = RawAnimation.begin().thenPlay("flapping");
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private int angerTicks;
    private UUID angerTargetId;
@@ -83,24 +83,32 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
    private int nextIdleSoundTick;
    private boolean wasOnGround;
 
-   public BlubEntity(EntityType type, Level level) {
+   public BlubEntity(EntityType<? extends TamableAnimal> type, Level level) {
       super(type, level);
-      this.jumpControl = new BlubJumpControl(this);
-      this.moveControl = new BlubMoveControl(this);
-      this.setSpeedModifier((double)0.0F);
+      this.jumpControl = new BlubEntity.BlubJumpControl(this);
+      this.moveControl = new BlubEntity.BlubMoveControl(this);
+      this.setSpeedModifier(0.0);
       this.nextFlappingTick = 100 + this.random.nextInt(301);
       this.nextIdleSoundTick = 160 + this.random.nextInt(321);
    }
 
-   public static AttributeSupplier.Builder createAttributes() {
-      return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, (double)20.0F).add(Attributes.MOVEMENT_SPEED, 0.3).add(Attributes.ATTACK_DAMAGE, (double)3.0F).add(Attributes.FOLLOW_RANGE, (double)24.0F).add(Attributes.TEMPT_RANGE, (double)10.0F).add(Attributes.STEP_HEIGHT, (double)1.0F);
+   public static Builder createAttributes() {
+      return Mob.createMobAttributes()
+         .add(Attributes.MAX_HEALTH, 20.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.3)
+         .add(Attributes.ATTACK_DAMAGE, 3.0)
+         .add(Attributes.FOLLOW_RANGE, 24.0)
+         .add(Attributes.TEMPT_RANGE, 10.0)
+         .add(Attributes.STEP_HEIGHT, 1.0);
    }
 
-   public static boolean checkBlubSpawnRules(EntityType type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+   public static boolean checkBlubSpawnRules(
+      EntityType<BlubEntity> type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random
+   ) {
       return Mob.checkMobSpawnRules(type, level, reason, pos, random) && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP);
    }
 
-   protected void defineSynchedData(SynchedEntityData.Builder builder) {
+   protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(DATA_FLAPPING, false);
       builder.define(DATA_SITTING, false);
@@ -110,9 +118,9 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
       this.goalSelector.addGoal(0, new FloatGoal(this));
       this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
       this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2, true));
-      this.goalSelector.addGoal(3, new TemptGoal(this, 1.1, (stack) -> stack.getItem() == ModBlocks.SOUL_BLOCK_ITEM, false));
+      this.goalSelector.addGoal(3, new TemptGoal(this, 1.1, stack -> stack.getItem() == ModBlocks.SOUL_BLOCK_ITEM, false));
       this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.1, 10.0F, 2.0F));
-      this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, (double)1.0F));
+      this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
       this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 7.0F));
       this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
@@ -146,33 +154,24 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
          }
 
          if (!this.isTame() && this.angerTicks > 0) {
-            label99: {
-               if (target == null && this.angerTargetId != null) {
-                  Level var4 = this.level();
-                  if (var4 instanceof ServerLevel) {
-                     ServerLevel level = (ServerLevel)var4;
-                     Player restoredTarget = level.getServer().getPlayerList().getPlayer(this.angerTargetId);
-                     if (restoredTarget != null && restoredTarget.isAlive() && restoredTarget.level() == this.level() && !restoredTarget.isCreative() && !restoredTarget.isSpectator()) {
-                        this.setTarget(restoredTarget);
-                        this.setAggressive(true);
-                        target = restoredTarget;
-                     }
-                  }
+            if (target == null && this.angerTargetId != null && this.level() instanceof ServerLevel level) {
+               Player restoredTarget = level.getServer().getPlayerList().getPlayer(this.angerTargetId);
+               if (restoredTarget != null
+                  && restoredTarget.isAlive()
+                  && restoredTarget.level() == this.level()
+                  && !restoredTarget.isCreative()
+                  && !restoredTarget.isSpectator()) {
+                  this.setTarget(restoredTarget);
+                  this.setAggressive(true);
+                  target = restoredTarget;
                }
+            }
 
-               --this.angerTicks;
-               if (this.angerTicks != 0 && (target == null || target.isAlive())) {
-                  if (!(target instanceof Player)) {
-                     break label99;
-                  }
-
-                  Player player = (Player)target;
-                  if (!player.isCreative() && !player.isSpectator()) {
-                     break label99;
-                  }
-               }
-
-               this.setTarget((LivingEntity)null);
+            this.angerTicks--;
+            if (this.angerTicks == 0 || target != null && !target.isAlive() || target instanceof Player player && (player.isCreative() || player.isSpectator())
+               )
+             {
+               this.setTarget(null);
                this.setAggressive(false);
                this.angerTargetId = null;
             }
@@ -186,7 +185,6 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
          } else if (!canFlap && this.flappingTicks == 0) {
             this.nextFlappingTick = Math.max(this.nextFlappingTick, 40);
          }
-
       }
    }
 
@@ -202,20 +200,17 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
             return InteractionResult.SUCCESS;
          }
       } else if (!this.isTame() && soulBlock && this.getTarget() == null && this.angerTicks <= 0) {
-         Level var7 = this.level();
-         if (var7 instanceof ServerLevel) {
-            ServerLevel level = (ServerLevel)var7;
+         if (this.level() instanceof ServerLevel level) {
             held.consume(1, player);
             if (this.random.nextInt(3) == 0) {
                this.tame(player);
-               if (player instanceof ServerPlayer) {
-                  ServerPlayer serverPlayer = (ServerPlayer)player;
+               if (player instanceof ServerPlayer serverPlayer) {
                   ModAdvancements.award(serverPlayer, "the_sift/blub");
                }
 
                this.setPersistenceRequired();
                this.getNavigation().stop();
-               this.setTarget((LivingEntity)null);
+               this.setTarget(null);
                this.setAggressive(false);
                this.angerTicks = 0;
                this.angerTargetId = null;
@@ -235,42 +230,37 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
          } else {
             return InteractionResult.SUCCESS;
          }
-      } else if (this.isTame() && this.isOwnedBy(player)) {
-         if (this.level() instanceof ServerLevel) {
-            this.setBlubSitting(!this.isBlubSitting());
-            this.setJumping(false);
-            this.getNavigation().stop();
-            this.setTarget((LivingEntity)null);
-            return InteractionResult.SUCCESS_SERVER;
-         } else {
-            return InteractionResult.SUCCESS;
-         }
-      } else {
+      } else if (!this.isTame() || !this.isOwnedBy(player)) {
          return super.mobInteract(player, hand);
+      } else if (this.level() instanceof ServerLevel) {
+         this.setBlubSitting(!this.isBlubSitting());
+         this.setJumping(false);
+         this.getNavigation().stop();
+         this.setTarget(null);
+         return InteractionResult.SUCCESS_SERVER;
+      } else {
+         return InteractionResult.SUCCESS;
       }
    }
 
    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
       boolean hurt = super.hurtServer(level, source, amount);
-      Entity attacker = source.getEntity();
-      if (hurt && !this.isTame() && attacker instanceof Player player) {
-         if (!player.isCreative() && !player.isSpectator()) {
-            AABB alertArea = this.getBoundingBox().inflate((double)16.0F);
+      if (hurt && !this.isTame() && source.getEntity() instanceof Player player && !player.isCreative() && !player.isSpectator()) {
+         AABB alertArea = this.getBoundingBox().inflate(16.0);
 
-            for (BlubEntity blub : level.getEntitiesOfClass(BlubEntity.class, alertArea, (candidate) -> !candidate.isTame() && candidate.isAlive())) {
-               blub.setBlubSitting(false);
-               blub.setTarget(player);
-               blub.setAggressive(true);
-               blub.angerTicks = 600;
-               blub.angerTargetId = player.getUUID();
-               blub.getNavigation().moveTo(player, 1.2);
-            }
-
-            return true;
+         for (BlubEntity blub : level.getEntitiesOfClass(BlubEntity.class, alertArea, candidate -> !candidate.isTame() && candidate.isAlive())) {
+            blub.setBlubSitting(false);
+            blub.setTarget(player);
+            blub.setAggressive(true);
+            blub.angerTicks = 600;
+            blub.angerTargetId = player.getUUID();
+            blub.getNavigation().moveTo(player, 1.2);
          }
-      }
 
-      return hurt;
+         return true;
+      } else {
+         return hurt;
+      }
    }
 
    protected void addAdditionalSaveData(ValueOutput output) {
@@ -281,16 +271,15 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
             output.putString("TheSiftAngryAt", this.angerTargetId.toString());
          }
       }
-
    }
 
    protected void readAdditionalSaveData(ValueInput input) {
       super.readAdditionalSaveData(input);
       this.angerTicks = Math.max(0, input.getIntOr("TheSiftAngerTicks", 0));
-      this.angerTargetId = (UUID)input.getString("TheSiftAngryAt").flatMap((value) -> {
+      this.angerTargetId = input.getString("TheSiftAngryAt").flatMap(value -> {
          try {
             return Optional.of(UUID.fromString(value));
-         } catch (IllegalArgumentException var2) {
+         } catch (IllegalArgumentException ignored) {
             return Optional.empty();
          }
       }).orElse(null);
@@ -298,28 +287,17 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
          this.angerTicks = 0;
          this.angerTargetId = null;
       }
-
    }
 
    public boolean canAttack(LivingEntity target) {
       if (target instanceof BlubEntity) {
          return false;
+      } else if (target instanceof OwnableEntity pet && pet.getOwner() != null) {
+         return false;
       } else {
-         if (target instanceof OwnableEntity) {
-            OwnableEntity pet = (OwnableEntity)target;
-            if (pet.getOwner() != null) {
-               return false;
-            }
-         }
-
-         if (target instanceof Player) {
-            Player player = (Player)target;
-            if (player.isCreative() || player.isSpectator()) {
-               return false;
-            }
-         }
-
-         return !this.isOwnedBy(target) && super.canAttack(target);
+         return !(target instanceof Player player && (player.isCreative() || player.isSpectator()))
+            ? !this.isOwnedBy(target) && super.canAttack(target)
+            : false;
       }
    }
 
@@ -327,14 +305,7 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
       if (target instanceof BlubEntity) {
          return false;
       } else {
-         if (target instanceof OwnableEntity) {
-            OwnableEntity pet = (OwnableEntity)target;
-            if (pet.getOwner() != null) {
-               return false;
-            }
-         }
-
-         return super.wantsToAttack(target, owner);
+         return target instanceof OwnableEntity pet && pet.getOwner() != null ? false : super.wantsToAttack(target, owner);
       }
    }
 
@@ -354,14 +325,13 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
          this.setJumping(false);
          this.getNavigation().stop();
          this.moveControl.setWait();
-         this.setDeltaMovement((double)0.0F, this.getDeltaMovement().y, (double)0.0F);
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
       }
-
    }
 
    private double hoppingAnimationSpeed() {
       double horizontalSpeed = Math.sqrt(this.getDeltaMovement().horizontalDistanceSqr());
-      return Mth.clamp(0.72 + horizontalSpeed * (double)7.0F, 0.72, 2.35);
+      return Mth.clamp(0.72 + horizontalSpeed * 7.0, 0.72, 2.35);
    }
 
    public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob partner) {
@@ -382,9 +352,9 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
 
    private void playAxolotlIdleSound(float volume, float pitch) {
       if (!this.level().isClientSide()) {
-         this.level().playSound((Entity)null, this.blockPosition(), this.isInWater() ? ModSounds.BLUB_IDLE_WATER : ModSounds.BLUB_IDLE_AIR, this.getSoundSource(), volume, pitch);
+         this.level()
+            .playSound(null, this.blockPosition(), this.isInWater() ? ModSounds.BLUB_IDLE_WATER : ModSounds.BLUB_IDLE_AIR, this.getSoundSource(), volume, pitch);
       }
-
    }
 
    protected SoundEvent getHurtSound(DamageSource source) {
@@ -418,11 +388,11 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
    protected float getJumpPower() {
       float height = this.moveControl.getSpeedModifier() > 1.1 ? 0.36F : 0.3F;
       Path path = this.navigation.getPath();
-      if (path != null && !path.isDone() && path.getNextEntityPos(this).y > this.getY() + (double)0.5F) {
+      if (path != null && !path.isDone() && path.getNextEntityPos(this).y > this.getY() + 0.5) {
          height = 0.5F;
       }
 
-      if (this.horizontalCollision || this.moveControl.getWantedY() > this.getY() + (double)0.5F) {
+      if (this.horizontalCollision || this.moveControl.getWantedY() > this.getY() + 0.5) {
          height = 0.5F;
       }
 
@@ -431,10 +401,9 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
 
    public void jumpFromGround() {
       super.jumpFromGround();
-      if (this.moveControl.getSpeedModifier() > (double)0.0F && this.getDeltaMovement().horizontalDistanceSqr() < 0.01) {
-         this.moveRelative(0.1F, new Vec3((double)0.0F, (double)0.0F, (double)1.0F));
+      if (this.moveControl.getSpeedModifier() > 0.0 && this.getDeltaMovement().horizontalDistanceSqr() < 0.01) {
+         this.moveRelative(0.1F, new Vec3(0.0, 0.0, 1.0));
       }
-
    }
 
    public void setJumping(boolean jumping) {
@@ -453,19 +422,19 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
    }
 
    private void facePoint(double x, double z) {
-      this.setYRot((float)(Mth.atan2(z - this.getZ(), x - this.getX()) * (180D / Math.PI)) - 90.0F);
+      this.setYRot((float)(Mth.atan2(z - this.getZ(), x - this.getX()) * (180.0 / Math.PI)) - 90.0F);
    }
 
    private void setLandingDelay() {
       double speed = this.moveControl.getSpeedModifier();
       this.jumpDelayTicks = speed >= 1.15 ? 4 : (speed >= 1.05 ? 6 : 8);
-      ((BlubJumpControl)this.jumpControl).setCanJump(false);
+      ((BlubEntity.BlubJumpControl)this.jumpControl).setCanJump(false);
    }
 
    protected void customServerAiStep(ServerLevel level) {
       super.customServerAiStep(level);
       if (this.jumpDelayTicks > 0) {
-         --this.jumpDelayTicks;
+         this.jumpDelayTicks--;
       }
 
       if (this.isBlubSitting()) {
@@ -479,7 +448,7 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
                this.setLandingDelay();
             }
 
-            BlubJumpControl jumps = (BlubJumpControl)this.jumpControl;
+            BlubEntity.BlubJumpControl jumps = (BlubEntity.BlubJumpControl)this.jumpControl;
             if (!jumps.wantJump() && this.moveControl.hasWanted() && this.jumpDelayTicks == 0) {
                Vec3 destination = new Vec3(this.moveControl.getWantedX(), this.moveControl.getWantedY(), this.moveControl.getWantedZ());
                Path path = this.navigation.getPath();
@@ -501,25 +470,24 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
    public void aiStep() {
       super.aiStep();
       if (this.jumpTicks != this.jumpDuration) {
-         ++this.jumpTicks;
+         this.jumpTicks++;
       } else if (this.jumpDuration != 0) {
          this.jumpTicks = 0;
          this.jumpDuration = 0;
          this.setJumping(false);
       }
-
    }
 
    public boolean canSpawnSprintParticle() {
       return false;
    }
 
-   public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add((new AnimationController("body", 2, (state) -> {
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(new AnimationController("body", 2, state -> {
          BlubEntity blub = (BlubEntity)state.animatable();
          AnimationController<BlubEntity> controller = state.controller();
          if (controller.isTriggeredAnimation("happy")) {
-            if (controller.getCurrentTimelineTime() != (double)-2.0F) {
+            if (controller.getCurrentTimelineTime() != -2.0) {
                return PlayState.CONTINUE;
             }
 
@@ -527,7 +495,7 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
          }
 
          if (blub.isBlubSitting()) {
-            controller.setAnimationSpeed((double)1.0F);
+            controller.setAnimationSpeed(1.0);
             controller.reset();
             return PlayState.STOP;
          } else if (blub.isMovingForAnimation()) {
@@ -535,12 +503,12 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
             controller.setAnimation(HOPPING);
             return PlayState.CONTINUE;
          } else {
-            controller.setAnimationSpeed((double)1.0F);
+            controller.setAnimationSpeed(1.0);
             controller.reset();
             return PlayState.STOP;
          }
-      })).triggerableAnim("happy", HAPPY).receiveTriggeredAnimations());
-      controllers.add(new AnimationController("ears", 1, (state) -> {
+      }).triggerableAnim("happy", HAPPY).receiveTriggeredAnimations());
+      controllers.add(new AnimationController("ears", 1, state -> {
          BlubEntity blub = (BlubEntity)state.animatable();
          if ((Boolean)blub.entityData.get(DATA_FLAPPING)) {
             state.controller().setAnimation(FLAPPING);
@@ -554,45 +522,6 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.cache;
-   }
-
-   static {
-      DATA_FLAPPING = SynchedEntityData.defineId(BlubEntity.class, EntityDataSerializers.BOOLEAN);
-      DATA_SITTING = SynchedEntityData.defineId(BlubEntity.class, EntityDataSerializers.BOOLEAN);
-      HOPPING = RawAnimation.begin().thenLoop("hopping");
-      HAPPY = RawAnimation.begin().thenPlay("happy");
-      FLAPPING = RawAnimation.begin().thenPlay("flapping");
-   }
-
-   private static final class BlubMoveControl extends MoveControl {
-      private double nextJumpSpeed;
-
-      private BlubMoveControl(BlubEntity blub) {
-         super(blub);
-      }
-
-      public void tick() {
-         BlubJumpControl jumps = (BlubJumpControl)((BlubEntity)this.mob).getJumpControl();
-         if (((BlubEntity)this.mob).onGround() && !((BlubEntity)this.mob).isJumping() && !jumps.wantJump()) {
-            ((BlubEntity)this.mob).setSpeedModifier((double)0.0F);
-         } else if (this.hasWanted() || this.operation == Operation.JUMPING) {
-            ((BlubEntity)this.mob).setSpeedModifier(this.nextJumpSpeed);
-         }
-
-         super.tick();
-      }
-
-      public void setWantedPosition(double x, double y, double z, double speed) {
-         if (((BlubEntity)this.mob).isInWater()) {
-            speed = (double)1.5F;
-         }
-
-         super.setWantedPosition(x, y, z, speed);
-         if (speed > (double)0.0F) {
-            this.nextJumpSpeed = speed;
-         }
-
-      }
    }
 
    private static final class BlubJumpControl extends JumpControl {
@@ -621,7 +550,36 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
             this.blub.startJumping();
             this.jump = false;
          }
+      }
+   }
 
+   private static final class BlubMoveControl extends MoveControl<BlubEntity> {
+      private double nextJumpSpeed;
+
+      private BlubMoveControl(BlubEntity blub) {
+         super(blub);
+      }
+
+      public void tick() {
+         BlubEntity.BlubJumpControl jumps = (BlubEntity.BlubJumpControl)((BlubEntity)this.mob).getJumpControl();
+         if (((BlubEntity)this.mob).onGround() && !((BlubEntity)this.mob).isJumping() && !jumps.wantJump()) {
+            ((BlubEntity)this.mob).setSpeedModifier(0.0);
+         } else if (this.hasWanted() || this.operation == Operation.JUMPING) {
+            ((BlubEntity)this.mob).setSpeedModifier(this.nextJumpSpeed);
+         }
+
+         super.tick();
+      }
+
+      public void setWantedPosition(double x, double y, double z, double speed) {
+         if (((BlubEntity)this.mob).isInWater()) {
+            speed = 1.5;
+         }
+
+         super.setWantedPosition(x, y, z, speed);
+         if (speed > 0.0) {
+            this.nextJumpSpeed = speed;
+         }
       }
    }
 }

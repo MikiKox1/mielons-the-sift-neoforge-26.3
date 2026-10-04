@@ -12,9 +12,9 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
 
 public final class SiftslatePlantPatchFeature implements Feature {
-   public static final MapCodec CODEC = MapCodec.unit(SiftslatePlantPatchFeature::new);
+   public static final MapCodec<SiftslatePlantPatchFeature> CODEC = MapCodec.unit(SiftslatePlantPatchFeature::new);
 
-   public MapCodec codec() {
+   public MapCodec<SiftslatePlantPatchFeature> codec() {
       return CODEC;
    }
 
@@ -23,19 +23,17 @@ public final class SiftslatePlantPatchFeature implements Feature {
       int centerZ = (origin.getZ() & -16) + 8;
       int target = 4 + random.nextInt(4);
       int placed = 0;
-      Block var10000;
-      switch (random.nextInt(6)) {
-         case 0 -> var10000 = ModBlocks.OVERGROWN_FRONDS;
-         case 1 -> var10000 = ModBlocks.OVERGROWN_STALKS;
-         case 2 -> var10000 = ModBlocks.OVERGROWN_CHARD;
-         case 3 -> var10000 = ModBlocks.SIFTSLATE_STALKS;
-         case 4 -> var10000 = ModBlocks.HEALTHY_SCULK_SPROUTS;
-         default -> var10000 = ModBlocks.DRY_HEALTHY_SCULK_SPROUTS;
-      }
 
-      Block plant = var10000;
+      Block plant = switch (random.nextInt(6)) {
+         case 0 -> ModBlocks.OVERGROWN_FRONDS;
+         case 1 -> ModBlocks.OVERGROWN_STALKS;
+         case 2 -> ModBlocks.OVERGROWN_CHARD;
+         case 3 -> ModBlocks.SIFTSLATE_STALKS;
+         case 4 -> ModBlocks.HEALTHY_SCULK_SPROUTS;
+         default -> ModBlocks.DRY_HEALTHY_SCULK_SPROUTS;
+      };
 
-      for (int attempt = 0; attempt < 32 && placed < target; ++attempt) {
+      for (int attempt = 0; attempt < 32 && placed < target; attempt++) {
          int x = centerX + random.nextInt(9) - 4;
          int z = centerZ + random.nextInt(9) - 4;
          int y = level.getHeight(Types.WORLD_SURFACE_WG, x, z);
@@ -44,7 +42,7 @@ public final class SiftslatePlantPatchFeature implements Feature {
             BlockState state = plant.defaultBlockState();
             if (state.canSurvive(level, plantPos)) {
                level.setBlock(plantPos, state, 2);
-               ++placed;
+               placed++;
             }
          }
       }

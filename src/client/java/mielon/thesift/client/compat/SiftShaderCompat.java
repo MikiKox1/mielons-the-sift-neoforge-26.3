@@ -11,7 +11,7 @@ public final class SiftShaderCompat {
    private static Object irisApi;
    private static Method isShaderPackInUse;
    private static Method assignPipeline;
-   private static Class irisProgramClass;
+   private static Class<?> irisProgramClass;
 
    private SiftShaderCompat() {
    }
@@ -29,20 +29,19 @@ public final class SiftShaderCompat {
                try {
                   irisProgramClass = Class.forName("net.irisshaders.iris.api.v0.IrisProgram");
                   assignPipeline = apiClass.getMethod("assignPipeline", RenderPipeline.class, irisProgramClass);
-               } catch (ReflectiveOperationException var2) {
+               } catch (ReflectiveOperationException ignored) {
                   assignPipeline = null;
                   irisProgramClass = null;
                }
 
                TheSiftMod.LOGGER.info("Iris detected; The Sift shader compatibility is enabled.");
-            } catch (LinkageError | ReflectiveOperationException exception) {
+            } catch (ReflectiveOperationException | LinkageError exception) {
                irisApi = null;
                isShaderPackInUse = null;
                assignPipeline = null;
                irisProgramClass = null;
                TheSiftMod.LOGGER.warn("Iris was detected, but its compatibility API could not be initialized.", exception);
             }
-
          }
       }
    }
@@ -57,7 +56,7 @@ public final class SiftShaderCompat {
       if (irisApi != null && isShaderPackInUse != null) {
          try {
             return Boolean.TRUE.equals(isShaderPackInUse.invoke(irisApi));
-         } catch (RuntimeException | ReflectiveOperationException var1) {
+         } catch (ReflectiveOperationException | RuntimeException exception) {
             return false;
          }
       } else {
@@ -71,14 +70,13 @@ public final class SiftShaderCompat {
          try {
             Object program = enumValue(irisProgramClass, irisProgram);
             assignPipeline.invoke(irisApi, pipeline, program);
-         } catch (IllegalArgumentException | ReflectiveOperationException exception) {
+         } catch (ReflectiveOperationException | IllegalArgumentException exception) {
             TheSiftMod.LOGGER.warn("Could not assign The Sift pipeline {} to Iris program {}.", new Object[]{pipeline.getLocation(), irisProgram, exception});
          }
-
       }
    }
 
-   private static Object enumValue(Class enumClass, String name) {
+   private static Object enumValue(Class<?> enumClass, String name) {
       return Enum.valueOf(enumClass.asSubclass(Enum.class), name);
    }
 }

@@ -27,7 +27,7 @@ public final class SonorousColors {
       int[] rgbShades = shades(soundIndex1to8);
       float[] hues = new float[rgbShades.length];
 
-      for (int i = 0; i < rgbShades.length; ++i) {
+      for (int i = 0; i < rgbShades.length; i++) {
          hues[i] = rgbToHue(rgbShades[i]);
       }
 
@@ -36,36 +36,36 @@ public final class SonorousColors {
 
    private static int lighten(int rgb, float factor) {
       factor = Math.max(0.0F, Math.min(1.0F, factor));
-      int r = rgb >> 16 & 255;
-      int g = rgb >> 8 & 255;
-      int b = rgb & 255;
-      r = Math.round((float)r + (float)(255 - r) * factor);
-      g = Math.round((float)g + (float)(255 - g) * factor);
-      b = Math.round((float)b + (float)(255 - b) * factor);
+      int r = rgb >> 16 & 0xFF;
+      int g = rgb >> 8 & 0xFF;
+      int b = rgb & 0xFF;
+      r = Math.round(r + (255 - r) * factor);
+      g = Math.round(g + (255 - g) * factor);
+      b = Math.round(b + (255 - b) * factor);
       return r << 16 | g << 8 | b;
    }
 
    private static float rgbToHue(int rgb) {
-      float r = (float)(rgb >> 16 & 255) / 255.0F;
-      float g = (float)(rgb >> 8 & 255) / 255.0F;
-      float b = (float)(rgb & 255) / 255.0F;
+      float r = (rgb >> 16 & 0xFF) / 255.0F;
+      float g = (rgb >> 8 & 0xFF) / 255.0F;
+      float b = (rgb & 0xFF) / 255.0F;
       float max = Math.max(r, Math.max(g, b));
       float min = Math.min(r, Math.min(g, b));
       float delta = max - min;
       if (delta < 1.0E-5F) {
          return 0.0F;
-      } else {
-         float hue;
-         if (max == r) {
-            hue = (g - b) / delta % 6.0F;
-         } else if (max == g) {
-            hue = (b - r) / delta + 2.0F;
-         } else {
-            hue = (r - g) / delta + 4.0F;
-         }
-
-         hue /= 6.0F;
-         return hue < 0.0F ? hue + 1.0F : hue;
       }
+
+      float hue;
+      if (max == r) {
+         hue = (g - b) / delta % 6.0F;
+      } else if (max == g) {
+         hue = (b - r) / delta + 2.0F;
+      } else {
+         hue = (r - g) / delta + 4.0F;
+      }
+
+      hue /= 6.0F;
+      return hue < 0.0F ? hue + 1.0F : hue;
    }
 }

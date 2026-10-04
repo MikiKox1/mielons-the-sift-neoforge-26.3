@@ -10,9 +10,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -20,10 +20,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class SculkflowerCropBlock extends CropBlock {
-   public static final IntegerProperty AGE;
-   private static final VoxelShape[] SHAPES;
+   public static final IntegerProperty AGE = BlockStateProperties.AGE_2;
+   private static final VoxelShape[] SHAPES = new VoxelShape[]{Block.column(10.0, 0.0, 4.0), Block.column(14.0, 0.0, 13.0), Block.column(16.0, 0.0, 16.0)};
 
-   public SculkflowerCropBlock(BlockBehaviour.Properties properties) {
+   public SculkflowerCropBlock(Properties properties) {
       super(properties);
    }
 
@@ -56,7 +56,7 @@ public final class SculkflowerCropBlock extends CropBlock {
    }
 
    protected boolean mayPlaceOn(BlockState floor, BlockGetter level, BlockPos floorPos) {
-      return floor.is(Blocks.FARMLAND) || floor.is(Blocks.SCULK);
+      return floor.is(Blocks.FARMLAND) || floor.is(Blocks.SCULK) || floor.is(ModBlocks.HEALTHY_SCULK) || floor.is(ModBlocks.DRY_HEALTHY_SCULK);
    }
 
    protected ItemLike getBaseSeedId() {
@@ -67,12 +67,7 @@ public final class SculkflowerCropBlock extends CropBlock {
       return SHAPES[this.getAge(state)];
    }
 
-   protected void createBlockStateDefinition(StateDefinition.Builder builder) {
+   protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
       builder.add(new Property[]{AGE});
-   }
-
-   static {
-      AGE = BlockStateProperties.AGE_2;
-      SHAPES = new VoxelShape[]{Block.column((double)10.0F, (double)0.0F, (double)4.0F), Block.column((double)14.0F, (double)0.0F, (double)13.0F), Block.column((double)16.0F, (double)0.0F, (double)16.0F)};
    }
 }

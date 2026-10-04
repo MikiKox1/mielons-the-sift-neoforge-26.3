@@ -13,20 +13,19 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 public final class RiftLightCleanup {
-   private static final Set pending = new HashSet();
+   private static final Set<RiftLightCleanup.Entry> pending = new HashSet<>();
 
-   public static void enqueue(ServerLevel level, Collection positions) {
-      for (BlockPos pos : (Iterable<BlockPos>) positions) {
-         pending.add(new Entry(level.dimension(), pos.immutable()));
+   public static void enqueue(ServerLevel level, Collection<BlockPos> positions) {
+      for (BlockPos pos : positions) {
+         pending.add(new RiftLightCleanup.Entry(level.dimension(), pos.immutable()));
       }
-
    }
 
    public static void tick(MinecraftServer server) {
-      Iterator<Entry> it = pending.iterator();
+      Iterator<RiftLightCleanup.Entry> it = pending.iterator();
 
-      while(it.hasNext()) {
-         Entry e = (Entry)it.next();
+      while (it.hasNext()) {
+         RiftLightCleanup.Entry e = it.next();
          ServerLevel level = server.getLevel(e.dimension);
          if (level == null) {
             it.remove();
@@ -41,7 +40,6 @@ public final class RiftLightCleanup {
             }
          }
       }
-
    }
 
    public static void clear() {
@@ -51,6 +49,6 @@ public final class RiftLightCleanup {
    private RiftLightCleanup() {
    }
 
-   private static record Entry(ResourceKey dimension, BlockPos pos) {
+   private record Entry(ResourceKey<Level> dimension, BlockPos pos) {
    }
 }

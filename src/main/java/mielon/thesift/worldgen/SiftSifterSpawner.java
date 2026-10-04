@@ -30,27 +30,26 @@ public final class SiftSifterSpawner {
                   return;
                }
             }
-
          }
       }
    }
 
    private static boolean trySpawnNear(ServerLevel level, BlockPos around) {
       RandomSource random = level.getRandom();
-      double phase = random.nextDouble() * Math.PI * (double)2.0F;
+      double phase = random.nextDouble() * Math.PI * 2.0;
 
-      for (int attempt = 0; attempt < 18; ++attempt) {
-         double angle = phase + (double)attempt * 2.399963229728653;
+      for (int attempt = 0; attempt < 18; attempt++) {
+         double angle = phase + attempt * 2.399963229728653;
          int radius = 32 + random.nextInt(45);
-         int x = around.getX() + (int)Math.round(Math.cos(angle) * (double)radius);
-         int z = around.getZ() + (int)Math.round(Math.sin(angle) * (double)radius);
+         int x = around.getX() + (int)Math.round(Math.cos(angle) * radius);
+         int z = around.getZ() + (int)Math.round(Math.sin(angle) * radius);
          if (level.getChunkSource().getChunkNow(Math.floorDiv(x, 16), Math.floorDiv(z, 16)) != null) {
             boolean surface = random.nextFloat() < 0.8F;
             BlockPos center = findSpawnFeet(level, x, z, surface, random);
             if (center != null) {
-               SpawnProfile profile = profileAt(level, center);
+               SiftSifterSpawner.SpawnProfile profile = profileAt(level, center);
                if (profile != null && !(random.nextDouble() >= profile.chance())) {
-                  AABB local = (new AABB(center)).inflate((double)96.0F, (double)48.0F, (double)96.0F);
+                  AABB local = new AABB(center).inflate(96.0, 48.0, 96.0);
                   int localPopulation = level.getEntitiesOfClass(SifterEntity.class, local).size();
                   int available = profile.localCap() - localPopulation;
                   if (available < profile.minimumGroup()) {
@@ -68,18 +67,21 @@ public final class SiftSifterSpawner {
       return false;
    }
 
-   private static boolean spawnGroup(ServerLevel level, BlockPos center, SpawnProfile profile, int groupSize, RandomSource random) {
+   private static boolean spawnGroup(ServerLevel level, BlockPos center, SiftSifterSpawner.SpawnProfile profile, int groupSize, RandomSource random) {
       int spawned = 0;
 
-      for (int member = 0; member < groupSize; ++member) {
+      for (int member = 0; member < groupSize; member++) {
          BlockPos feet = null;
 
-         for (int attempt = 0; attempt < 12 && feet == null; ++attempt) {
+         for (int attempt = 0; attempt < 12 && feet == null; attempt++) {
             int x = center.getX() + random.nextInt(9) - 4;
             int z = center.getZ() + random.nextInt(9) - 4;
             boolean surface = random.nextFloat() < 0.8F;
             BlockPos candidate = findSpawnFeet(level, x, z, surface, random);
-            if (candidate != null && profileAt(level, candidate) == profile && hasEmptyCollision(level, candidate) && hasEmptyCollision(level, candidate.above())) {
+            if (candidate != null
+               && profileAt(level, candidate) == profile
+               && hasEmptyCollision(level, candidate)
+               && hasEmptyCollision(level, candidate.above())) {
                feet = candidate;
             }
          }
@@ -87,9 +89,9 @@ public final class SiftSifterSpawner {
          if (feet != null) {
             SifterEntity sifter = (SifterEntity)ModEntities.SIFTER.create(level, EntitySpawnReason.NATURAL);
             if (sifter != null) {
-               sifter.snapTo((double)feet.getX() + (double)0.5F, (double)feet.getY(), (double)feet.getZ() + (double)0.5F, random.nextFloat() * 360.0F, 0.0F);
+               sifter.snapTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
                if (level.noCollision(sifter) && level.addFreshEntity(sifter)) {
-                  ++spawned;
+                  spawned++;
                } else {
                   sifter.discard();
                }
@@ -104,23 +106,23 @@ public final class SiftSifterSpawner {
       int top = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
       if (surface) {
          return findFloor(level, x, z, top - 1, 10, 1);
-      } else {
-         int minY = level.getMinY() + 2;
-         int highestCaveFloor = top - 6;
-         if (highestCaveFloor <= minY) {
-            return null;
-         } else {
-            int startY = minY + random.nextInt(highestCaveFloor - minY + 1);
-            return findFloor(level, x, z, startY, 18, -1);
-         }
       }
+
+      int minY = level.getMinY() + 2;
+      int highestCaveFloor = top - 6;
+      if (highestCaveFloor <= minY) {
+         return null;
+      }
+
+      int startY = minY + random.nextInt(highestCaveFloor - minY + 1);
+      return findFloor(level, x, z, startY, 18, -1);
    }
 
    private static BlockPos findFloor(ServerLevel level, int x, int z, int startY, int attempts, int direction) {
-      for (int offset = 0; offset <= attempts; ++offset) {
+      for (int offset = 0; offset <= attempts; offset++) {
          int floorY = startY + offset * direction;
          BlockPos floor = new BlockPos(x, floorY, z);
-         if (level.getBlockState(floor).isCollisionShapeFullBlock(level, floor)) {
+         if (SifterEntity.canSpawnOn(level.getBlockState(floor)) && level.getBlockState(floor).isCollisionShapeFullBlock(level, floor)) {
             BlockPos feet = floor.above();
             if (hasEmptyCollision(level, feet) && hasEmptyCollision(level, feet.above())) {
                return feet;
@@ -135,9 +137,11 @@ public final class SiftSifterSpawner {
       return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
    }
 
-   private static SpawnProfile profileAt(ServerLevel level, BlockPos pos) {
+   private static SiftSifterSpawner.SpawnProfile profileAt(ServerLevel level, BlockPos pos) {
       if (TheSiftDimension.isOvergrownBiome(level.getBiome(pos))) {
-         return level.getBiome(pos).is(TheSiftDimension.OVERGROWN_FOREST) ? SiftSifterSpawner.SpawnProfile.OVERGROWN_FOREST : SiftSifterSpawner.SpawnProfile.OVERGROWN;
+         return level.getBiome(pos).is(TheSiftDimension.OVERGROWN_FOREST)
+            ? SiftSifterSpawner.SpawnProfile.OVERGROWN_FOREST
+            : SiftSifterSpawner.SpawnProfile.OVERGROWN;
       } else {
          return level.getBiome(pos).is(TheSiftDimension.SIFT_WASTES) ? SiftSifterSpawner.SpawnProfile.WASTES : SiftSifterSpawner.SpawnProfile.OTHER_SIFT;
       }
@@ -147,7 +151,7 @@ public final class SiftSifterSpawner {
       checkCooldown = 0;
    }
 
-   private static enum SpawnProfile {
+   private enum SpawnProfile {
       OVERGROWN_FOREST(0.36, 8),
       OVERGROWN(0.28, 6),
       WASTES(0.22, 5),
@@ -156,7 +160,7 @@ public final class SiftSifterSpawner {
       private final double chance;
       private final int localCap;
 
-      private SpawnProfile(double chance, int localCap) {
+      SpawnProfile(double chance, int localCap) {
          this.chance = chance;
          this.localCap = localCap;
       }
@@ -175,11 +179,6 @@ public final class SiftSifterSpawner {
 
       private int localCap() {
          return this.localCap;
-      }
-
-      // $FF: synthetic method
-      private static SpawnProfile[] $values() {
-         return new SpawnProfile[]{OVERGROWN_FOREST, OVERGROWN, WASTES, OTHER_SIFT};
       }
    }
 }

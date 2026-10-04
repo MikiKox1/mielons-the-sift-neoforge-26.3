@@ -1,31 +1,21 @@
 package mielon.thesift.client.loading;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.LevelLoadingScreen.Reason;
-import net.minecraft.client.multiplayer.LevelLoadTracker;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.Level;
+import net.minecraft.network.chat.Component;
 
-public final class SiftTransitionScreen extends LevelLoadingScreen {
-   private static final double FAILSAFE_SECONDS = (double)45.0F;
-   private boolean realTracker;
-
-   public boolean hasRealTracker() {
-      return this.realTracker;
-   }
-
-   public void update(LevelLoadTracker tracker, LevelLoadingScreen.Reason reason) {
-      super.update(tracker, reason);
-      this.realTracker = true;
-   }
+public final class SiftTransitionScreen extends Screen {
+   private final long createdAtNanos = System.nanoTime();
 
    public SiftTransitionScreen() {
-      super(new LevelLoadTracker(), Reason.END_PORTAL);
+      super(Component.translatable("multiplayer.downloadingTerrain"));
    }
 
    public boolean isPauseScreen() {
+      return false;
+   }
+
+   public boolean shouldCloseOnEsc() {
       return false;
    }
 
@@ -33,29 +23,16 @@ public final class SiftTransitionScreen extends LevelLoadingScreen {
       SiftLoadingBackgroundRenderer.draw(graphics, this.width, this.height);
    }
 
+   public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+      graphics.centeredText(this.font, this.title, this.width / 2, this.height / 2 - 50, -1);
+   }
+
    public void tick() {
-      if (SiftLoadingScreenState.isActive() && this.minecraft.player != null) {
-         ResourceKey<Level> source = SiftLoadingScreenState.sourceDimension();
-         if (source != null && !this.minecraft.player.level().dimension().equals(source)) {
-            SiftLoadingScreenState.clear();
-            if (this.minecraft.gui.screen() == this) {
-               this.minecraft.gui.setScreen((Screen)null);
-            }
-
-            return;
+      if (!SiftLoadingScreenState.isActive() || System.nanoTime() - this.createdAtNanos > 30000000000L) {
+         SiftLoadingScreenState.clear();
+         if (this.minecraft.gui.screen() == this) {
+            this.minecraft.gui.setScreen(null);
          }
-      }
-
-      if (this.realTracker) {
-         super.tick();
-      } else {
-         if (!SiftLoadingScreenState.isActive() || SiftLoadingScreenState.isOlderThanSeconds((double)45.0F)) {
-            SiftLoadingScreenState.clear();
-            if (this.minecraft.gui.screen() == this) {
-               this.minecraft.gui.setScreen((Screen)null);
-            }
-         }
-
       }
    }
 }

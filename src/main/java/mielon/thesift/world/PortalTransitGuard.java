@@ -10,25 +10,27 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public final class PortalTransitGuard {
-   private static final Map blocked = new HashMap();
+   private static final Map<UUID, PortalTransitGuard.Arrival> blocked = new HashMap<>();
 
    public static void block(Entity e) {
-      e.getSelfAndPassengers().forEach((p) -> blocked.put(p.getUUID(), new Arrival(p.level().dimension(), p.position())));
+      e.getSelfAndPassengers().forEach(p -> blocked.put(p.getUUID(), new PortalTransitGuard.Arrival(p.level().dimension(), p.position())));
    }
 
    public static boolean isBlocked(Entity e) {
-      Arrival arrival = (Arrival)blocked.get(e.getUUID());
+      PortalTransitGuard.Arrival arrival = blocked.get(e.getUUID());
       if (arrival == null) {
          return false;
-      } else if (arrival.dimension.equals(e.level().dimension()) && arrival.pos.distanceToSqr(e.position()) < (double)0.0625F) {
-         return true;
-      } else {
-         if (!SiftTeleportManager.isTouchingPortal(e) && !RiftManager.isTouchingRift(e)) {
-            blocked.remove(e.getUUID());
-         }
+      }
 
+      if (arrival.dimension.equals(e.level().dimension()) && arrival.pos.distanceToSqr(e.position()) < 0.0625) {
          return true;
       }
+
+      if (!SiftTeleportManager.isTouchingPortal(e) && !RiftManager.isTouchingRift(e)) {
+         blocked.remove(e.getUUID());
+      }
+
+      return true;
    }
 
    public static void clear() {
@@ -36,9 +38,9 @@ public final class PortalTransitGuard {
    }
 
    public static void prune(MinecraftServer server) {
-      blocked.keySet().removeIf((id) -> server.overworld().getEntityInAnyDimension((UUID) id) == null);
+      blocked.keySet().removeIf(id -> server.overworld().getEntityInAnyDimension(id) == null);
    }
 
-   private static record Arrival(ResourceKey dimension, Vec3 pos) {
+   private record Arrival(ResourceKey<Level> dimension, Vec3 pos) {
    }
 }

@@ -16,7 +16,14 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class SiftPlantInteractions {
-   private static final List GROWTH_PLANTS;
+   private static final List<Block> GROWTH_PLANTS = List.of(
+      ModBlocks.OVERGROWN_FRONDS,
+      ModBlocks.OVERGROWN_FRONDS,
+      ModBlocks.OVERGROWN_FRONDS,
+      ModBlocks.OVERGROWN_CHARD,
+      ModBlocks.OVERGROWN_CHARD,
+      ModBlocks.OVERGROWN_STALKS
+   );
 
    private SiftPlantInteractions() {
    }
@@ -26,40 +33,36 @@ public final class SiftPlantInteractions {
          ItemStack stack = player.getItemInHand(hand);
          if (!stack.is(Items.BONE_MEAL)) {
             return InteractionResult.PASS;
-         } else {
-            BlockPos pos = hit.getBlockPos();
-            BlockState state = level.getBlockState(pos);
-            if (state.is(ModBlocks.SIFTSLATE) && level.getBlockState(pos.above()).isAir() && hasAdjacentGrowth(level, pos)) {
-               if (!level.isClientSide()) {
-                  level.setBlockAndUpdate(pos, ModBlocks.SIFTSLATE_GROWTH.defaultBlockState());
-                  consume(player, stack);
-                  level.levelEvent(1505, pos, 0);
-               }
+         }
 
-               return InteractionResult.SUCCESS;
-            } else if (state.is(ModBlocks.SIFTSLATE_GROWTH)) {
-               if (!level.isClientSide()) {
-                  growGrowthPatch((ServerLevel)level, pos);
-                  consume(player, stack);
-                  level.levelEvent(1505, pos, 0);
-               }
-
-               return InteractionResult.SUCCESS;
-            } else {
-               Block patt0$temp = state.getBlock();
-               if (patt0$temp instanceof SiftPlantBlock) {
-                  SiftPlantBlock plant = (SiftPlantBlock)patt0$temp;
-                  if (!level.isClientSide()) {
-                     spreadSamePlant((ServerLevel)level, pos, plant);
-                     consume(player, stack);
-                     level.levelEvent(1505, pos, 0);
-                  }
-
-                  return InteractionResult.SUCCESS;
-               } else {
-                  return InteractionResult.PASS;
-               }
+         BlockPos pos = hit.getBlockPos();
+         BlockState state = level.getBlockState(pos);
+         if (state.is(ModBlocks.SIFTSLATE) && level.getBlockState(pos.above()).isAir() && hasAdjacentGrowth(level, pos)) {
+            if (!level.isClientSide()) {
+               level.setBlockAndUpdate(pos, ModBlocks.SIFTSLATE_GROWTH.defaultBlockState());
+               consume(player, stack);
+               level.levelEvent(1505, pos, 0);
             }
+
+            return InteractionResult.SUCCESS;
+         } else if (state.is(ModBlocks.SIFTSLATE_GROWTH)) {
+            if (!level.isClientSide()) {
+               growGrowthPatch((ServerLevel)level, pos);
+               consume(player, stack);
+               level.levelEvent(1505, pos, 0);
+            }
+
+            return InteractionResult.SUCCESS;
+         } else if (state.getBlock() instanceof SiftPlantBlock plant) {
+            if (!level.isClientSide()) {
+               spreadSamePlant((ServerLevel)level, pos, plant);
+               consume(player, stack);
+               level.levelEvent(1505, pos, 0);
+            }
+
+            return InteractionResult.SUCCESS;
+         } else {
+            return InteractionResult.PASS;
          }
       });
    }
@@ -78,13 +81,13 @@ public final class SiftPlantInteractions {
       RandomSource random = level.getRandom();
       int patches = 3 + random.nextInt(3);
 
-      for (int p = 0; p < patches; ++p) {
-         Block plant = (Block)GROWTH_PLANTS.get(random.nextInt(GROWTH_PLANTS.size()));
+      for (int p = 0; p < patches; p++) {
+         Block plant = GROWTH_PLANTS.get(random.nextInt(GROWTH_PLANTS.size()));
          int cx = origin.getX() + random.nextInt(7) - 3;
          int cz = origin.getZ() + random.nextInt(7) - 3;
          int attempts = 4 + random.nextInt(7);
 
-         for (int i = 0; i < attempts; ++i) {
+         for (int i = 0; i < attempts; i++) {
             int x = cx + random.nextInt(5) - 2;
             int z = cz + random.nextInt(5) - 2;
             BlockPos floor = findNearbySurface(level, x, origin.getY(), z, ModBlocks.SIFTSLATE_GROWTH);
@@ -93,7 +96,6 @@ public final class SiftPlantInteractions {
             }
          }
       }
-
    }
 
    private static void spreadSamePlant(ServerLevel level, BlockPos origin, SiftPlantBlock plant) {
@@ -101,7 +103,7 @@ public final class SiftPlantInteractions {
       Block block = plant;
       int attempts = 7 + random.nextInt(7);
 
-      for (int i = 0; i < attempts; ++i) {
+      for (int i = 0; i < attempts; i++) {
          int x = origin.getX() + random.nextInt(7) - 3;
          int z = origin.getZ() + random.nextInt(7) - 3;
          BlockPos floor = findAnySiftFloor(level, x, origin.getY() - 1, z);
@@ -109,11 +111,10 @@ public final class SiftPlantInteractions {
             placePlant(level, floor.above(), block);
          }
       }
-
    }
 
    private static BlockPos findNearbySurface(ServerLevel level, int x, int aroundY, int z, Block wanted) {
-      for (int dy = 3; dy >= -3; --dy) {
+      for (int dy = 3; dy >= -3; dy--) {
          BlockPos p = new BlockPos(x, aroundY + dy, z);
          if (level.getBlockState(p).is(wanted) && level.getBlockState(p.above()).isAir()) {
             return p;
@@ -124,10 +125,17 @@ public final class SiftPlantInteractions {
    }
 
    private static BlockPos findAnySiftFloor(ServerLevel level, int x, int aroundY, int z) {
-      for (int dy = 3; dy >= -3; --dy) {
+      for (int dy = 3; dy >= -3; dy--) {
          BlockPos p = new BlockPos(x, aroundY + dy, z);
          BlockState s = level.getBlockState(p);
-         if ((s.is(ModBlocks.SIFTSLATE) || s.is(ModBlocks.SIFTSLATE_GROWTH) || s.is(ModBlocks.HEALTHY_SCULK) || s.is(ModBlocks.DRY_HEALTHY_SCULK) || s.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)) && level.getBlockState(p.above()).isAir()) {
+         if ((
+               s.is(ModBlocks.SIFTSLATE)
+                  || s.is(ModBlocks.SIFTSLATE_GROWTH)
+                  || s.is(ModBlocks.HEALTHY_SCULK)
+                  || s.is(ModBlocks.DRY_HEALTHY_SCULK)
+                  || s.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)
+            )
+            && level.getBlockState(p.above()).isAir()) {
             return p;
          }
       }
@@ -141,7 +149,6 @@ public final class SiftPlantInteractions {
          if (state.canSurvive(level, pos)) {
             level.setBlockAndUpdate(pos, state);
          }
-
       }
    }
 
@@ -149,10 +156,5 @@ public final class SiftPlantInteractions {
       if (!player.getAbilities().instabuild) {
          stack.shrink(1);
       }
-
-   }
-
-   static {
-      GROWTH_PLANTS = List.of(ModBlocks.OVERGROWN_FRONDS, ModBlocks.OVERGROWN_FRONDS, ModBlocks.OVERGROWN_FRONDS, ModBlocks.OVERGROWN_CHARD, ModBlocks.OVERGROWN_CHARD, ModBlocks.OVERGROWN_STALKS);
    }
 }

@@ -8,11 +8,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public final class SoulBlock extends Block {
-   public SoulBlock(BlockBehaviour.Properties properties) {
+   public SoulBlock(Properties properties) {
       super(properties);
    }
 
@@ -21,7 +21,6 @@ public final class SoulBlock extends Block {
       if (!level.isClientSide() && !oldState.is(this)) {
          SiftLandmarkTracker.record(SiftLandmarkTracker.Kind.SOUL_CANYON_SOUL_BLOCK, pos);
       }
-
    }
 
    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
@@ -32,6 +31,16 @@ public final class SoulBlock extends Block {
    protected void spawnAfterBreak(BlockState state, ServerLevel level, BlockPos pos, ItemStack tool, boolean dropExperience) {
       super.spawnAfterBreak(state, level, pos, tool, dropExperience);
       RandomSource random = level.getRandom();
-      level.sendParticles(ModParticles.CANYON_SOUL, (double)pos.getX() - (double)1.75F + random.nextDouble() * (double)4.5F, (double)pos.getY() + 0.95, (double)pos.getZ() - (double)1.75F + random.nextDouble() * (double)4.5F, 1, 0.04, 0.01, 0.04, (double)0.0F);
+      level.sendParticles(
+         ModParticles.CANYON_SOUL,
+         pos.getX() - 1.75 + random.nextDouble() * 4.5,
+         pos.getY() + 0.95,
+         pos.getZ() - 1.75 + random.nextDouble() * 4.5,
+         1,
+         0.04,
+         0.01,
+         0.04,
+         0.0
+      );
    }
 }

@@ -7,19 +7,19 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.Item.Properties;
 
 public final class BlubItems {
-   public static final ResourceKey BLUB_SPAWN_EGG_KEY;
-   public static final Item BLUB_SPAWN_EGG;
+   public static final ResourceKey<Item> BLUB_SPAWN_EGG_KEY = ResourceKey.create(
+      BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "blub_spawn_egg")
+   );
+   public static final Item BLUB_SPAWN_EGG = (Item)Registry.register(
+      BuiltInRegistries.ITEM, BLUB_SPAWN_EGG_KEY, new SpawnEggItem(new Properties().setId(BLUB_SPAWN_EGG_KEY).spawnEgg(ModEntities.BLUB))
+   );
 
    private BlubItems() {
    }
 
    public static void initialize() {
-   }
-
-   static {
-      BLUB_SPAWN_EGG_KEY = ResourceKey.create(BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "blub_spawn_egg"));
-      BLUB_SPAWN_EGG = (Item)Registry.register(BuiltInRegistries.ITEM, BLUB_SPAWN_EGG_KEY, new SpawnEggItem((new Item.Properties()).setId(BLUB_SPAWN_EGG_KEY).spawnEgg(ModEntities.BLUB)));
    }
 }

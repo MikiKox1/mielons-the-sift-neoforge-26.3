@@ -12,9 +12,8 @@ public final class CharoiteEnchanting {
 
    public static void markUsed(ItemStack stack) {
       if (!stack.isEmpty()) {
-         CustomData.update(DataComponents.CUSTOM_DATA, stack, (tag) -> tag.putBoolean("the_sift:charoite_used", true));
+         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putBoolean("the_sift:charoite_used", true));
       }
-
    }
 
    public static boolean wasUsed(ItemStack stack) {
@@ -23,10 +22,6 @@ public final class CharoiteEnchanting {
    }
 
    public static boolean blocksAnvil(ItemStack base, ItemStack addition) {
-      if (!base.isEmpty() && !addition.isEmpty()) {
-         return wasUsed(base) || wasUsed(addition);
-      } else {
-         return false;
-      }
+      return !base.isEmpty() && !addition.isEmpty() ? wasUsed(base) || wasUsed(addition) : false;
    }
 }

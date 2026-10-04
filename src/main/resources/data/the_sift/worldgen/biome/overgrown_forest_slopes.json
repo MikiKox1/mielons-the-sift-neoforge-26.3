@@ -7,7 +7,7 @@
           "particle": {
             "type": "the_sift:sift_note"
           },
-          "probability": 0.0009
+          "probability": 0.00036000
         }
       ],
       "modifier": "append"
@@ -74,8 +74,11 @@
       "the_sift:siftslate_emerald_ore",
       "the_sift:siftslate_charoite_ore",
       "the_sift:siftslate_siftite_ore",
+      "the_sift:cobbled_siftslate_blob",
+      "the_sift:sift_rubble_blob",
       "the_sift:healthy_sculk_underground_blob",
-      "the_sift:dry_healthy_sculk_underground_blob"
+      "the_sift:dry_healthy_sculk_underground_blob",
+      "the_sift:sift_fossil"
     ],
     [
       "the_sift:soul_canyon",

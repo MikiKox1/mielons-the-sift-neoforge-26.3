@@ -1,21 +1,22 @@
 {
   "schemaVersion": 1,
-  "id": "${id}",
-  "version": "${version}",
-  "name": "${name}",
-  "description": "${description}",
+  "id": "the_sift",
+  "version": "1.1.1",
+  "name": "Mielon's The Sift",
+  "description": "Explore The Sift: a strange dimension of siftslate, Ichor, ancient life, and resonant souls.",
   "authors": [
-    "${author}"
+    "Mielon"
   ],
   "contributors": [
     "ImpSteve — Dark Sniffer texture",
-    "Fuzja Jądrowa — Rift music disc"
+    "Fuzja Jądrowa — Rift music disc",
+    "StrawberrySushi_ — Korean localization",
+    "Echo_Dev — Wellspring remix"
   ],
   "contact": {
     "homepage": "https://x.com/MielonDev"
   },
   "license": "MIT",
-  "icon": "assets/the_sift/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -29,6 +30,16 @@
       "mielon.thesift.client.light.TheSiftDynamicLightsInitializer"
     ]
   },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": ">=0.160.5+26.3",
+    "geckolib": ">=5.5.6"
+  },
+  "recommends": {
+    "lambdynlights": ">=4.13.0"
+  },
   "mixins": [
     "the_sift.mixins.json",
     {
@@ -36,15 +47,5 @@
       "environment": "client"
     }
   ],
-  "depends": {
-    "fabricloader": "*",
-    "minecraft": ">=${minecraft}",
-    "java": ">=${java}",
-    "fabric-api": "*",
-    "geckolib": ">=${geckolib_version}"
-  },
-  "recommends": {
-    "lambdynlights": ">=${lambdynlights_version}"
-  },
-  "accessWidener": "the_sift.accesswidener"
+  "icon": "assets/the_sift/icon.png"
 }

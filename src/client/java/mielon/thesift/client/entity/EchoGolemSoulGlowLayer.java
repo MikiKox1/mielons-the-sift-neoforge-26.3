@@ -1,25 +1,33 @@
 package mielon.thesift.client.entity;
 
+import com.geckolib.cache.model.GeoBone;
+import com.geckolib.constant.DataTickets;
 import com.geckolib.renderer.base.GeoRenderer;
-import com.geckolib.renderer.base.GeoRenderState;
-import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
+import com.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.renderer.layer.builtin.CustomBoneTextureGeoLayer;
 import mielon.thesift.entity.EchoGolemEntity;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.resources.Identifier;
 
-public final class EchoGolemSoulGlowLayer extends AutoGlowingGeoLayer {
-   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("the_sift", "textures/entity/echo_golem/echo_golem_emissive.png");
-
-   public EchoGolemSoulGlowLayer(GeoRenderer renderer) {
-      super(renderer);
+public final class EchoGolemSoulGlowLayer extends CustomBoneTextureGeoLayer<EchoGolemEntity, Void, EntityRenderState> {
+   public EchoGolemSoulGlowLayer(GeoRenderer<EchoGolemEntity, Void, EntityRenderState> renderer) {
+      super(renderer, "soul_block", Identifier.fromNamespaceAndPath("the_sift", "textures/entity/echo_golem.png"));
    }
 
-   protected Identifier getTextureResource(GeoRenderState state) {
-      return TEXTURE;
-   }
-
-   protected RenderType getRenderType(GeoRenderState state) {
+   public boolean shouldRenderBone(EntityRenderState state) {
       EchoGolemEntity golem = (EchoGolemEntity)state.getGeckolibData(EchoGolemRenderer.ECHO_GOLEM_ENTITY);
-      return golem != null && golem.hasSoulBlock() ? super.getRenderType(state) : null;
+      return golem != null && golem.hasSoulBlock() && !state.isInvisible;
+   }
+
+   protected void renderBone(RenderPassInfo<EntityRenderState> pass, GeoBone bone, SubmitNodeCollector tasks) {
+      int light = pass.packedLight();
+      ((EntityRenderState)pass.renderState()).addGeckolibData(DataTickets.PACKED_LIGHT, 15728880);
+
+      try {
+         super.renderBone(pass, bone, tasks);
+      } finally {
+         ((EntityRenderState)pass.renderState()).addGeckolibData(DataTickets.PACKED_LIGHT, light);
+      }
    }
 }

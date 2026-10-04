@@ -1,6 +1,8 @@
 package mielon.thesift.client.loading;
 
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Builder;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -18,11 +20,13 @@ public final class SiftLoadingBackgroundRenderer {
       boolean targetSift = !TheSiftDimension.LEVEL_KEY.equals(SiftLoadingScreenState.sourceDimension());
       Identifier texture = id("textures/entity/rift/" + (targetSift ? "sift" : "overworld") + ".png");
       RenderPipeline pipeline = SiftLoadingScreenState.isRift() ? RIFT_PIPELINE : PORTAL_PIPELINE;
-      graphics.blit(pipeline, texture, 0, 0, 0.0F, 0.0F, width, height, 320, 320, 320, 320, -16777216 | clock);
+      graphics.blit(pipeline, texture, 0, 0, 0.0F, 0.0F, width, height, 320, 320, 320, 320, 0xFF000000 | clock);
    }
 
    private static RenderPipeline createPipeline(boolean rift) {
-      RenderPipeline.Builder builder = RenderPipeline.builder(new RenderPipeline.Snippet[]{RenderPipelines.GUI_TEXTURED_SNIPPET}).withLocation(id(rift ? "pipeline/rift_loading" : "pipeline/portal_loading")).withFragmentShader(id("core/sift_loading"));
+      Builder builder = RenderPipeline.builder(new Snippet[]{RenderPipelines.GUI_TEXTURED_SNIPPET})
+         .withLocation(id(rift ? "pipeline/rift_loading" : "pipeline/portal_loading"))
+         .withFragmentShader(id("core/sift_loading"));
       if (rift) {
          builder.withShaderDefine("RIFT_LOADING");
       }

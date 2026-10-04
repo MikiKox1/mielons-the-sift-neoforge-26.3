@@ -60,28 +60,10 @@ dependencies {
 	compileOnly "dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:${project.lambdynlights_version}+${project.minecraft_version}"
 }
 
-processResources {
-	inputs.property "version", project.version
-
-	filesMatching("fabric.mod.json") {
-		expand 'id': project.mod_id, 'version': project.version,
-				'name': project.mod_name, 'description': project.mod_description,
-				'author': project.mod_author, 'minecraft': project.minecraft_version,
-				'java': project.java_version,
-				'geckolib_version': project.geckolib_version, 'lambdynlights_version': project.lambdynlights_version
-
-	}
-
-	filesMatching("the_sift.mixins.json") {
-		expand 'java': "JAVA_${project.java_version}"
-	}
-}
-
-processClientResources {
-	filesMatching("the_sift.client.mixins.json") {
-		expand 'java': "JAVA_${project.java_version}"
-	}
-}
+// The 1.1.1 release is reconstructed from the official published artifact.
+// Its Fabric metadata and mixin configs are already fully expanded. Re-running
+// Groovy template expansion would incorrectly interpret inner mixin names such
+// as LavaIchorMixins$Contact as template variables.
 
 java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task

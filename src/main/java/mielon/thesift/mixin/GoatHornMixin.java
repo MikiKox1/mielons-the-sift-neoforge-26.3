@@ -13,21 +13,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({InstrumentItem.class})
+@Mixin(InstrumentItem.class)
 public abstract class GoatHornMixin {
-   @Inject(
-      method = {"play"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "play", at = @At("HEAD"))
    private static void theSift$onInstrumentFinished(Level level, Player player, Instrument instrument, CallbackInfo ci) {
       if (level instanceof ServerLevel serverLevel) {
          SingerSummoner.onGoatHornFinished(serverLevel, player);
-         if (player instanceof ServerPlayer serverPlayer) {
-            if (SingerSummoner.isNearAncientCityCenter(serverLevel, player.position())) {
-               ModAdvancements.award(serverPlayer, "story/song_of_the_past");
-            }
+         if (player instanceof ServerPlayer serverPlayer && SingerSummoner.isNearAncientCityCenter(serverLevel, player.position())) {
+            ModAdvancements.award(serverPlayer, "story/song_of_the_past");
          }
-
       }
    }
 }

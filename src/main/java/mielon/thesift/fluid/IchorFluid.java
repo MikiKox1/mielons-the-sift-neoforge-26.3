@@ -6,6 +6,7 @@ import mielon.thesift.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
@@ -39,7 +40,7 @@ public abstract class IchorFluid extends WaterFluid {
       return ModFluids.ICHOR_BUCKET;
    }
 
-   public Optional getPickupSound() {
+   public Optional<SoundEvent> getPickupSound() {
       return Optional.of(ModSounds.ICHOR_BUCKET_FILL);
    }
 
@@ -69,7 +70,9 @@ public abstract class IchorFluid extends WaterFluid {
 
    protected FluidState getNewLiquid(ServerLevel level, BlockPos pos, BlockState state) {
       FluidState next = super.getNewLiquid(level, pos, state);
-      return !next.isEmpty() && next.getType().isSame(this) && !next.isSource() && !(Boolean)next.getValue(FALLING) && next.getAmount() > 6 ? this.getFlowing(6, false) : next;
+      return !next.isEmpty() && next.getType().isSame(this) && !next.isSource() && !next.getValue(FALLING) && next.getAmount() > 6
+         ? this.getFlowing(6, false)
+         : next;
    }
 
    public int getDropOff(LevelReader level) {
@@ -83,10 +86,17 @@ public abstract class IchorFluid extends WaterFluid {
    public void animateTick(Level level, BlockPos pos, FluidState state, RandomSource random) {
       super.animateTick(level, pos, state, random);
       if (state.isSource() && level.getBlockState(pos.above()).isAir() && random.nextInt(8) == 0) {
-         double surfaceY = (double)((float)pos.getY() + state.getHeight(level, pos)) + 0.00625;
-         level.addParticle(ModParticles.ICHOR_SURFACE_MIST, (double)pos.getX() + 0.1 + random.nextDouble() * 0.8, surfaceY, (double)pos.getZ() + 0.1 + random.nextDouble() * 0.8, (double)0.0F, (double)0.0F, (double)0.0F);
+         double surfaceY = pos.getY() + state.getHeight(level, pos) + 0.00625;
+         level.addParticle(
+            ModParticles.ICHOR_SURFACE_MIST,
+            pos.getX() + 0.1 + random.nextDouble() * 0.8,
+            surfaceY,
+            pos.getZ() + 0.1 + random.nextDouble() * 0.8,
+            0.0,
+            0.0,
+            0.0
+         );
       }
-
    }
 
    protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
@@ -95,11 +105,10 @@ public abstract class IchorFluid extends WaterFluid {
       if (!level.isClientSide() && entity instanceof LivingEntity living) {
          living.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 101, 0, true, false, true));
       }
-
    }
 
    public static final class Flowing extends IchorFluid {
-      protected void createFluidStateDefinition(StateDefinition.Builder builder) {
+      protected void createFluidStateDefinition(Builder<Fluid, FluidState> builder) {
          super.createFluidStateDefinition(builder);
          builder.add(new Property[]{LEVEL});
       }

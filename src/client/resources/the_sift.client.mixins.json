@@ -1,8 +1,9 @@
 {
   "required": true,
   "package": "mielon.thesift.client.mixin",
-  "compatibilityLevel": "${java}",
+  "compatibilityLevel": "JAVA_25",
   "client": [
+    "RiftAmbientSoundMixin",
     "IchorFluidUvMixin",
     "SodiumIchorFluidUvMixin",
     "IchorAirHudMixin",

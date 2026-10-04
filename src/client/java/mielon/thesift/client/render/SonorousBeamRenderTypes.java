@@ -7,6 +7,7 @@ import com.mojang.renderpearl.api.pipeline.CompareOp;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import mielon.thesift.client.compat.SiftShaderCompat;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -15,10 +16,40 @@ import net.minecraft.resources.Identifier;
 
 public final class SonorousBeamRenderTypes {
    private static final Identifier BEAM_TEXTURE = id("textures/block/sonorous_deepslate_beam.png");
-   private static final RenderPipeline BEAM_PIPELINE;
-   private static final RenderPipeline WATER_OVERLAY_PIPELINE;
-   public static final RenderType BEAM;
-   public static final RenderType WATER_OVERLAY;
+   private static final RenderPipeline BEAM_PIPELINE = RenderPipeline.builder(new Snippet[0])
+      .withLocation(id("pipeline/sonorous_beam_depth"))
+      .withVertexShader(id("core/sonorous_beam"))
+      .withFragmentShader(id("core/sonorous_beam"))
+      .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+      .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+      .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+      .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+      .withVertexBinding(0, DefaultVertexFormat.BLOCK)
+      .withPrimitiveTopology(PrimitiveTopology.QUADS)
+      .withDepthStencilState(new DepthStencilState(DepthStencilState.DEFAULT.depthTest(), true))
+      .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+      .withCull(false)
+      .build();
+   private static final RenderPipeline WATER_OVERLAY_PIPELINE = RenderPipeline.builder(new Snippet[0])
+      .withLocation(id("pipeline/sonorous_beam_water_overlay"))
+      .withVertexShader(id("core/sonorous_beam"))
+      .withFragmentShader(id("core/sonorous_beam"))
+      .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+      .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+      .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+      .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+      .withVertexBinding(0, DefaultVertexFormat.BLOCK)
+      .withPrimitiveTopology(PrimitiveTopology.QUADS)
+      .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+      .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+      .withCull(false)
+      .build();
+   public static final RenderType BEAM = RenderType.create(
+      "the_sift_sonorous_beam", RenderSetup.builder(BEAM_PIPELINE).withTexture("Sampler0", BEAM_TEXTURE).createRenderSetup()
+   );
+   public static final RenderType WATER_OVERLAY = RenderType.create(
+      "the_sift_sonorous_beam_water_overlay", RenderSetup.builder(WATER_OVERLAY_PIPELINE).withTexture("Sampler0", BEAM_TEXTURE).createRenderSetup()
+   );
 
    private SonorousBeamRenderTypes() {
    }
@@ -30,12 +61,5 @@ public final class SonorousBeamRenderTypes {
 
    private static Identifier id(String path) {
       return Identifier.fromNamespaceAndPath("the_sift", path);
-   }
-
-   static {
-      BEAM_PIPELINE = RenderPipeline.builder(new RenderPipeline.Snippet[0]).withLocation(id("pipeline/sonorous_beam_depth")).withVertexShader(id("core/sonorous_beam")).withFragmentShader(id("core/sonorous_beam")).withBindGroupLayout(BindGroupLayouts.GLOBALS).withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS).withBindGroupLayout(BindGroupLayouts.PROJECTION).withBindGroupLayout(BindGroupLayouts.SAMPLER0).withVertexBinding(0, DefaultVertexFormat.BLOCK).withPrimitiveTopology(PrimitiveTopology.QUADS).withDepthStencilState(new DepthStencilState(DepthStencilState.DEFAULT.depthTest(), true)).withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).withCull(false).build();
-      WATER_OVERLAY_PIPELINE = RenderPipeline.builder(new RenderPipeline.Snippet[0]).withLocation(id("pipeline/sonorous_beam_water_overlay")).withVertexShader(id("core/sonorous_beam")).withFragmentShader(id("core/sonorous_beam")).withBindGroupLayout(BindGroupLayouts.GLOBALS).withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS).withBindGroupLayout(BindGroupLayouts.PROJECTION).withBindGroupLayout(BindGroupLayouts.SAMPLER0).withVertexBinding(0, DefaultVertexFormat.BLOCK).withPrimitiveTopology(PrimitiveTopology.QUADS).withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false)).withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).withCull(false).build();
-      BEAM = RenderType.create("the_sift_sonorous_beam", RenderSetup.builder(BEAM_PIPELINE).withTexture("Sampler0", BEAM_TEXTURE).createRenderSetup());
-      WATER_OVERLAY = RenderType.create("the_sift_sonorous_beam_water_overlay", RenderSetup.builder(WATER_OVERLAY_PIPELINE).withTexture("Sampler0", BEAM_TEXTURE).createRenderSetup());
    }
 }

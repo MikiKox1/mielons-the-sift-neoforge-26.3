@@ -18,10 +18,10 @@ public final class SingerSoundWaveParticle extends SingleQuadParticle {
    private final int travelLifetime;
 
    private SingerSoundWaveParticle(ClientLevel level, double x, double y, double z, double xd, double yd, double zd, SpriteSet sprites) {
-      super(level, x, y, z, (double)0.0F, (double)0.0F, (double)0.0F, sprites.get(level.getRandom()));
+      super(level, x, y, z, 0.0, 0.0, 0.0, sprites.get(level.getRandom()));
       double encodedMagnitude = Math.sqrt(xd * xd + yd * yd + zd * zd);
       if (encodedMagnitude < 1.0E-6) {
-         encodedMagnitude = (double)1.0F;
+         encodedMagnitude = 1.0;
       }
 
       Vector3f suppliedDirection = new Vector3f((float)(xd / encodedMagnitude), (float)(yd / encodedMagnitude), (float)(zd / encodedMagnitude));
@@ -32,7 +32,7 @@ public final class SingerSoundWaveParticle extends SingleQuadParticle {
       }
 
       this.direction = suppliedDirection;
-      this.travelLifetime = Math.max(1, (int)Math.round((encodedMagnitude - (double)1.0F) * (double)100.0F));
+      this.travelLifetime = Math.max(1, (int)Math.round((encodedMagnitude - 1.0) * 100.0));
       this.lifetime = this.travelLifetime;
       this.gravity = 0.0F;
       this.friction = 1.0F;
@@ -47,22 +47,21 @@ public final class SingerSoundWaveParticle extends SingleQuadParticle {
       this.xo = this.x;
       this.yo = this.y;
       this.zo = this.z;
-      this.move((double)this.direction.x() * 0.6, (double)this.direction.y() * 0.6, (double)this.direction.z() * 0.6);
-      ++this.age;
-      float progress = Math.min(1.0F, (float)this.age / (float)Math.max(1, this.travelLifetime));
+      this.move(this.direction.x() * 0.6, this.direction.y() * 0.6, this.direction.z() * 0.6);
+      this.age++;
+      float progress = Math.min(1.0F, (float)this.age / Math.max(1, this.travelLifetime));
       this.quadSize = this.startSize * (1.0F + progress);
       if (this.age >= this.travelLifetime) {
          this.remove();
       }
-
    }
 
    public float getQuadSize(float partialTickTime) {
-      float progress = Math.min(1.0F, ((float)this.age + partialTickTime) / (float)Math.max(1, this.travelLifetime));
+      float progress = Math.min(1.0F, (this.age + partialTickTime) / Math.max(1, this.travelLifetime));
       return this.startSize * (1.0F + progress);
    }
 
-   public SingleQuadParticle.FacingCameraMode getFacingCameraMode() {
+   public FacingCameraMode getFacingCameraMode() {
       return FacingCameraMode.LOOKAT_XYZ;
    }
 
@@ -70,7 +69,7 @@ public final class SingerSoundWaveParticle extends SingleQuadParticle {
       return 15728880;
    }
 
-   protected SingleQuadParticle.Layer getLayer() {
+   protected Layer getLayer() {
       return Layer.bySprite(this.sprite);
    }
 
@@ -81,7 +80,9 @@ public final class SingerSoundWaveParticle extends SingleQuadParticle {
          this.sprites = sprites;
       }
 
-      public SingerSoundWaveParticle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, RandomSource random) {
+      public SingerSoundWaveParticle createParticle(
+         SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, RandomSource random
+      ) {
          return new SingerSoundWaveParticle(level, x, y, z, xd, yd, zd, this.sprites);
       }
    }

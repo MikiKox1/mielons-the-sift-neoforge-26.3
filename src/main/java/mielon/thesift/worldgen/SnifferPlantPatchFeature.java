@@ -11,9 +11,9 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
 
 public final class SnifferPlantPatchFeature implements Feature {
-   public static final MapCodec CODEC = MapCodec.unit(SnifferPlantPatchFeature::new);
+   public static final MapCodec<SnifferPlantPatchFeature> CODEC = MapCodec.unit(SnifferPlantPatchFeature::new);
 
-   public MapCodec codec() {
+   public MapCodec<SnifferPlantPatchFeature> codec() {
       return CODEC;
    }
 
@@ -24,14 +24,17 @@ public final class SnifferPlantPatchFeature implements Feature {
       int placed = 0;
       SiftSnifferPlantPlacement.PlantType blobType = SiftSnifferPlantPlacement.chooseBlobType(random, 0.58F);
 
-      for (int attempt = 0; attempt < 28 && placed < target; ++attempt) {
+      for (int attempt = 0; attempt < 28 && placed < target; attempt++) {
          int x = centerX + random.nextInt(13) - 6;
          int z = centerZ + random.nextInt(13) - 6;
          int y = level.getHeight(Types.WORLD_SURFACE_WG, x, z);
          BlockPos plantPos = new BlockPos(x, y, z);
          BlockState floor = level.getBlockState(plantPos.below());
-         if ((floor.is(ModBlocks.HEALTHY_SCULK) || floor.is(ModBlocks.DRY_HEALTHY_SCULK) || floor.is(ModBlocks.SIFTSLATE_GROWTH)) && level.isEmptyBlock(plantPos) && level.ensureCanWrite(plantPos) && SiftSnifferPlantPlacement.place(level, plantPos, blobType, random)) {
-            ++placed;
+         if ((floor.is(ModBlocks.HEALTHY_SCULK) || floor.is(ModBlocks.DRY_HEALTHY_SCULK) || floor.is(ModBlocks.SIFTSLATE_GROWTH))
+            && level.isEmptyBlock(plantPos)
+            && level.ensureCanWrite(plantPos)
+            && SiftSnifferPlantPlacement.place(level, plantPos, blobType, random)) {
+            placed++;
          }
       }
 

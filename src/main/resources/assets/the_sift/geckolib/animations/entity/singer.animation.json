@@ -2048,6 +2048,26 @@
           }
         }
       }
+    },
+    "barter_hold": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "left_arm": {
+          "rotation": [
+            -62,
+            0,
+            -7
+          ]
+        },
+        "right_arm": {
+          "rotation": [
+            -62,
+            0,
+            7
+          ]
+        }
+      }
     }
   }
 }

@@ -308,6 +308,15 @@
               ]
             }
           ]
+        },
+        {
+          "name": "held_soul",
+          "parent": "body",
+          "pivot": [
+            0,
+            15,
+            -11
+          ]
         }
       ]
     }

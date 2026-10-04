@@ -13,10 +13,10 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
 
 public final class SiftIchorCaveSpringFeature implements Feature {
-   public static final MapCodec CODEC = MapCodec.unit(SiftIchorCaveSpringFeature::new);
-   private static final Direction[] POSSIBLE_OPENINGS;
+   public static final MapCodec<SiftIchorCaveSpringFeature> CODEC = MapCodec.unit(SiftIchorCaveSpringFeature::new);
+   private static final Direction[] POSSIBLE_OPENINGS = new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN};
 
-   public MapCodec codec() {
+   public MapCodec<SiftIchorCaveSpringFeature> codec() {
       return CODEC;
    }
 
@@ -35,29 +35,29 @@ public final class SiftIchorCaveSpringFeature implements Feature {
          BlockState current = level.getBlockState(origin);
          if (!current.isAir() && !isValidSpringBlock(current)) {
             return false;
+         }
+
+         int rockCount = 0;
+         int holeCount = 0;
+
+         for (Direction direction : POSSIBLE_OPENINGS) {
+            BlockPos adjacent = origin.relative(direction);
+            BlockState adjacentState = level.getBlockState(adjacent);
+            if (isValidSpringBlock(adjacentState)) {
+               rockCount++;
+            }
+
+            if (level.isEmptyBlock(adjacent)) {
+               holeCount++;
+            }
+         }
+
+         if (rockCount == 4 && holeCount == 1) {
+            level.setBlock(origin, ModFluids.ICHOR.getSource(true).createLegacyBlock(), 2);
+            level.scheduleTick(origin, ModFluids.ICHOR, 0);
+            return true;
          } else {
-            int rockCount = 0;
-            int holeCount = 0;
-
-            for (Direction direction : POSSIBLE_OPENINGS) {
-               BlockPos adjacent = origin.relative(direction);
-               BlockState adjacentState = level.getBlockState(adjacent);
-               if (isValidSpringBlock(adjacentState)) {
-                  ++rockCount;
-               }
-
-               if (level.isEmptyBlock(adjacent)) {
-                  ++holeCount;
-               }
-            }
-
-            if (rockCount == 4 && holeCount == 1) {
-               level.setBlock(origin, ModFluids.ICHOR.getSource(true).createLegacyBlock(), 2);
-               level.scheduleTick(origin, ModFluids.ICHOR, 0);
-               return true;
-            } else {
-               return false;
-            }
+            return false;
          }
       } else {
          return false;
@@ -65,10 +65,10 @@ public final class SiftIchorCaveSpringFeature implements Feature {
    }
 
    private static boolean isValidSpringBlock(BlockState state) {
-      return state.is(ModBlocks.SIFTSLATE) || state.is(ModBlocks.SIFTSLATE_GROWTH) || state.is(ModBlocks.HEALTHY_SCULK) || state.is(ModBlocks.DRY_HEALTHY_SCULK) || state.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH);
-   }
-
-   static {
-      POSSIBLE_OPENINGS = new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN};
+      return state.is(ModBlocks.SIFTSLATE)
+         || state.is(ModBlocks.SIFTSLATE_GROWTH)
+         || state.is(ModBlocks.HEALTHY_SCULK)
+         || state.is(ModBlocks.DRY_HEALTHY_SCULK)
+         || state.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH);
    }
 }

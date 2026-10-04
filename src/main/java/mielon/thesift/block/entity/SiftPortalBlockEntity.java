@@ -3,14 +3,15 @@ package mielon.thesift.block.entity;
 import java.util.List;
 import java.util.Set;
 import mielon.thesift.block.ModBlocks;
+import mielon.thesift.block.SiftPortalBlock;
 import mielon.thesift.portal.PortalFrameScanner;
 import mielon.thesift.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TheEndPortalBlockEntity;
@@ -32,23 +33,23 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
    }
 
    public boolean shouldRenderFace(Direction direction) {
-      return this.level == null || !this.level.getBlockState(this.worldPosition.relative(direction)).is(ModBlocks.SIFT_PORTAL);
+      return true;
    }
 
-   public void startGrowth(List queue, int nextIndex) {
+   public void startGrowth(List<BlockPos> queue, int nextIndex) {
       this.setAnimation(1, queue, nextIndex);
    }
 
-   public void startClosing(List queue) {
+   public void startClosing(List<BlockPos> queue) {
       this.setAnimation(2, queue, 0);
    }
 
-   private void setAnimation(int mode, List queue, int nextIndex) {
+   private void setAnimation(int mode, List<BlockPos> queue, int nextIndex) {
       this.animationMode = mode;
       this.animationQueue = new long[queue.size()];
 
-      for (int i = 0; i < queue.size(); ++i) {
-         this.animationQueue[i] = ((BlockPos)queue.get(i)).asLong();
+      for (int i = 0; i < queue.size(); i++) {
+         this.animationQueue[i] = queue.get(i).asLong();
       }
 
       this.animationIndex = Math.max(0, Math.min(nextIndex, this.animationQueue.length));
@@ -67,18 +68,18 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
       return this.animationMode != 0;
    }
 
-   public boolean animationOverlaps(Set positions) {
+   public boolean animationOverlaps(Set<BlockPos> positions) {
       if (!this.isAnimatingPortal()) {
          return false;
-      } else {
-         for (long packed : this.animationQueue) {
-            if (positions.contains(BlockPos.of(packed))) {
-               return true;
-            }
-         }
-
-         return false;
       }
+
+      for (long packed : this.animationQueue) {
+         if (positions.contains(BlockPos.of(packed))) {
+            return true;
+         }
+      }
+
+      return false;
    }
 
    public static void tick(Level level, BlockPos pos, BlockState state, SiftPortalBlockEntity blockEntity) {
@@ -89,36 +90,33 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
 
    private void tickAnimation(ServerLevel level) {
       if (this.animationMode != 0) {
-         if (this.animationQueue.length != 0 && this.animationIndex < this.animationQueue.length) {
-            if (this.animationCooldown > 0) {
-               --this.animationCooldown;
-               this.setChanged();
-            } else {
-               boolean closing = this.animationMode == 2;
-               this.processOne(level, BlockPos.of(this.animationQueue[this.animationIndex]), closing);
-               ++this.animationIndex;
-               if (this.animationIndex < this.animationQueue.length && this.deterministicChance(this.animationIndex, 55)) {
-                  BlockPos next = BlockPos.of(this.animationQueue[this.animationIndex]);
-                  if (!closing || !next.equals(this.worldPosition)) {
-                     this.processOne(level, next, closing);
-                     ++this.animationIndex;
-                  }
-               }
-
-               if (this.animationIndex < this.animationQueue.length) {
-                  this.animationCooldown = this.deterministicChance(this.animationIndex + 31, 20) ? 1 : 0;
-                  this.setChanged();
-               } else {
-                  if (!closing || level.getBlockState(this.worldPosition).is(ModBlocks.SIFT_PORTAL)) {
-                     this.clearAnimation();
-                     this.setChanged();
-                  }
-
-               }
-            }
-         } else {
+         if (this.animationQueue.length == 0 || this.animationIndex >= this.animationQueue.length) {
             this.clearAnimation();
             this.setChanged();
+         } else if (this.animationCooldown > 0) {
+            this.animationCooldown--;
+            this.setChanged();
+         } else {
+            boolean closing = this.animationMode == 2;
+            this.processOne(level, BlockPos.of(this.animationQueue[this.animationIndex]), closing);
+            this.animationIndex++;
+            if (this.animationIndex < this.animationQueue.length && this.deterministicChance(this.animationIndex, 55)) {
+               BlockPos next = BlockPos.of(this.animationQueue[this.animationIndex]);
+               if (!closing || !next.equals(this.worldPosition)) {
+                  this.processOne(level, next, closing);
+                  this.animationIndex++;
+               }
+            }
+
+            if (this.animationIndex < this.animationQueue.length) {
+               this.animationCooldown = this.deterministicChance(this.animationIndex + 31, 20) ? 1 : 0;
+               this.setChanged();
+            } else {
+               if (!closing || level.getBlockState(this.worldPosition).is(ModBlocks.SIFT_PORTAL)) {
+                  this.clearAnimation();
+                  this.setChanged();
+               }
+            }
          }
       }
    }
@@ -129,31 +127,33 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
       } else {
          this.placeAt(level, pos);
       }
-
    }
 
    private void placeAt(ServerLevel level, BlockPos pos) {
       if (PortalFrameScanner.isAirLikeInterior(level, pos)) {
-         level.setBlockAndUpdate(pos, ModBlocks.SIFT_PORTAL.defaultBlockState());
-         level.sendParticles(ParticleTypes.END_ROD, (double)pos.getX() + (double)0.5F, (double)pos.getY() + (double)0.5F, (double)pos.getZ() + (double)0.5F, 5, 0.32, 0.32, 0.32, 0.025);
-         level.playSound((Entity)null, pos, ModSounds.SIFT_PORTAL_AMBIENT, SoundSource.BLOCKS, 0.3F, 1.15F);
+         level.setBlockAndUpdate(
+            pos,
+            (BlockState)ModBlocks.SIFT_PORTAL.defaultBlockState().setValue(SiftPortalBlock.AXIS, (Axis)this.getBlockState().getValue(SiftPortalBlock.AXIS))
+         );
+         level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.32, 0.32, 0.32, 0.025);
+         level.playSound(null, pos, ModSounds.SIFT_PORTAL_AMBIENT, SoundSource.BLOCKS, 0.3F, 1.15F);
       }
    }
 
    private void removeAt(ServerLevel level, BlockPos pos) {
       if (level.getBlockState(pos).is(ModBlocks.SIFT_PORTAL)) {
-         level.sendParticles(ParticleTypes.END_ROD, (double)pos.getX() + (double)0.5F, (double)pos.getY() + (double)0.5F, (double)pos.getZ() + (double)0.5F, 5, 0.32, 0.32, 0.32, 0.025);
+         level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.32, 0.32, 0.32, 0.025);
          level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
       }
    }
 
    private boolean deterministicChance(int salt, int percent) {
       long x = this.worldPosition.asLong();
-      x ^= (long)salt * -7046029254386353131L;
+      x ^= salt * -7046029254386353131L;
       x ^= x >>> 33;
       x *= -49064778989728563L;
       x ^= x >>> 33;
-      return Math.floorMod(x, 100L) < (long)percent;
+      return Math.floorMod(x, 100L) < percent;
    }
 
    private void clearAnimation() {
@@ -170,10 +170,9 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
       output.putInt("portal_animation_cooldown", this.animationCooldown);
       output.putInt("portal_animation_count", this.animationQueue.length);
 
-      for (int i = 0; i < this.animationQueue.length; ++i) {
+      for (int i = 0; i < this.animationQueue.length; i++) {
          output.putLong("portal_animation_pos_" + i, this.animationQueue[i]);
       }
-
    }
 
    protected void loadAdditional(ValueInput input) {
@@ -186,8 +185,8 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
       int count = Math.max(0, Math.min(1024, input.getIntOr("portal_animation_count", 0)));
       this.animationQueue = new long[count];
 
-      for (int i = 0; i < count; ++i) {
-         this.animationQueue[i] = (Long)input.getLong("portal_animation_pos_" + i).orElse(0L);
+      for (int i = 0; i < count; i++) {
+         this.animationQueue[i] = input.getLong("portal_animation_pos_" + i).orElse(0L);
       }
 
       this.animationIndex = Math.max(0, Math.min(input.getIntOr("portal_animation_index", 0), count));
@@ -195,6 +194,5 @@ public class SiftPortalBlockEntity extends TheEndPortalBlockEntity {
       if (count == 0 || this.animationIndex >= count) {
          this.clearAnimation();
       }
-
    }
 }

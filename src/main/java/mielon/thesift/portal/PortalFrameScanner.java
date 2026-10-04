@@ -16,13 +16,13 @@ public class PortalFrameScanner {
    private static final int MIN_TOTAL_SIZE = 3;
    private static final int MAX_SCAN = 23;
 
-   public static Optional scan(Level level, BlockPos clicked) {
-      Optional<Frame> onX = scanAxis(level, clicked, Axis.X, false);
+   public static Optional<PortalFrameScanner.Frame> scan(Level level, BlockPos clicked) {
+      Optional<PortalFrameScanner.Frame> onX = scanAxis(level, clicked, Axis.X, false);
       return onX.isPresent() ? onX : scanAxis(level, clicked, Axis.Z, false);
    }
 
-   public static Optional scanForClosing(Level level, BlockPos clicked) {
-      Optional<Frame> onX = scanAxis(level, clicked, Axis.X, true);
+   public static Optional<PortalFrameScanner.Frame> scanForClosing(Level level, BlockPos clicked) {
+      Optional<PortalFrameScanner.Frame> onX = scanAxis(level, clicked, Axis.X, true);
       return onX.isPresent() ? onX : scanAxis(level, clicked, Axis.Z, true);
    }
 
@@ -36,61 +36,53 @@ public class PortalFrameScanner {
    }
 
    private static boolean isOpenInterior(Level level, BlockPos pos, boolean closing) {
-      if (isAirLikeInterior(level, pos)) {
-         return true;
-      } else {
-         return closing && level.getBlockState(pos).is(ModBlocks.SIFT_PORTAL);
-      }
+      return isAirLikeInterior(level, pos) ? true : closing && level.getBlockState(pos).is(ModBlocks.SIFT_PORTAL);
    }
 
-   private static Optional scanAxis(Level level, BlockPos clicked, Direction.Axis axis, boolean closing) {
+   private static Optional<PortalFrameScanner.Frame> scanAxis(Level level, BlockPos clicked, Axis axis, boolean closing) {
       Direction positiveDir = axis == Axis.X ? Direction.EAST : Direction.SOUTH;
       Direction negativeDir = positiveDir.getOpposite();
       BlockPos anchor = clicked;
       int steps = 0;
 
-      while(isFrame(level, anchor.below())) {
+      while (isFrame(level, anchor.below())) {
          anchor = anchor.below();
-         ++steps;
-         if (steps > 23) {
+         if (++steps > 23) {
             return Optional.empty();
          }
       }
 
       steps = 0;
 
-      while(isFrame(level, anchor.relative(negativeDir))) {
+      while (isFrame(level, anchor.relative(negativeDir))) {
          anchor = anchor.relative(negativeDir);
-         ++steps;
-         if (steps > 23) {
+         if (++steps > 23) {
             return Optional.empty();
          }
       }
 
       int width = 1;
 
-      while(isFrame(level, anchor.relative(positiveDir, width))) {
-         ++width;
-         if (width > 23) {
+      while (isFrame(level, anchor.relative(positiveDir, width))) {
+         if (++width > 23) {
             return Optional.empty();
          }
       }
 
       int height = 1;
 
-      while(isFrame(level, anchor.above(height))) {
-         ++height;
-         if (height > 23) {
+      while (isFrame(level, anchor.above(height))) {
+         if (++height > 23) {
             return Optional.empty();
          }
       }
 
       if (width >= 3 && height >= 3) {
-         List<BlockPos> interior = new ArrayList();
+         List<BlockPos> interior = new ArrayList<>();
          boolean hasPortalBlock = false;
 
-         for (int w = 0; w < width; ++w) {
-            for (int h = 0; h < height; ++h) {
+         for (int w = 0; w < width; w++) {
+            for (int h = 0; h < height; h++) {
                BlockPos pos = anchor.relative(positiveDir, w).above(h);
                boolean border = w == 0 || w == width - 1 || h == 0 || h == height - 1;
                if (border) {
@@ -112,16 +104,18 @@ public class PortalFrameScanner {
 
          if (closing && !hasPortalBlock) {
             return Optional.empty();
-         } else {
-            double middle = (double)(width - 1) * (double)0.5F;
-            Vec3 bottomCenter = new Vec3((double)anchor.getX() + (double)0.5F + (double)positiveDir.getStepX() * middle, (double)anchor.getY() + (double)1.0F, (double)anchor.getZ() + (double)0.5F + (double)positiveDir.getStepZ() * middle);
-            return Optional.of(new Frame(interior, axis, bottomCenter));
          }
+
+         double middle = (width - 1) * 0.5;
+         Vec3 bottomCenter = new Vec3(
+            anchor.getX() + 0.5 + positiveDir.getStepX() * middle, anchor.getY() + 1.0, anchor.getZ() + 0.5 + positiveDir.getStepZ() * middle
+         );
+         return Optional.of(new PortalFrameScanner.Frame(interior, axis, bottomCenter));
       } else {
          return Optional.empty();
       }
    }
 
-   public static record Frame(List interior, Direction.Axis axis, Vec3 bottomCenter) {
+   public record Frame(List<BlockPos> interior, Axis axis, Vec3 bottomCenter) {
    }
 }

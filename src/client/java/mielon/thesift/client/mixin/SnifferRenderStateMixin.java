@@ -5,15 +5,17 @@ import net.minecraft.client.renderer.entity.state.SnifferRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin({SnifferRenderState.class})
+@Mixin(SnifferRenderState.class)
 public abstract class SnifferRenderStateMixin implements SnifferInfectionRenderState {
    @Unique
    private boolean theSift$infected;
 
+   @Override
    public boolean theSift$isInfected() {
       return this.theSift$infected;
    }
 
+   @Override
    public void theSift$setInfected(boolean infected) {
       this.theSift$infected = infected;
    }

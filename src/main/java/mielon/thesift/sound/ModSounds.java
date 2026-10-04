@@ -54,7 +54,18 @@ public final class ModSounds {
    public static final SoundEvent ICHOR_BUCKET_EMPTY = register("item.ichor_bucket.empty");
    public static final SoundEvent SIFTITE_ARMOR_EQUIP = register("item.siftite_armor.equip");
    public static final SoundEvent MUSIC_DISC_RIFT = register("music_disc.rift");
-   public static final SoundEvent[] BY_INDEX;
+   public static final SoundEvent MUSIC_DISC_WELLSPRING = register("music_disc.wellspring");
+   public static final SoundEvent SIFT_INTRO = register("sift_intro");
+   public static final SoundEvent[] BY_INDEX = new SoundEvent[]{
+      SONOROUS_DEEPSLATE_SOUND_1,
+      SONOROUS_DEEPSLATE_SOUND_2,
+      SONOROUS_DEEPSLATE_SOUND_3,
+      SONOROUS_DEEPSLATE_SOUND_4,
+      SONOROUS_DEEPSLATE_SOUND_5,
+      SONOROUS_DEEPSLATE_SOUND_6,
+      SONOROUS_DEEPSLATE_SOUND_7,
+      SONOROUS_DEEPSLATE_SOUND_8
+   };
 
    private ModSounds() {
    }
@@ -72,11 +83,7 @@ public final class ModSounds {
       return (SoundEvent)Registry.register(BuiltInRegistries.SOUND_EVENT, key, SoundEvent.createFixedRangeEvent(key.identifier(), range));
    }
 
-   private static ResourceKey key(String path) {
+   private static ResourceKey<SoundEvent> key(String path) {
       return ResourceKey.create(BuiltInRegistries.SOUND_EVENT.key(), Identifier.fromNamespaceAndPath("the_sift", path));
-   }
-
-   static {
-      BY_INDEX = new SoundEvent[]{SONOROUS_DEEPSLATE_SOUND_1, SONOROUS_DEEPSLATE_SOUND_2, SONOROUS_DEEPSLATE_SOUND_3, SONOROUS_DEEPSLATE_SOUND_4, SONOROUS_DEEPSLATE_SOUND_5, SONOROUS_DEEPSLATE_SOUND_6, SONOROUS_DEEPSLATE_SOUND_7, SONOROUS_DEEPSLATE_SOUND_8};
    }
 }

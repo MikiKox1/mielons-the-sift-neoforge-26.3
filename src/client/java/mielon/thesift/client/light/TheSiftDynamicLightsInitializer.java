@@ -4,6 +4,7 @@ import dev.lambdaurora.lambdynlights.api.DynamicLightsContext;
 import dev.lambdaurora.lambdynlights.api.DynamicLightsInitializer;
 import dev.lambdaurora.lambdynlights.api.behavior.DynamicLightBehavior;
 import dev.lambdaurora.lambdynlights.api.behavior.DynamicLightBehaviorManager;
+import dev.lambdaurora.lambdynlights.api.behavior.DynamicLightBehavior.BoundingBox;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -16,42 +17,13 @@ import net.minecraft.world.phys.Vec3;
 public final class TheSiftDynamicLightsInitializer implements DynamicLightsInitializer {
    public void onInitializeDynamicLights(DynamicLightsContext context) {
       DynamicLightBehaviorManager manager = context.dynamicLightBehaviorManager();
-      SingerHeadLightBridge.install(new SingerLightHandler(manager));
-      EchoGolemLightBridge.install(new EchoLightHandler(manager));
-   }
-
-   private static final class EchoLightHandler implements EchoGolemLightBridge.Handler {
-      private final DynamicLightBehaviorManager manager;
-      private final Map sources = new WeakHashMap();
-
-      private EchoLightHandler(DynamicLightBehaviorManager manager) {
-         this.manager = manager;
-      }
-
-      public void update(EchoGolemEntity golem, Vec3 position) {
-         EchoLightBehavior source = (EchoLightBehavior)this.sources.get(golem);
-         if (!golem.hasSoulBlock()) {
-            if (source != null) {
-               this.manager.remove(source);
-               this.sources.remove(golem);
-            }
-
-         } else {
-            if (source != null && !source.isRemoved()) {
-               source.setPosition(position);
-            } else {
-               source = new EchoLightBehavior(golem, position);
-               this.sources.put(golem, source);
-               this.manager.add(source);
-            }
-
-         }
-      }
+      SingerHeadLightBridge.install(new TheSiftDynamicLightsInitializer.SingerLightHandler(manager));
+      EchoGolemLightBridge.install(new TheSiftDynamicLightsInitializer.EchoLightHandler(manager));
    }
 
    private static final class EchoLightBehavior implements DynamicLightBehavior {
-      private static final double LUMINANCE = (double)14.0F;
-      private final WeakReference golem;
+      private static final double LUMINANCE = 14.0;
+      private final WeakReference<EchoGolemEntity> golem;
       private double x;
       private double y;
       private double z;
@@ -60,7 +32,7 @@ public final class TheSiftDynamicLightsInitializer implements DynamicLightsIniti
       private double previousZ = Double.NaN;
 
       private EchoLightBehavior(EchoGolemEntity golem, Vec3 position) {
-         this.golem = new WeakReference(golem);
+         this.golem = new WeakReference<>(golem);
          this.setPosition(position);
       }
 
@@ -71,65 +43,72 @@ public final class TheSiftDynamicLightsInitializer implements DynamicLightsIniti
       }
 
       public double lightAtPos(BlockPos pos, double falloffRatio) {
-         EchoGolemEntity entity = (EchoGolemEntity)this.golem.get();
+         EchoGolemEntity entity = this.golem.get();
          if (entity != null && entity.hasSoulBlock()) {
-            double dx = (double)pos.getX() + (double)0.5F - this.x;
-            double dy = (double)pos.getY() + (double)0.5F - this.y;
-            double dz = (double)pos.getZ() + (double)0.5F - this.z;
-            return Math.max((double)14.0F - Math.sqrt(dx * dx + dy * dy + dz * dz) * falloffRatio, (double)0.0F);
+            double dx = pos.getX() + 0.5 - this.x;
+            double dy = pos.getY() + 0.5 - this.y;
+            double dz = pos.getZ() + 0.5 - this.z;
+            return Math.max(14.0 - Math.sqrt(dx * dx + dy * dy + dz * dz) * falloffRatio, 0.0);
          } else {
-            return (double)0.0F;
+            return 0.0;
          }
       }
 
-      public DynamicLightBehavior.BoundingBox getBoundingBox() {
+      public BoundingBox getBoundingBox() {
          int blockX = Mth.floor(this.x);
          int blockY = Mth.floor(this.y);
          int blockZ = Mth.floor(this.z);
-         return new DynamicLightBehavior.BoundingBox(blockX, blockY, blockZ, blockX + 1, blockY + 1, blockZ + 1);
+         return new BoundingBox(blockX, blockY, blockZ, blockX + 1, blockY + 1, blockZ + 1);
       }
 
       public boolean hasChanged() {
          if (Double.compare(this.x, this.previousX) == 0 && Double.compare(this.y, this.previousY) == 0 && Double.compare(this.z, this.previousZ) == 0) {
             return false;
-         } else {
-            this.previousX = this.x;
-            this.previousY = this.y;
-            this.previousZ = this.z;
-            return true;
          }
+
+         this.previousX = this.x;
+         this.previousY = this.y;
+         this.previousZ = this.z;
+         return true;
       }
 
       public boolean isRemoved() {
-         EchoGolemEntity entity = (EchoGolemEntity)this.golem.get();
+         EchoGolemEntity entity = this.golem.get();
          return entity == null || entity.isRemoved() || !entity.hasSoulBlock();
       }
    }
 
-   private static final class SingerLightHandler implements SingerHeadLightBridge.Handler {
+   private static final class EchoLightHandler implements EchoGolemLightBridge.Handler {
       private final DynamicLightBehaviorManager manager;
-      private final Map sources = new WeakHashMap();
+      private final Map<EchoGolemEntity, TheSiftDynamicLightsInitializer.EchoLightBehavior> sources = new WeakHashMap<>();
 
-      private SingerLightHandler(DynamicLightBehaviorManager manager) {
+      private EchoLightHandler(DynamicLightBehaviorManager manager) {
          this.manager = manager;
       }
 
-      public void update(SingerEntity singer, Vec3 position) {
-         SingerHeadLightBehavior source = (SingerHeadLightBehavior)this.sources.get(singer);
-         if (source == null) {
-            source = new SingerHeadLightBehavior(singer, position);
-            this.sources.put(singer, source);
-            this.manager.add(source);
+      @Override
+      public void update(EchoGolemEntity golem, Vec3 position) {
+         TheSiftDynamicLightsInitializer.EchoLightBehavior source = this.sources.get(golem);
+         if (!golem.hasSoulBlock()) {
+            if (source != null) {
+               this.manager.remove(source);
+               this.sources.remove(golem);
+            }
          } else {
-            source.setPosition(position);
+            if (source != null && !source.isRemoved()) {
+               source.setPosition(position);
+            } else {
+               source = new TheSiftDynamicLightsInitializer.EchoLightBehavior(golem, position);
+               this.sources.put(golem, source);
+               this.manager.add(source);
+            }
          }
-
       }
    }
 
    private static final class SingerHeadLightBehavior implements DynamicLightBehavior {
-      private static final double LUMINANCE = (double)15.0F;
-      private final WeakReference singer;
+      private static final double LUMINANCE = 15.0;
+      private final WeakReference<SingerEntity> singer;
       private double x;
       private double y;
       private double z;
@@ -138,7 +117,7 @@ public final class TheSiftDynamicLightsInitializer implements DynamicLightsIniti
       private double previousZ = Double.NaN;
 
       private SingerHeadLightBehavior(SingerEntity singer, Vec3 position) {
-         this.singer = new WeakReference(singer);
+         this.singer = new WeakReference<>(singer);
          this.setPosition(position);
       }
 
@@ -149,34 +128,55 @@ public final class TheSiftDynamicLightsInitializer implements DynamicLightsIniti
       }
 
       public double lightAtPos(BlockPos pos, double falloffRatio) {
-         double dx = (double)pos.getX() + (double)0.5F - this.x;
-         double dy = (double)pos.getY() + (double)0.5F - this.y;
-         double dz = (double)pos.getZ() + (double)0.5F - this.z;
+         double dx = pos.getX() + 0.5 - this.x;
+         double dy = pos.getY() + 0.5 - this.y;
+         double dz = pos.getZ() + 0.5 - this.z;
          double distanceSquared = dx * dx + dy * dy + dz * dz;
-         return Math.max((double)15.0F - Math.sqrt(distanceSquared) * falloffRatio, (double)0.0F);
+         return Math.max(15.0 - Math.sqrt(distanceSquared) * falloffRatio, 0.0);
       }
 
-      public DynamicLightBehavior.BoundingBox getBoundingBox() {
+      public BoundingBox getBoundingBox() {
          int blockX = Mth.floor(this.x);
          int blockY = Mth.floor(this.y);
          int blockZ = Mth.floor(this.z);
-         return new DynamicLightBehavior.BoundingBox(blockX, blockY, blockZ, blockX + 1, blockY + 1, blockZ + 1);
+         return new BoundingBox(blockX, blockY, blockZ, blockX + 1, blockY + 1, blockZ + 1);
       }
 
       public boolean hasChanged() {
          if (Double.compare(this.x, this.previousX) == 0 && Double.compare(this.y, this.previousY) == 0 && Double.compare(this.z, this.previousZ) == 0) {
             return false;
-         } else {
-            this.previousX = this.x;
-            this.previousY = this.y;
-            this.previousZ = this.z;
-            return true;
          }
+
+         this.previousX = this.x;
+         this.previousY = this.y;
+         this.previousZ = this.z;
+         return true;
       }
 
       public boolean isRemoved() {
-         SingerEntity entity = (SingerEntity)this.singer.get();
+         SingerEntity entity = this.singer.get();
          return entity == null || entity.isRemoved();
+      }
+   }
+
+   private static final class SingerLightHandler implements SingerHeadLightBridge.Handler {
+      private final DynamicLightBehaviorManager manager;
+      private final Map<SingerEntity, TheSiftDynamicLightsInitializer.SingerHeadLightBehavior> sources = new WeakHashMap<>();
+
+      private SingerLightHandler(DynamicLightBehaviorManager manager) {
+         this.manager = manager;
+      }
+
+      @Override
+      public void update(SingerEntity singer, Vec3 position) {
+         TheSiftDynamicLightsInitializer.SingerHeadLightBehavior source = this.sources.get(singer);
+         if (source == null) {
+            source = new TheSiftDynamicLightsInitializer.SingerHeadLightBehavior(singer, position);
+            this.sources.put(singer, source);
+            this.manager.add(source);
+         } else {
+            source.setPosition(position);
+         }
       }
    }
 }

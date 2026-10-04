@@ -6,12 +6,8 @@ import net.minecraft.world.level.Level;
 public final class SiftLoadingScreenState {
    private static boolean active;
    private static boolean rift;
-   private static ResourceKey sourceDimension;
    private static long startedAtNanos;
-
-   public static boolean isRift() {
-      return rift;
-   }
+   private static ResourceKey<Level> sourceDimension;
 
    private SiftLoadingScreenState() {
    }
@@ -20,50 +16,37 @@ public final class SiftLoadingScreenState {
       return active;
    }
 
-   public static void begin(ResourceKey source) {
-      begin(source, false);
+   public static boolean isRift() {
+      return rift;
    }
 
-   public static void begin(ResourceKey source, boolean fromRift) {
-      rift = fromRift;
-      active = true;
-      sourceDimension = source;
-      startedAtNanos = System.nanoTime();
-   }
-
-   public static void markVanillaTransition(ResourceKey oldDimension) {
+   public static void begin(ResourceKey<Level> source, boolean fromRift) {
       if (!active) {
-         begin(oldDimension);
-      } else if (sourceDimension == null) {
-         sourceDimension = oldDimension;
+         active = true;
+         sourceDimension = source;
+         startedAtNanos = System.nanoTime();
       }
 
+      rift |= fromRift;
    }
 
-   public static ResourceKey sourceDimension() {
+   public static void markVanillaTransition(ResourceKey<Level> oldDimension) {
+      begin(oldDimension, false);
+      sourceDimension = oldDimension;
+   }
+
+   public static ResourceKey<Level> sourceDimension() {
       return sourceDimension;
    }
 
    public static boolean isOlderThanSeconds(double seconds) {
-      return active && startedAtNanos != 0L && (double)(System.nanoTime() - startedAtNanos) > seconds * (double)1.0E9F;
+      return active && System.nanoTime() - startedAtNanos > seconds * 1.0E9;
    }
 
    public static void clear() {
       active = false;
       rift = false;
-      sourceDimension = null;
       startedAtNanos = 0L;
-   }
-
-   public static void setActive(boolean active) {
-      if (active) {
-         if (!SiftLoadingScreenState.active) {
-            SiftLoadingScreenState.active = true;
-            startedAtNanos = System.nanoTime();
-         }
-      } else {
-         clear();
-      }
-
+      sourceDimension = null;
    }
 }

@@ -2,7 +2,7 @@
   "parent": "the_sift:the_sift/root",
   "display": {
     "icon": {
-      "id": "the_sift:soul_block"
+      "id": "the_sift:echo_golem_spawn_egg"
     },
     "title": {
       "translate": "advancement.the_sift.like_father_and_son.title"

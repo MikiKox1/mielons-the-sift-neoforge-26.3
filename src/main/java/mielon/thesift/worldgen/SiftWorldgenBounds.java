@@ -30,4 +30,8 @@ final class SiftWorldgenBounds {
    boolean contains(int x, int z) {
       return x >= this.minX && x <= this.maxX && z >= this.minZ && z <= this.maxZ;
    }
+
+   int distanceToEdge(int x, int z) {
+      return Math.max(0, Math.min(Math.min(x - this.minX, this.maxX - x), Math.min(z - this.minZ, this.maxZ - z)));
+   }
 }

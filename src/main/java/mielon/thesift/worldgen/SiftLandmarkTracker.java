@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import mielon.thesift.block.ModBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -18,9 +19,9 @@ import net.minecraft.server.level.ServerLevel;
 public final class SiftLandmarkTracker {
    private static final int SAVE_INTERVAL_TICKS = 600;
    private static final Identifier STORAGE_ID = Identifier.fromNamespaceAndPath("the_sift", "generated_landmarks");
-   private static final Map POSITIONS = new EnumMap(Kind.class);
-   private static final Map POSITIONS_BY_CHUNK = new EnumMap(Kind.class);
-   private static final Map LEGACY_CANYON_ACTIVITY = new ConcurrentHashMap();
+   private static final Map<SiftLandmarkTracker.Kind, Set<Long>> POSITIONS = new EnumMap<>(SiftLandmarkTracker.Kind.class);
+   private static final Map<SiftLandmarkTracker.Kind, Map<Long, Set<Long>>> POSITIONS_BY_CHUNK = new EnumMap<>(SiftLandmarkTracker.Kind.class);
+   private static final Map<Long, SiftLandmarkTracker.CanyonActivity> LEGACY_CANYON_ACTIVITY = new ConcurrentHashMap<>();
    private static volatile boolean dirty;
    private static boolean loaded;
    private static int saveCooldown;
@@ -28,55 +29,52 @@ public final class SiftLandmarkTracker {
    private SiftLandmarkTracker() {
    }
 
-   public static void record(Kind kind, BlockPos pos) {
+   public static void record(SiftLandmarkTracker.Kind kind, BlockPos pos) {
       long packed = pos.asLong();
-      if (((Set)POSITIONS.get(kind)).add(packed)) {
+      if (POSITIONS.get(kind).add(packed)) {
          index(kind, packed);
          dirty = true;
       }
-
    }
 
-   public static void forget(Kind kind, BlockPos pos) {
+   public static void forget(SiftLandmarkTracker.Kind kind, BlockPos pos) {
       long packed = pos.asLong();
-      if (((Set)POSITIONS.get(kind)).remove(packed)) {
+      if (POSITIONS.get(kind).remove(packed)) {
          unindex(kind, packed);
          dirty = true;
       }
-
    }
 
-   private static void index(Kind kind, long packed) {
+   private static void index(SiftLandmarkTracker.Kind kind, long packed) {
       BlockPos pos = BlockPos.of(packed);
       long chunk = chunkKey(pos.getX() >> 4, pos.getZ() >> 4);
-      ((Set)((Map)POSITIONS_BY_CHUNK.get(kind)).computeIfAbsent(chunk, (ignored) -> ConcurrentHashMap.newKeySet())).add(packed);
+      POSITIONS_BY_CHUNK.get(kind).computeIfAbsent(chunk, ignored -> ConcurrentHashMap.newKeySet()).add(packed);
    }
 
-   private static void unindex(Kind kind, long packed) {
+   private static void unindex(SiftLandmarkTracker.Kind kind, long packed) {
       BlockPos pos = BlockPos.of(packed);
       long chunk = chunkKey(pos.getX() >> 4, pos.getZ() >> 4);
-      Set<Long> positions = (Set)((Map)POSITIONS_BY_CHUNK.get(kind)).get(chunk);
+      Set<Long> positions = POSITIONS_BY_CHUNK.get(kind).get(chunk);
       if (positions != null) {
          positions.remove(packed);
          if (positions.isEmpty()) {
-            ((Map)POSITIONS_BY_CHUNK.get(kind)).remove(chunk, positions);
+            POSITIONS_BY_CHUNK.get(kind).remove(chunk, positions);
          }
-
       }
    }
 
    private static long chunkKey(int chunkX, int chunkZ) {
-      return (long)chunkX << 32 ^ (long)chunkZ & 4294967295L;
+      return (long)chunkX << 32 ^ chunkZ & 4294967295L;
    }
 
-   public static Optional nearest(Kind kind, BlockPos origin) {
+   public static Optional<BlockPos> nearest(SiftLandmarkTracker.Kind kind, BlockPos origin) {
       BlockPos best = null;
       double bestDistance = Double.POSITIVE_INFINITY;
 
-      for (long packed : (Set<Long>) POSITIONS.get(kind)) {
+      for (long packed : POSITIONS.get(kind)) {
          BlockPos candidate = BlockPos.of(packed);
-         double dx = (double)(candidate.getX() - origin.getX());
-         double dz = (double)(candidate.getZ() - origin.getZ());
+         double dx = candidate.getX() - origin.getX();
+         double dz = candidate.getZ() - origin.getZ();
          double distance = dx * dx + dz * dz;
          if (distance < bestDistance) {
             bestDistance = distance;
@@ -87,20 +85,20 @@ public final class SiftLandmarkTracker {
       return Optional.ofNullable(best);
    }
 
-   public static Optional nearestOther(Kind kind, BlockPos origin, double maximumDistance, BlockPos excluded) {
+   public static Optional<BlockPos> nearestOther(SiftLandmarkTracker.Kind kind, BlockPos origin, double maximumDistance, BlockPos excluded) {
       BlockPos best = null;
       double bestDistance = maximumDistance * maximumDistance;
       long excludedPacked = excluded == null ? Long.MIN_VALUE : excluded.asLong();
       int originChunkX = origin.getX() >> 4;
       int originChunkZ = origin.getZ() >> 4;
       int maximumRing = ceilChunks(maximumDistance);
-      Map<Long, Set<Long>> index = (Map)POSITIONS_BY_CHUNK.get(kind);
+      Map<Long, Set<Long>> index = POSITIONS_BY_CHUNK.get(kind);
 
-      for (int ring = 0; ring <= maximumRing; ++ring) {
-         for (int chunkX = originChunkX - ring; chunkX <= originChunkX + ring; ++chunkX) {
-            for (int chunkZ = originChunkZ - ring; chunkZ <= originChunkZ + ring; ++chunkZ) {
+      for (int ring = 0; ring <= maximumRing; ring++) {
+         for (int chunkX = originChunkX - ring; chunkX <= originChunkX + ring; chunkX++) {
+            for (int chunkZ = originChunkZ - ring; chunkZ <= originChunkZ + ring; chunkZ++) {
                if (ring <= 0 || Math.max(Math.abs(chunkX - originChunkX), Math.abs(chunkZ - originChunkZ)) == ring) {
-                  Set<Long> positions = (Set)index.get(chunkKey(chunkX, chunkZ));
+                  Set<Long> positions = index.get(chunkKey(chunkX, chunkZ));
                   if (positions != null) {
                      for (long packed : positions) {
                         if (packed != excludedPacked) {
@@ -125,27 +123,27 @@ public final class SiftLandmarkTracker {
       return Optional.ofNullable(best);
    }
 
-   public static List snapshot(Kind kind) {
-      return ((Set<Long>) POSITIONS.get(kind)).stream().map(BlockPos::of).toList();
+   public static List<BlockPos> snapshot(SiftLandmarkTracker.Kind kind) {
+      return POSITIONS.get(kind).stream().<BlockPos>map(BlockPos::of).toList();
    }
 
-   public static Optional nearestActiveSoulCanyon(ServerLevel level, BlockPos origin, double maximumDistance) {
+   public static Optional<BlockPos> nearestActiveSoulCanyon(ServerLevel level, BlockPos origin, double maximumDistance) {
       return nearestActiveSoulCanyon(level, origin, maximumDistance, Set.of());
    }
 
-   public static Optional nearestActiveSoulCanyon(ServerLevel level, BlockPos origin, double maximumDistance, Collection excluded) {
+   public static Optional<BlockPos> nearestActiveSoulCanyon(ServerLevel level, BlockPos origin, double maximumDistance, Collection<Long> excluded) {
       BlockPos best = null;
       double bestDistance = maximumDistance * maximumDistance;
       int originChunkX = origin.getX() >> 4;
       int originChunkZ = origin.getZ() >> 4;
       int maximumRing = ceilChunks(maximumDistance);
-      Map<Long, Set<Long>> index = (Map)POSITIONS_BY_CHUNK.get(SiftLandmarkTracker.Kind.SOUL_CANYON_CLUSTER);
+      Map<Long, Set<Long>> index = POSITIONS_BY_CHUNK.get(SiftLandmarkTracker.Kind.SOUL_CANYON_CLUSTER);
 
-      for (int ring = 0; ring <= maximumRing; ++ring) {
-         for (int chunkX = originChunkX - ring; chunkX <= originChunkX + ring; ++chunkX) {
-            for (int chunkZ = originChunkZ - ring; chunkZ <= originChunkZ + ring; ++chunkZ) {
+      for (int ring = 0; ring <= maximumRing; ring++) {
+         for (int chunkX = originChunkX - ring; chunkX <= originChunkX + ring; chunkX++) {
+            for (int chunkZ = originChunkZ - ring; chunkZ <= originChunkZ + ring; chunkZ++) {
                if (ring <= 0 || Math.max(Math.abs(chunkX - originChunkX), Math.abs(chunkZ - originChunkZ)) == ring) {
-                  Set<Long> positions = (Set)index.get(chunkKey(chunkX, chunkZ));
+                  Set<Long> positions = index.get(chunkKey(chunkX, chunkZ));
                   if (positions != null) {
                      for (long packed : positions) {
                         if (!excluded.contains(packed)) {
@@ -170,22 +168,25 @@ public final class SiftLandmarkTracker {
       return Optional.ofNullable(best);
    }
 
-   public static List activeSoulBlocksNear(ServerLevel level, BlockPos center, int horizontal, int vertical) {
-      double horizontalSqr = (double)horizontal * (double)horizontal;
+   public static List<BlockPos> activeSoulBlocksNear(ServerLevel level, BlockPos center, int horizontal, int vertical) {
+      double horizontalSqr = (double)horizontal * horizontal;
       int minimumChunkX = center.getX() - horizontal >> 4;
       int maximumChunkX = center.getX() + horizontal >> 4;
       int minimumChunkZ = center.getZ() - horizontal >> 4;
       int maximumChunkZ = center.getZ() + horizontal >> 4;
-      List<BlockPos> result = new ArrayList();
-      Map<Long, Set<Long>> index = (Map)POSITIONS_BY_CHUNK.get(SiftLandmarkTracker.Kind.SOUL_CANYON_SOUL_BLOCK);
+      List<BlockPos> result = new ArrayList<>();
+      Map<Long, Set<Long>> index = POSITIONS_BY_CHUNK.get(SiftLandmarkTracker.Kind.SOUL_CANYON_SOUL_BLOCK);
 
-      for (int chunkX = minimumChunkX; chunkX <= maximumChunkX; ++chunkX) {
-         for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ; ++chunkZ) {
-            Set<Long> positions = (Set)index.get(chunkKey(chunkX, chunkZ));
+      for (int chunkX = minimumChunkX; chunkX <= maximumChunkX; chunkX++) {
+         for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ; chunkZ++) {
+            Set<Long> positions = index.get(chunkKey(chunkX, chunkZ));
             if (positions != null) {
                for (long packed : positions) {
                   BlockPos candidate = BlockPos.of(packed);
-                  if (horizontalDistanceSqr(candidate, center) <= horizontalSqr && Math.abs(candidate.getY() - center.getY()) <= vertical && level.isLoaded(candidate) && level.getBlockState(candidate).is(ModBlocks.SOUL_BLOCK)) {
+                  if (horizontalDistanceSqr(candidate, center) <= horizontalSqr
+                     && Math.abs(candidate.getY() - center.getY()) <= vertical
+                     && level.isLoaded(candidate)
+                     && level.getBlockState(candidate).is(ModBlocks.SOUL_BLOCK)) {
                      result.add(candidate);
                   }
                }
@@ -197,16 +198,16 @@ public final class SiftLandmarkTracker {
    }
 
    public static boolean hasIndexedSoulPositionsNear(BlockPos center, int horizontal, int vertical) {
-      double horizontalSqr = (double)horizontal * (double)horizontal;
+      double horizontalSqr = (double)horizontal * horizontal;
       int minimumChunkX = center.getX() - horizontal >> 4;
       int maximumChunkX = center.getX() + horizontal >> 4;
       int minimumChunkZ = center.getZ() - horizontal >> 4;
       int maximumChunkZ = center.getZ() + horizontal >> 4;
-      Map<Long, Set<Long>> index = (Map)POSITIONS_BY_CHUNK.get(SiftLandmarkTracker.Kind.SOUL_CANYON_SOUL_BLOCK);
+      Map<Long, Set<Long>> index = POSITIONS_BY_CHUNK.get(SiftLandmarkTracker.Kind.SOUL_CANYON_SOUL_BLOCK);
 
-      for (int chunkX = minimumChunkX; chunkX <= maximumChunkX; ++chunkX) {
-         for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ; ++chunkZ) {
-            Set<Long> positions = (Set)index.get(chunkKey(chunkX, chunkZ));
+      for (int chunkX = minimumChunkX; chunkX <= maximumChunkX; chunkX++) {
+         for (int chunkZ = minimumChunkZ; chunkZ <= maximumChunkZ; chunkZ++) {
+            Set<Long> positions = index.get(chunkKey(chunkX, chunkZ));
             if (positions != null) {
                for (long packed : positions) {
                   BlockPos candidate = BlockPos.of(packed);
@@ -225,38 +226,40 @@ public final class SiftLandmarkTracker {
       List<BlockPos> recorded = activeSoulBlocksNear(level, center, 36, 28);
       if (!recorded.isEmpty()) {
          return true;
-      } else if (hasIndexedSoulPositionsNear(center, 36, 28)) {
-         return false;
-      } else {
-         long now = level.getGameTime();
-         CanyonActivity cached = (CanyonActivity)LEGACY_CANYON_ACTIVITY.get(center.asLong());
-         if (cached != null && cached.validUntil() > now) {
-            return cached.active();
-         } else {
-            BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+      }
 
-            for (int dy = -20; dy <= 20; ++dy) {
-               for (int dx = -24; dx <= 24; ++dx) {
-                  for (int dz = -24; dz <= 24; ++dz) {
-                     if (dx * dx + dz * dz <= 576) {
-                        cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                        if (level.isLoaded(cursor) && level.getBlockState(cursor).is(ModBlocks.SOUL_BLOCK)) {
-                           LEGACY_CANYON_ACTIVITY.put(center.asLong(), new CanyonActivity(true, now + 100L));
-                           return true;
-                        }
-                     }
+      if (hasIndexedSoulPositionsNear(center, 36, 28)) {
+         return false;
+      }
+
+      long now = level.getGameTime();
+      SiftLandmarkTracker.CanyonActivity cached = LEGACY_CANYON_ACTIVITY.get(center.asLong());
+      if (cached != null && cached.validUntil() > now) {
+         return cached.active();
+      }
+
+      MutableBlockPos cursor = new MutableBlockPos();
+
+      for (int dy = -20; dy <= 20; dy++) {
+         for (int dx = -24; dx <= 24; dx++) {
+            for (int dz = -24; dz <= 24; dz++) {
+               if (dx * dx + dz * dz <= 576) {
+                  cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                  if (level.isLoaded(cursor) && level.getBlockState(cursor).is(ModBlocks.SOUL_BLOCK)) {
+                     LEGACY_CANYON_ACTIVITY.put(center.asLong(), new SiftLandmarkTracker.CanyonActivity(true, now + 100L));
+                     return true;
                   }
                }
             }
-
-            LEGACY_CANYON_ACTIVITY.put(center.asLong(), new CanyonActivity(false, now + 1200L));
-            return false;
          }
       }
+
+      LEGACY_CANYON_ACTIVITY.put(center.asLong(), new SiftLandmarkTracker.CanyonActivity(false, now + 1200L));
+      return false;
    }
 
    private static int ceilChunks(double distance) {
-      return Math.max(0, (int)Math.ceil(distance / (double)16.0F) + 1);
+      return Math.max(0, (int)Math.ceil(distance / 16.0) + 1);
    }
 
    private static double outsideRingDistanceSqr(BlockPos origin, int originChunkX, int originChunkZ, int ring) {
@@ -264,13 +267,15 @@ public final class SiftLandmarkTracker {
       int maximumX = (originChunkX + ring << 4) + 15;
       int minimumZ = originChunkZ - ring << 4;
       int maximumZ = (originChunkZ + ring << 4) + 15;
-      int distance = Math.min(Math.min(origin.getX() - (minimumX - 1), maximumX + 1 - origin.getX()), Math.min(origin.getZ() - (minimumZ - 1), maximumZ + 1 - origin.getZ()));
-      return (double)distance * (double)distance;
+      int distance = Math.min(
+         Math.min(origin.getX() - (minimumX - 1), maximumX + 1 - origin.getX()), Math.min(origin.getZ() - (minimumZ - 1), maximumZ + 1 - origin.getZ())
+      );
+      return (double)distance * distance;
    }
 
    private static double horizontalDistanceSqr(BlockPos first, BlockPos second) {
-      double dx = (double)(first.getX() - second.getX());
-      double dz = (double)(first.getZ() - second.getZ());
+      double dx = first.getX() - second.getX();
+      double dz = first.getZ() - second.getZ();
       return dx * dx + dz * dz;
    }
 
@@ -287,7 +292,6 @@ public final class SiftLandmarkTracker {
       if (dirty) {
          writeStorage(server);
       }
-
    }
 
    private static void ensureLoaded(MinecraftServer server) {
@@ -295,37 +299,36 @@ public final class SiftLandmarkTracker {
          loaded = true;
          CompoundTag stored = server.getCommandStorage().get(STORAGE_ID);
 
-         for (Kind kind : SiftLandmarkTracker.Kind.values()) {
-            long[] positions = (long[])stored.getLongArray(kind.storageKey()).orElse(new long[0]);
+         for (SiftLandmarkTracker.Kind kind : SiftLandmarkTracker.Kind.values()) {
+            long[] positions = stored.getLongArray(kind.storageKey()).orElse(new long[0]);
 
             for (long position : positions) {
-               if (((Set)POSITIONS.get(kind)).add(position)) {
+               if (POSITIONS.get(kind).add(position)) {
                   index(kind, position);
                }
             }
          }
-
       }
    }
 
    private static void writeStorage(MinecraftServer server) {
+      dirty = false;
       CompoundTag stored = new CompoundTag();
 
-      for (Kind kind : SiftLandmarkTracker.Kind.values()) {
-         long[] positions = ((Set<Long>) POSITIONS.get(kind)).stream().mapToLong(Long::longValue).sorted().toArray();
+      for (SiftLandmarkTracker.Kind kind : SiftLandmarkTracker.Kind.values()) {
+         long[] positions = POSITIONS.get(kind).stream().mapToLong(Long::longValue).sorted().toArray();
          stored.putLongArray(kind.storageKey(), positions);
       }
 
       server.getCommandStorage().set(STORAGE_ID, stored);
-      dirty = false;
    }
 
    public static void clearTransientState() {
-      for (Set positions : (Iterable<Set>) POSITIONS.values()) {
+      for (Set<Long> positions : POSITIONS.values()) {
          positions.clear();
       }
 
-      for (Map positions : (Iterable<Map>) POSITIONS_BY_CHUNK.values()) {
+      for (Map<Long, Set<Long>> positions : POSITIONS_BY_CHUNK.values()) {
          positions.clear();
       }
 
@@ -336,37 +339,32 @@ public final class SiftLandmarkTracker {
    }
 
    static {
-      for (Kind kind : SiftLandmarkTracker.Kind.values()) {
+      for (SiftLandmarkTracker.Kind kind : SiftLandmarkTracker.Kind.values()) {
          POSITIONS.put(kind, ConcurrentHashMap.newKeySet());
-         POSITIONS_BY_CHUNK.put(kind, new ConcurrentHashMap());
+         POSITIONS_BY_CHUNK.put(kind, new ConcurrentHashMap<>());
       }
-
    }
 
-   public static enum Kind {
+   private record CanyonActivity(boolean active, long validUntil) {
+   }
+
+   public enum Kind {
       ABANDONED_MAIN_PORTAL("abandoned_main_portals"),
       SNIFFER_CAVE("sniffer_caves"),
       SOUL_CANYON_ENTRANCE("soul_canyon_entrances"),
       SOUL_CANYON_CLUSTER("soul_canyon_clusters"),
       SOUL_CANYON_MIDPOINT("soul_canyon_midpoints"),
-      SOUL_CANYON_SOUL_BLOCK("soul_canyon_soul_blocks");
+      SOUL_CANYON_SOUL_BLOCK("soul_canyon_soul_blocks"),
+      SOUL_CANYON_GOLEM_PENDING("soul_canyon_golems_pending");
 
       private final String storageKey;
 
-      private Kind(String storageKey) {
+      Kind(String storageKey) {
          this.storageKey = storageKey;
       }
 
       private String storageKey() {
          return this.storageKey;
       }
-
-      // $FF: synthetic method
-      private static Kind[] $values() {
-         return new Kind[]{ABANDONED_MAIN_PORTAL, SNIFFER_CAVE, SOUL_CANYON_ENTRANCE, SOUL_CANYON_CLUSTER, SOUL_CANYON_MIDPOINT, SOUL_CANYON_SOUL_BLOCK};
-      }
-   }
-
-   private static record CanyonActivity(boolean active, long validUntil) {
    }
 }

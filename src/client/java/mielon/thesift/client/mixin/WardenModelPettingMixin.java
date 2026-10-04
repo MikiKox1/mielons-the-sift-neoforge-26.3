@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({WardenModel.class})
+@Mixin(WardenModel.class)
 public abstract class WardenModelPettingMixin {
    @Shadow
    @Final
@@ -21,13 +21,10 @@ public abstract class WardenModelPettingMixin {
    @Final
    protected ModelPart head;
 
-   @Inject(
-      method = {"setupAnim(Lnet/minecraft/client/renderer/entity/state/WardenRenderState;)V"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/WardenRenderState;)V", at = @At("TAIL"))
    private void theSift$animatePetting(WardenRenderState state, CallbackInfo ci) {
       if (((WardenPettingRenderState)state).theSift$isPettingDarkSniffer()) {
-         float stroke = Mth.sin((double)(state.ageInTicks * 0.32F)) * 0.16F;
+         float stroke = Mth.sin(state.ageInTicks * 0.32F) * 0.16F;
          this.rightArm.xRot = -0.66F + stroke;
          this.rightArm.yRot = -0.1F;
          this.rightArm.zRot = -0.08F;

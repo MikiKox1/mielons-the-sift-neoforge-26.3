@@ -376,5 +376,23 @@
       }
     ],
     "subtitle": "subtitles.the_sift.item.siftite_armor.equip"
+  },
+  "music_disc.wellspring": {
+    "sounds": [
+      {
+        "name": "the_sift:music/music_disc_wellspring",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.the_sift.music_disc.wellspring"
+  },
+  "sift_intro": {
+    "sounds": [
+      {
+        "name": "the_sift:ambient/sift_intro",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.the_sift.sift_intro"
   }
 }

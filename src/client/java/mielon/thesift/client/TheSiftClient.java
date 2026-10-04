@@ -35,8 +35,12 @@ import net.minecraft.client.renderer.entity.BoatRenderer;
 import net.minecraft.resources.Identifier;
 
 public final class TheSiftClient implements ClientModInitializer {
-   private static final ModelLayerLocation OVERGROWN_WILLOW_BOAT_LAYER = new ModelLayerLocation(Identifier.fromNamespaceAndPath("the_sift", "boat/overgrown_willow"), "main");
-   private static final ModelLayerLocation OVERGROWN_WILLOW_CHEST_BOAT_LAYER = new ModelLayerLocation(Identifier.fromNamespaceAndPath("the_sift", "chest_boat/overgrown_willow"), "main");
+   private static final ModelLayerLocation OVERGROWN_WILLOW_BOAT_LAYER = new ModelLayerLocation(
+      Identifier.fromNamespaceAndPath("the_sift", "boat/overgrown_willow"), "main"
+   );
+   private static final ModelLayerLocation OVERGROWN_WILLOW_CHEST_BOAT_LAYER = new ModelLayerLocation(
+      Identifier.fromNamespaceAndPath("the_sift", "chest_boat/overgrown_willow"), "main"
+   );
 
    public void onInitializeClient() {
       VanillaPaletteRemapper.initialize();
@@ -50,9 +54,9 @@ public final class TheSiftClient implements ClientModInitializer {
       SiftCloudRenderPipelines.initialize();
       ModelLayerRegistry.registerModelLayer(OVERGROWN_WILLOW_BOAT_LAYER, BoatModel::createBoatModel);
       ModelLayerRegistry.registerModelLayer(OVERGROWN_WILLOW_CHEST_BOAT_LAYER, BoatModel::createChestBoatModel);
-      EntityRendererRegistry.register(ModEntities.OVERGROWN_WILLOW_BOAT, (context) -> new BoatRenderer(context, OVERGROWN_WILLOW_BOAT_LAYER));
-      EntityRendererRegistry.register(ModEntities.OVERGROWN_WILLOW_CHEST_BOAT, (context) -> new BoatRenderer(context, OVERGROWN_WILLOW_CHEST_BOAT_LAYER));
-      BlockEntityRendererRegistry.register(ModBlocks.SIFT_PORTAL_BLOCK_ENTITY, (context) -> new SiftPortalRenderer());
+      EntityRendererRegistry.register(ModEntities.OVERGROWN_WILLOW_BOAT, context -> new BoatRenderer(context, OVERGROWN_WILLOW_BOAT_LAYER));
+      EntityRendererRegistry.register(ModEntities.OVERGROWN_WILLOW_CHEST_BOAT, context -> new BoatRenderer(context, OVERGROWN_WILLOW_CHEST_BOAT_LAYER));
+      BlockEntityRendererRegistry.register(ModBlocks.SIFT_PORTAL_BLOCK_ENTITY, context -> new SiftPortalRenderer());
       BlockEntityRendererRegistry.register(ModBlocks.SONOROUS_DEEPSLATE_BLOCK_ENTITY, SonorousBeamRenderer::new);
       EntityRendererRegistry.register(ModEntities.SINGER, SingerRenderer::new);
       EntityRendererRegistry.register(ModEntities.ECHO_GOLEM, EchoGolemRenderer::new);

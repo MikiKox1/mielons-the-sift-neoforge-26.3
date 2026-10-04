@@ -21,16 +21,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({NoteBlock.class})
+@Mixin(NoteBlock.class)
 public abstract class NoteBlockMixin {
-   private static final double THE_SIFT_NOTE_MARKER = (double)100.0F;
+   private static final double THE_SIFT_NOTE_MARKER = 100.0;
 
-   @Inject(
-      method = {"useWithoutItem"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private void theSift$cycleSonorousSound(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit, CallbackInfoReturnable cir) {
+   @Inject(method = "useWithoutItem", at = @At("HEAD"), cancellable = true)
+   private void theSift$cycleSonorousSound(
+      BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit, CallbackInfoReturnable<InteractionResult> cir
+   ) {
       if (SonorousNoteBlocks.isHorn(level, pos)) {
          if (!level.isClientSide()) {
             SonorousNoteBlocks.playHornGlitch(level, pos);
@@ -54,10 +52,7 @@ public abstract class NoteBlockMixin {
       }
    }
 
-   @Inject(
-      method = {"attack"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "attack", at = @At("HEAD"))
    private void theSift$trackSonorousAttack(BlockState state, Level level, BlockPos pos, Player player, CallbackInfo ci) {
       if (SonorousNoteBlocks.isSonorous(level, pos) && !level.isClientSide()) {
          ServerLevel serverLevel = (ServerLevel)level;
@@ -65,23 +60,19 @@ public abstract class NoteBlockMixin {
          SonorousAutoplay.interrupt(serverLevel, pos);
          int current = SonorousNoteBlocks.getIndex(state);
          Optional<SonorousConsoles.MatchedSequence> winning = SonorousConsoles.onSoundPlayed(serverLevel, pos, current + 1);
-         winning.ifPresent((matched) -> SonorousIgnition.start(serverLevel, matched));
+         winning.ifPresent(matched -> SonorousIgnition.start(serverLevel, matched));
       }
    }
 
-   @Inject(
-      method = {"triggerEvent"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private void theSift$playSonorousSound(BlockState state, Level level, BlockPos pos, int id, int param, CallbackInfoReturnable cir) {
+   @Inject(method = "triggerEvent", at = @At("HEAD"), cancellable = true)
+   private void theSift$playSonorousSound(BlockState state, Level level, BlockPos pos, int id, int param, CallbackInfoReturnable<Boolean> cir) {
       if (SonorousNoteBlocks.isHorn(level, pos)) {
          SonorousNoteBlocks.playHornGlitch(level, pos);
          cir.setReturnValue(true);
       } else if (SonorousNoteBlocks.isSonorous(level, pos)) {
          int index = SonorousNoteBlocks.getIndex(state);
-         double encodedColor = (double)100.0F + (double)(index * 3);
-         level.addParticle(ParticleTypes.NOTE, (double)pos.getX() + (double)0.5F, (double)pos.getY() + 1.2, (double)pos.getZ() + (double)0.5F, encodedColor, (double)0.0F, (double)0.0F);
+         double encodedColor = 100.0 + index * 3;
+         level.addParticle(ParticleTypes.NOTE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, encodedColor, 0.0, 0.0);
          SonorousNoteBlocks.playSound(level, pos, index);
          cir.setReturnValue(true);
       }

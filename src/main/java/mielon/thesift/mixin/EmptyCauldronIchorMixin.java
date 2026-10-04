@@ -16,25 +16,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({CauldronBlock.class})
+@Mixin(CauldronBlock.class)
 public abstract class EmptyCauldronIchorMixin {
-   @Inject(
-      method = {"canReceiveStalactiteDrip"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
-   private void theSift$acceptIchor(Fluid fluid, CallbackInfoReturnable cir) {
+   @Inject(method = "canReceiveStalactiteDrip", at = @At("HEAD"), cancellable = true)
+   private void theSift$acceptIchor(Fluid fluid, CallbackInfoReturnable<Boolean> cir) {
       if (fluid == ModFluids.ICHOR || fluid == ModFluids.FLOWING_ICHOR) {
          cir.setReturnValue(true);
       }
-
    }
 
-   @Inject(
-      method = {"receiveStalactiteDrip"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "receiveStalactiteDrip", at = @At("HEAD"), cancellable = true)
    private void theSift$receiveIchor(BlockState state, Level level, BlockPos pos, Fluid fluid, CallbackInfo ci) {
       if (fluid == ModFluids.ICHOR || fluid == ModFluids.FLOWING_ICHOR) {
          BlockState next = (BlockState)ModBlocks.ICHOR_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 1);

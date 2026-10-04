@@ -2,7 +2,7 @@ package mielon.thesift.entity;
 
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animatable.manager.AnimatableManager.ControllerRegistrar;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
@@ -21,6 +21,7 @@ import mielon.thesift.block.ModBlocks;
 import mielon.thesift.sound.ModSounds;
 import mielon.thesift.worldgen.SiftLandmarkTracker;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -38,12 +39,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
-import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.player.Player;
@@ -67,25 +67,25 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
 
 public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
-   private static final Map SOUL_RESERVATIONS = new HashMap();
-   private static final Map SOUL_FAILURE_MEMORY = new HashMap();
+   private static final Map<Long, UUID> SOUL_RESERVATIONS = new HashMap<>();
+   private static final Map<Long, EchoGolemEntity.SoulFailureMemory> SOUL_FAILURE_MEMORY = new HashMap<>();
    private static final int MAX_NEW_PATHS_PER_SERVER_TICK = 1;
    private static final int MAX_CRITICAL_EXIT_PATHS_PER_SERVER_TICK = 1;
    private static long pathBudgetTick = Long.MIN_VALUE;
    private static int pathsUsedThisTick;
    private static int criticalExitPathsUsedThisTick;
-   private static final EntityDataAccessor DATA_MISSION_STATE;
-   private static final EntityDataAccessor DATA_HAS_SOUL;
-   private static final EntityDataAccessor DATA_BONDED;
-   private static final RawAnimation IDLE;
-   private static final RawAnimation WALK;
-   private static final RawAnimation PICKUP;
-   private static final RawAnimation CARRY_IDLE;
-   private static final RawAnimation CARRY_WALK;
-   private static final RawAnimation BOW;
-   private static final RawAnimation SIT;
-   private static final RawAnimation SOUL_VISIBLE;
-   private static final RawAnimation SOUL_HIDDEN;
+   private static final EntityDataAccessor<Integer> DATA_MISSION_STATE = SynchedEntityData.defineId(EchoGolemEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Boolean> DATA_HAS_SOUL = SynchedEntityData.defineId(EchoGolemEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> DATA_BONDED = SynchedEntityData.defineId(EchoGolemEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
+   private static final RawAnimation WALK = RawAnimation.begin().thenLoop("walk");
+   private static final RawAnimation PICKUP = RawAnimation.begin().thenPlay("pickup");
+   private static final RawAnimation CARRY_IDLE = RawAnimation.begin().thenLoop("carry_idle");
+   private static final RawAnimation CARRY_WALK = RawAnimation.begin().thenLoop("carry_walk");
+   private static final RawAnimation BOW = RawAnimation.begin().thenPlay("bow");
+   private static final RawAnimation SIT = RawAnimation.begin().thenLoop("sit");
+   private static final RawAnimation SOUL_VISIBLE = RawAnimation.begin().thenLoop("soul_visible");
+   private static final RawAnimation SOUL_HIDDEN = RawAnimation.begin().thenLoop("soul_hidden");
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private BlockPos soulTarget;
    private BlockPos soulApproach;
@@ -99,15 +99,15 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private BlockPos deliveryAnchor;
    private BlockPos patrolTarget;
    private int patrolCooldown;
-   private RoutePhase routePhase;
+   private EchoGolemEntity.RoutePhase routePhase = EchoGolemEntity.RoutePhase.EXPLORE;
    private int stateTicks;
    private int routeTicks;
    private int routeFailures;
    private int targetCooldown;
    private int nearbySoulScanCooldown;
-   private long lastSoulScanTick;
-   private long nextPhysicalSoulScanTick;
-   private long nextAllowedPathfindTick;
+   private long lastSoulScanTick = Long.MIN_VALUE;
+   private long nextPhysicalSoulScanTick = Long.MIN_VALUE;
+   private long nextAllowedPathfindTick = Long.MIN_VALUE;
    private int repathCooldown;
    private int emptyCanyonChecks;
    private int canyonEntryAttempts;
@@ -140,18 +140,12 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private double livenessSampleX;
    private double livenessSampleY;
    private double livenessSampleZ;
-   private final Map unavailableCanyons;
-   private final Map unreachableSoulBlocks;
+   private final Map<Long, Long> unavailableCanyons = new HashMap<>();
+   private final Map<Long, Long> unreachableSoulBlocks = new HashMap<>();
 
-   public EchoGolemEntity(EntityType type, Level level) {
+   public EchoGolemEntity(EntityType<? extends EchoGolemEntity> type, Level level) {
       super(type, level);
-      this.routePhase = EchoGolemEntity.RoutePhase.EXPLORE;
-      this.lastSoulScanTick = Long.MIN_VALUE;
-      this.nextPhysicalSoulScanTick = Long.MIN_VALUE;
-      this.nextAllowedPathfindTick = Long.MIN_VALUE;
-      this.unavailableCanyons = new HashMap();
-      this.unreachableSoulBlocks = new HashMap();
-      this.explorationHeading = this.random.nextDouble() * Math.PI * (double)2.0F;
+      this.explorationHeading = this.random.nextDouble() * Math.PI * 2.0;
       this.explorationTurnTicks = 900 + this.random.nextInt(901);
       this.setPathfindingMalus(PathType.LEAVES, 0.0F);
       this.setPathfindingMalus(PathType.COCOA, 0.0F);
@@ -160,20 +154,24 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       this.getNavigation().setMaxVisitedNodesMultiplier(2.0F);
       this.nearbySoulScanCooldown = 1 + this.random.nextInt(20);
       this.landmarkCooldown = 1 + this.random.nextInt(45);
-      this.nextPhysicalSoulScanTick = level.getGameTime() + (long)this.random.nextInt(80);
-      this.nextAllowedPathfindTick = level.getGameTime() + (long)this.random.nextInt(4);
+      this.nextPhysicalSoulScanTick = level.getGameTime() + this.random.nextInt(80);
+      this.nextAllowedPathfindTick = level.getGameTime() + this.random.nextInt(4);
       this.livenessSampleX = this.getX();
       this.livenessSampleY = this.getY();
       this.livenessSampleZ = this.getZ();
-      PathNavigation var4 = this.getNavigation();
-      if (var4 instanceof GroundPathNavigation groundNavigation) {
+      if (this.getNavigation() instanceof GroundPathNavigation groundNavigation) {
          groundNavigation.setCanPathToTargetsBelowSurface(true);
       }
-
    }
 
-   public static AttributeSupplier.Builder createAttributes() {
-      return AbstractGolem.createMobAttributes().add(Attributes.MAX_HEALTH, (double)34.0F).add(Attributes.MOVEMENT_SPEED, 0.23).add(Attributes.FOLLOW_RANGE, (double)128.0F).add(Attributes.STEP_HEIGHT, (double)1.5F).add(Attributes.MOVEMENT_EFFICIENCY, (double)1.0F).add(Attributes.KNOCKBACK_RESISTANCE, (double)0.25F);
+   public static Builder createAttributes() {
+      return AbstractGolem.createMobAttributes()
+         .add(Attributes.MAX_HEALTH, 34.0)
+         .add(Attributes.MOVEMENT_SPEED, 0.23)
+         .add(Attributes.FOLLOW_RANGE, 128.0)
+         .add(Attributes.STEP_HEIGHT, 1.5)
+         .add(Attributes.MOVEMENT_EFFICIENCY, 1.0)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.25);
    }
 
    public static void clearTransientState() {
@@ -184,16 +182,18 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       criticalExitPathsUsedThisTick = 0;
    }
 
-   public static boolean checkEchoGolemSpawnRules(EntityType type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+   public static boolean checkEchoGolemSpawnRules(
+      EntityType<EchoGolemEntity> type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random
+   ) {
       if (!Mob.checkMobSpawnRules(type, level, reason, pos, random)) {
          return false;
-      } else {
-         AABB exclusion = (new AABB(pos)).inflate((double)160.0F, (double)72.0F, (double)160.0F);
-         return level.getLevel().getEntitiesOfClass(EchoGolemEntity.class, exclusion).isEmpty();
       }
+
+      AABB exclusion = new AABB(pos).inflate(160.0, 72.0, 160.0);
+      return level.getLevel().getEntitiesOfClass(EchoGolemEntity.class, exclusion).isEmpty();
    }
 
-   protected void defineSynchedData(SynchedEntityData.Builder builder) {
+   protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(DATA_MISSION_STATE, EchoGolemEntity.MissionState.SEARCH.ordinal());
       builder.define(DATA_HAS_SOUL, false);
@@ -213,7 +213,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       return this.bondedPlayer == null && this.bondedPlayerName == null && !(Boolean)this.entityData.get(DATA_BONDED);
    }
 
-   public MissionState missionState() {
+   public EchoGolemEntity.MissionState missionState() {
       int index = Mth.clamp((Integer)this.entityData.get(DATA_MISSION_STATE), 0, EchoGolemEntity.MissionState.values().length - 1);
       return EchoGolemEntity.MissionState.values()[index];
    }
@@ -227,13 +227,12 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.getNavigation().stop();
          this.setMissionState(EchoGolemEntity.MissionState.BOW);
       }
-
    }
 
    public void faceEntity(Entity other) {
       double dx = other.getX() - this.getX();
       double dz = other.getZ() - this.getZ();
-      float yaw = (float)(Mth.atan2(dz, dx) * (180D / Math.PI)) - 90.0F;
+      float yaw = (float)(Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0F;
       this.setYRot(yaw);
       this.setYHeadRot(yaw);
       this.setYBodyRot(yaw);
@@ -241,14 +240,12 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
 
    public boolean transferSoulToSinger() {
       if (this.canInteractWithSinger() && this.hasSoulBlock()) {
-         Level var2 = this.level();
-         if (var2 instanceof ServerLevel) {
-            ServerLevel level = (ServerLevel)var2;
-            ModAdvancements.awardNearby(level, this.position(), (double)16.0F, "the_sift/like_father_and_son");
+         if (this.level() instanceof ServerLevel level) {
+            ModAdvancements.awardNearby(level, this.position(), 16.0, "the_sift/like_father_and_son");
          }
 
          this.entityData.set(DATA_HAS_SOUL, false);
-         this.level().playSound((Entity)null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_DROP, this.getSoundSource(), 1.0F, 0.92F);
+         this.level().playSound(null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_DROP, this.getSoundSource(), 1.0F, 0.92F);
          this.singerTarget = null;
          this.deliveryAnchor = null;
          this.patrolTarget = null;
@@ -272,7 +269,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
 
          this.setMissionState(EchoGolemEntity.MissionState.SEARCH);
       }
-
    }
 
    public void sitAfterLosingSoul() {
@@ -285,7 +281,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       this.setMissionState(EchoGolemEntity.MissionState.SIT);
    }
 
-   private void setMissionState(MissionState state) {
+   private void setMissionState(EchoGolemEntity.MissionState state) {
       this.entityData.set(DATA_MISSION_STATE, state.ordinal());
       this.stateTicks = 0;
       this.repathCooldown = 0;
@@ -293,7 +289,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       this.resetCarryWatchdog();
    }
 
-   private void setRoutePhase(RoutePhase phase) {
+   private void setRoutePhase(EchoGolemEntity.RoutePhase phase) {
       this.routePhase = phase;
       this.routeTicks = 0;
       this.routeFailures = 0;
@@ -308,36 +304,40 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
 
    public void tick() {
       super.tick();
-      Level var2 = this.level();
-      if (var2 instanceof ServerLevel serverLevel) {
-         if (this.isAlive()) {
-            if (this.ignoredCanyonTicks > 0 && --this.ignoredCanyonTicks == 0) {
-               this.ignoredCanyon = null;
-            }
-
-            ++this.stateTicks;
-            ++this.routeTicks;
-            switch (this.missionState().ordinal()) {
-               case 0 -> this.tickSearch(serverLevel);
-               case 1 -> this.tickPickup(serverLevel);
-               case 2 -> this.tickCarry(serverLevel);
-               case 3 -> this.tickBow(serverLevel);
-               case 4 -> this.tickSit();
-            }
-
-            if (this.missionState() == EchoGolemEntity.MissionState.CARRY && this.hasSoulBlock()) {
-               this.tickCarryWatchdog(serverLevel);
-            }
-
-            if (this.missionState() == EchoGolemEntity.MissionState.SEARCH) {
-               this.tickLivenessWatchdog(serverLevel);
-            }
-
-            this.assistLocalStep();
-            return;
+      if (this.level() instanceof ServerLevel serverLevel && this.isAlive()) {
+         if (this.ignoredCanyonTicks > 0 && --this.ignoredCanyonTicks == 0) {
+            this.ignoredCanyon = null;
          }
-      }
 
+         this.stateTicks++;
+         this.routeTicks++;
+         switch (this.missionState()) {
+            case SEARCH:
+               this.tickSearch(serverLevel);
+               break;
+            case PICKUP:
+               this.tickPickup(serverLevel);
+               break;
+            case CARRY:
+               this.tickCarry(serverLevel);
+               break;
+            case BOW:
+               this.tickBow(serverLevel);
+               break;
+            case SIT:
+               this.tickSit();
+         }
+
+         if (this.missionState() == EchoGolemEntity.MissionState.CARRY && this.hasSoulBlock()) {
+            this.tickCarryWatchdog(serverLevel);
+         }
+
+         if (this.missionState() == EchoGolemEntity.MissionState.SEARCH) {
+            this.tickLivenessWatchdog(serverLevel);
+         }
+
+         this.assistLocalStep();
+      }
    }
 
    private void tickSearch(ServerLevel level) {
@@ -358,10 +358,12 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          if (--this.nearbySoulScanCooldown <= 0) {
             this.nearbySoulScanCooldown = 12;
             this.lastSoulScanTick = level.getGameTime();
-            SoulCandidate nearby = this.findReachableSoulBlock(level, this.blockPosition(), this.soulTarget == null ? 36 : 16, this.soulTarget == null ? 26 : 12);
+            EchoGolemEntity.SoulCandidate nearby = this.findReachableSoulBlock(
+               level, this.blockPosition(), this.soulTarget == null ? 36 : 16, this.soulTarget == null ? 26 : 12
+            );
             double currentDistance = this.soulTarget == null ? Double.POSITIVE_INFINITY : this.soulTarget.distSqr(this.blockPosition());
             double nearbyDistance = nearby == null ? Double.POSITIVE_INFINITY : nearby.soul().distSqr(this.blockPosition());
-            if (nearby != null && (this.soulTarget == null || !nearby.soul().equals(this.soulTarget) && nearbyDistance + (double)1.0F < currentDistance)) {
+            if (nearby != null && (this.soulTarget == null || !nearby.soul().equals(this.soulTarget) && nearbyDistance + 1.0 < currentDistance)) {
                this.claimSoulTarget(nearby);
                this.canyonDepthAttempts = 0;
                this.emptyCanyonChecks = 0;
@@ -374,31 +376,30 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             this.setRoutePhase(EchoGolemEntity.RoutePhase.SEEK_SOUL);
          }
 
-         switch (this.routePhase.ordinal()) {
-            case 0:
+         switch (this.routePhase) {
+            case EXPLORE:
                this.tickExploreRoute(level);
                break;
-            case 1:
+            case APPROACH_CANYON:
                this.tickCanyonApproach(level);
                break;
-            case 2:
+            case ENTER_CANYON:
                this.tickCanyonEntry(level);
                break;
-            case 3:
+            case SEEK_SOUL:
                this.tickSoulSearch(level);
                break;
-            case 4:
+            case LEAVE_EMPTY_CANYON:
                this.tickLeaveEmptyCanyon(level);
                break;
-            case 5:
-            case 6:
+            case EXIT_CANYON:
+            case DELIVER:
             default:
                this.setRoutePhase(this.enteredCanyon && this.canyonCluster != null ? EchoGolemEntity.RoutePhase.SEEK_SOUL : EchoGolemEntity.RoutePhase.EXPLORE);
                break;
-            case 7:
+            case DESCEND_CANYON:
                this.tickCanyonDescent(level);
          }
-
       }
    }
 
@@ -424,7 +425,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          BlockPos approach = this.canyonApproach();
          if (approach == null) {
             this.abandonBlockedCanyon(level, 2400L);
-         } else if (this.isNear(approach, (double)3.5F, (double)5.0F)) {
+         } else if (this.isNear(approach, 3.5, 5.0)) {
             this.setRoutePhase(EchoGolemEntity.RoutePhase.ENTER_CANYON);
          } else {
             this.navigateToward(approach, 0.88);
@@ -432,7 +433,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             if (this.routeFailures >= 8) {
                this.abandonBlockedCanyon(level, 2400L);
             }
-
          }
       }
    }
@@ -441,7 +441,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       if (!this.hasValidCanyonRoute()) {
          this.clearCanyonRoute();
          this.setRoutePhase(EchoGolemEntity.RoutePhase.EXPLORE);
-      } else if (this.isNear(this.canyonEntrance, (double)3.5F, (double)4.0F)) {
+      } else if (this.isNear(this.canyonEntrance, 3.5, 4.0)) {
          this.enteredCanyon = true;
          this.canyonEntryAttempts = 0;
          this.setRoutePhase(this.canyonMidpoint == null ? EchoGolemEntity.RoutePhase.SEEK_SOUL : EchoGolemEntity.RoutePhase.DESCEND_CANYON);
@@ -455,7 +455,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.setRoutePhase(EchoGolemEntity.RoutePhase.APPROACH_CANYON);
             }
          }
-
       }
    }
 
@@ -463,7 +462,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       if (!this.hasValidCanyonRoute()) {
          this.clearCanyonRoute();
          this.setRoutePhase(EchoGolemEntity.RoutePhase.EXPLORE);
-      } else if (this.canyonMidpoint != null && !this.isNear(this.canyonMidpoint, (double)3.0F, (double)4.0F)) {
+      } else if (this.canyonMidpoint != null && !this.isNear(this.canyonMidpoint, 3.0, 4.0)) {
          this.navigateToward(this.canyonMidpoint, 0.82);
          this.monitorRouteProgress(false);
          if (this.routeFailures >= 12) {
@@ -475,7 +474,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.setRoutePhase(EchoGolemEntity.RoutePhase.APPROACH_CANYON);
             }
          }
-
       } else {
          this.setRoutePhase(EchoGolemEntity.RoutePhase.SEEK_SOUL);
       }
@@ -514,16 +512,18 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.nearbySoulScanCooldown = 2 + this.random.nextInt(5);
                this.routeFailures = 0;
             }
-
          }
-      } else if (this.lastSoulScanTick == level.getGameTime() && this.canyonCluster != null && this.isNear(this.canyonCluster.above(), (double)11.0F, (double)10.0F) && ++this.emptyCanyonChecks >= 3) {
+      } else if (this.lastSoulScanTick == level.getGameTime()
+         && this.canyonCluster != null
+         && this.isNear(this.canyonCluster.above(), 11.0, 10.0)
+         && ++this.emptyCanyonChecks >= 3) {
          this.markCurrentCanyonUnavailable(level, 6000L);
          this.setRoutePhase(EchoGolemEntity.RoutePhase.LEAVE_EMPTY_CANYON);
       } else if (this.canyonCluster == null) {
          this.setRoutePhase(EchoGolemEntity.RoutePhase.EXPLORE);
       } else if (!this.enteredCanyon) {
          this.setRoutePhase(EchoGolemEntity.RoutePhase.APPROACH_CANYON);
-      } else if (!this.isNear(this.canyonCluster.above(), (double)11.0F, (double)10.0F)) {
+      } else if (!this.isNear(this.canyonCluster.above(), 11.0, 10.0)) {
          this.navigateToward(this.canyonCluster.above(), 0.84);
          this.monitorRouteProgress(false);
          if (this.routeFailures >= 12) {
@@ -535,7 +535,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.setRoutePhase(EchoGolemEntity.RoutePhase.APPROACH_CANYON);
             }
          }
-
       }
    }
 
@@ -551,23 +550,22 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          } else {
             this.tickEmergencyAscent(level);
          }
-
       }
    }
 
    private void tickExploration(ServerLevel level) {
       if (--this.explorationTurnTicks <= 0) {
-         this.explorationHeading += (this.random.nextDouble() - (double)0.5F) * 0.38;
+         this.explorationHeading = this.explorationHeading + (this.random.nextDouble() - 0.5) * 0.38;
          this.explorationTurnTicks = 900 + this.random.nextInt(901);
          this.explorationTarget = null;
       }
 
-      ++this.explorationTargetTicks;
-      boolean reached = this.explorationTarget != null && this.isNear(this.explorationTarget, (double)4.0F, (double)7.0F);
+      this.explorationTargetTicks++;
+      boolean reached = this.explorationTarget != null && this.isNear(this.explorationTarget, 4.0, 7.0);
       boolean failed = this.routeFailures >= 6 || this.explorationTargetTicks >= 1200;
       if (this.explorationTarget == null || reached || failed) {
          if (failed) {
-            this.explorationHeading += (this.random.nextBoolean() ? (double)1.0F : (double)-1.0F) * (0.58 + this.random.nextDouble() * 0.38);
+            this.explorationHeading = this.explorationHeading + (this.random.nextBoolean() ? 1.0 : -1.0) * (0.58 + this.random.nextDouble() * 0.38);
          }
 
          this.explorationTarget = this.chooseExplorationTarget(level);
@@ -581,28 +579,26 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       if (this.explorationTarget != null) {
          this.navigateToward(this.explorationTarget, 0.78);
       }
-
    }
 
    private BlockPos chooseExplorationTarget(ServerLevel level) {
-      double[] offsets = new double[]{(double)0.0F, 0.18, -0.18, 0.38, -0.38, 0.62, -0.62};
+      double[] offsets = new double[]{0.0, 0.18, -0.18, 0.38, -0.38, 0.62, -0.62};
       int[] distances = new int[]{42, 34, 26};
 
       for (int distance : distances) {
          for (double offset : offsets) {
             double angle = this.explorationHeading + offset;
-            int x = Mth.floor(this.getX() + Math.cos(angle) * (double)distance);
-            int z = Mth.floor(this.getZ() + Math.sin(angle) * (double)distance);
+            int x = Mth.floor(this.getX() + Math.cos(angle) * distance);
+            int z = Mth.floor(this.getZ() + Math.sin(angle) * distance);
             if (level.getChunkSource().getChunkNow(Math.floorDiv(x, 16), Math.floorDiv(z, 16)) != null) {
                int y = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-               BlockPos candidate = new BlockPos(x, y, z);
-               return candidate;
+               return new BlockPos(x, y, z);
             }
          }
       }
 
-      Vec3 desired = new Vec3(this.getX() + Math.cos(this.explorationHeading) * (double)28.0F, this.getY(), this.getZ() + Math.sin(this.explorationHeading) * (double)28.0F);
-      Vec3 fallback = DefaultRandomPos.getPosTowards(this, 24, 12, desired, (Math.PI / 3D));
+      Vec3 desired = new Vec3(this.getX() + Math.cos(this.explorationHeading) * 28.0, this.getY(), this.getZ() + Math.sin(this.explorationHeading) * 28.0);
+      Vec3 fallback = DefaultRandomPos.getPosTowards(this, 24, 12, desired, Math.PI / 3);
       return fallback == null ? null : BlockPos.containing(fallback);
    }
 
@@ -624,7 +620,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.entityData.set(DATA_HAS_SOUL, true);
          this.deliveryAnchor = this.canyonEntrance != null ? this.canyonEntrance.immutable() : this.blockPosition();
          this.setPersistenceRequired();
-         this.level().playSound((Entity)null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_GET, this.getSoundSource(), 1.0F, 0.96F);
+         this.level().playSound(null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_GET, this.getSoundSource(), 1.0F, 0.96F);
       }
 
       if (this.stateTicks >= 34) {
@@ -633,7 +629,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.setRoutePhase(this.hasReachedSurface() ? EchoGolemEntity.RoutePhase.DELIVER : EchoGolemEntity.RoutePhase.EXIT_CANYON);
          this.setMissionState(EchoGolemEntity.MissionState.CARRY);
       }
-
    }
 
    private void tickCarry(ServerLevel level) {
@@ -651,7 +646,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.setRoutePhase(EchoGolemEntity.RoutePhase.DELIVER);
             } else {
                if (!this.exitMidpointPassed && this.canyonMidpoint != null) {
-                  if (this.isNear(this.canyonMidpoint, (double)3.0F, (double)4.0F)) {
+                  if (this.isNear(this.canyonMidpoint, 3.0, 4.0)) {
                      this.exitMidpointPassed = true;
                      this.repathCooldown = 0;
                      this.navigationGoal = null;
@@ -675,7 +670,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                } else {
                   this.tickEmergencyAscent(level);
                }
-
             }
          } else if (!this.canInteractWithSinger()) {
             this.tickBondedDelivery(level);
@@ -699,21 +693,21 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.tickExploration(level);
                this.monitorRouteProgress(true);
             }
-
          }
       }
    }
 
    private void tickBondedDelivery(ServerLevel level) {
       Player owner = this.resolveBondedPlayer(level);
-      if (owner != null && owner.level() == level && this.distanceToSqr(owner) <= (double)4096.0F) {
+      if (owner != null && owner.level() == level && this.distanceToSqr(owner) <= 4096.0) {
          this.patrolTarget = null;
          this.patrolCooldown = 0;
-         this.faceEntity(owner);
-         if (this.distanceToSqr(owner) <= (double)9.0F) {
+         if (this.distanceToSqr(owner) <= 9.0 && this.onGround() && Math.abs(this.getY() - owner.getY()) <= 1.25) {
+            this.getNavigation().stop();
+            this.faceEntity(owner);
             this.setMissionState(EchoGolemEntity.MissionState.BOW);
          } else {
-            this.navigateToward(owner.blockPosition(), 0.82);
+            this.navigateBondedDelivery(level, owner);
             this.monitorRouteProgress(false);
          }
       } else {
@@ -722,17 +716,40 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       }
    }
 
+   private void navigateBondedDelivery(ServerLevel level, Player owner) {
+      if (--this.repathCooldown <= 0) {
+         BlockPos target = owner.blockPosition();
+         if (this.navigationGoal == null
+            || !(this.navigationGoal.distSqr(target) < 4.0)
+            || !this.getNavigation().isInProgress()
+            || this.getNavigation().isStuck()) {
+            if (!this.tryAcquirePathBudget(level, 4)) {
+               this.repathCooldown = 2;
+            } else {
+               this.repathCooldown = 10;
+               Path path = this.getNavigation().createPath(owner, 1);
+               if (path != null && this.getNavigation().moveTo(path, 0.82)) {
+                  this.navigationGoal = target.immutable();
+                  this.routeFailures = 0;
+               } else {
+                  this.routeFailures++;
+               }
+            }
+         }
+      }
+   }
+
    private void tickPatrolAroundCanyon(ServerLevel level) {
       BlockPos anchor = this.deliveryAnchor != null ? this.deliveryAnchor : (this.canyonEntrance != null ? this.canyonEntrance : this.blockPosition());
-      if (this.horizontalDistanceSqr(anchor) > (double)4096.0F) {
+      if (this.horizontalDistanceSqr(anchor) > 4096.0) {
          this.patrolTarget = anchor;
          this.navigateToward(anchor, 0.76);
       } else if (--this.patrolCooldown <= 0 || this.patrolTarget == null || this.getNavigation().isDone()) {
          this.patrolCooldown = 50 + this.random.nextInt(51);
-         double angle = this.random.nextDouble() * Math.PI * (double)2.0F;
+         double angle = this.random.nextDouble() * Math.PI * 2.0;
          int radius = 14 + this.random.nextInt(47);
-         int x = anchor.getX() + (int)Math.round(Math.cos(angle) * (double)radius);
-         int z = anchor.getZ() + (int)Math.round(Math.sin(angle) * (double)radius);
+         int x = anchor.getX() + (int)Math.round(Math.cos(angle) * radius);
+         int z = anchor.getZ() + (int)Math.round(Math.sin(angle) * radius);
          BlockPos probe = new BlockPos(x, anchor.getY(), z);
          if (!level.isLoaded(probe)) {
             this.patrolTarget = anchor;
@@ -757,11 +774,10 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                this.setMissionState(EchoGolemEntity.MissionState.SEARCH);
             }
          }
-
       } else {
          Player owner = this.resolveBondedPlayer(level);
          if (this.hasSoulBlock()) {
-            if (owner == null || owner.level() != level || this.distanceToSqr(owner) > (double)20.25F) {
+            if (owner == null || owner.level() != level || this.distanceToSqr(owner) > 20.25) {
                this.setRoutePhase(this.hasReachedSurface() ? EchoGolemEntity.RoutePhase.DELIVER : EchoGolemEntity.RoutePhase.EXIT_CANYON);
                this.setMissionState(EchoGolemEntity.MissionState.CARRY);
                return;
@@ -779,7 +795,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             this.setRoutePhase(EchoGolemEntity.RoutePhase.EXPLORE);
             this.setMissionState(EchoGolemEntity.MissionState.SEARCH);
          }
-
       }
    }
 
@@ -791,12 +806,11 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             player.drop(soul, false, Prediction.SERVER_ONLY);
          }
 
-         if (player instanceof ServerPlayer) {
-            ServerPlayer serverPlayer = (ServerPlayer)player;
+         if (player instanceof ServerPlayer serverPlayer) {
             ModAdvancements.award(serverPlayer, "the_sift/friend_of_the_sift");
          }
 
-         level.playSound((Entity)null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_DROP, this.getSoundSource(), 1.0F, 1.04F);
+         level.playSound(null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_DROP, this.getSoundSource(), 1.0F, 1.04F);
          this.forgetCurrentCanyon(600);
          this.deliveryAnchor = null;
          this.patrolTarget = null;
@@ -804,11 +818,10 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    }
 
    private boolean hasReachedSurface() {
-      if (this.canyonEntrance == null) {
-         return this.level().canSeeSky(this.blockPosition().above());
-      } else {
-         return this.getY() >= (double)this.canyonEntrance.getY() - (double)2.0F && (this.level().canSeeSky(this.blockPosition().above()) || this.horizontalDistanceSqr(this.canyonEntrance) <= (double)144.0F);
-      }
+      return this.canyonEntrance == null
+         ? this.level().canSeeSky(this.blockPosition().above())
+         : this.getY() >= this.canyonEntrance.getY() - 2.0
+            && (this.level().canSeeSky(this.blockPosition().above()) || this.horizontalDistanceSqr(this.canyonEntrance) <= 144.0);
    }
 
    private void tickCarryWatchdog(ServerLevel level) {
@@ -823,7 +836,8 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.carrySampleZ = this.getZ();
          SingerEntity singer = this.resolveSinger(level);
          Player owner = this.resolveBondedPlayer(level);
-         boolean waitingForHandshake = this.routePhase == EchoGolemEntity.RoutePhase.DELIVER && (singer != null && this.distanceToSqr(singer) <= (double)9.0F || owner != null && this.distanceToSqr(owner) <= (double)9.0F);
+         boolean waitingForHandshake = this.routePhase == EchoGolemEntity.RoutePhase.DELIVER
+            && (singer != null && this.distanceToSqr(singer) <= 9.0 || owner != null && this.distanceToSqr(owner) <= 9.0);
          if (!(movedSqr >= 0.16) && !waitingForHandshake) {
             int toleratedSamples = this.routePhase == EchoGolemEntity.RoutePhase.EXIT_CANYON ? 2 : 3;
             if (++this.carryStallSamples >= toleratedSamples) {
@@ -832,16 +846,15 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             }
          } else {
             this.carryStallSamples = 0;
-            if (movedSqr >= (double)1.0F) {
+            if (movedSqr >= 1.0) {
                this.carryRecoveryStage = Math.max(0, this.carryRecoveryStage - 1);
             }
-
          }
       }
    }
 
    private void recoverCarryRoute(ServerLevel level) {
-      ++this.carryRecoveryStage;
+      this.carryRecoveryStage++;
       this.getNavigation().stop();
       this.navigationGoal = null;
       this.repathCooldown = 0;
@@ -859,7 +872,8 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             this.routeFailures = 0;
             this.navigateExitToward(emergency, 0.86);
          } else {
-            this.explorationHeading += (this.random.nextBoolean() ? (double)1.0F : (double)-1.0F) * (0.48 + Math.min(0.72, (double)this.carryRecoveryStage * 0.12));
+            this.explorationHeading = this.explorationHeading
+               + (this.random.nextBoolean() ? 1.0 : -1.0) * (0.48 + Math.min(0.72, this.carryRecoveryStage * 0.12));
             this.tickEmergencyAscent(level);
          }
       } else {
@@ -870,10 +884,9 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             this.patrolCooldown = 0;
             this.explorationTarget = null;
             this.explorationTargetTicks = 0;
-            this.explorationHeading += (this.random.nextDouble() - (double)0.5F) * 0.72;
+            this.explorationHeading = this.explorationHeading + (this.random.nextDouble() - 0.5) * 0.72;
             this.tickExploration(level);
          }
-
       }
    }
 
@@ -888,16 +901,12 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
 
    private SingerEntity resolveSinger(ServerLevel level) {
       if (this.canInteractWithSinger() && this.singerTarget != null) {
-         Entity entity = level.getEntityInAnyDimension(this.singerTarget);
-         if (entity instanceof SingerEntity) {
-            SingerEntity singer = (SingerEntity)entity;
-            if (singer.isAlive() && singer.isSoulEvent()) {
-               return singer;
-            }
+         if (level.getEntityInAnyDimension(this.singerTarget) instanceof SingerEntity singer && singer.isAlive() && singer.isSoulEvent()) {
+            return singer;
+         } else {
+            this.singerTarget = null;
+            return null;
          }
-
-         this.singerTarget = null;
-         return null;
       } else {
          this.singerTarget = null;
          return null;
@@ -945,59 +954,63 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    }
 
    private boolean acquireCanyonRoute(ServerLevel level) {
-      Set<Long> excluded = new HashSet(this.unavailableCanyons.keySet());
+      Set<Long> excluded = new HashSet<>(this.unavailableCanyons.keySet());
       if (this.ignoredCanyon != null && this.ignoredCanyonTicks > 0) {
          excluded.add(this.ignoredCanyon.asLong());
       }
 
-      BlockPos cluster = (BlockPos)SiftLandmarkTracker.nearestActiveSoulCanyon(level, this.blockPosition(), (double)1024.0F, excluded).orElse(null);
+      BlockPos cluster = SiftLandmarkTracker.nearestActiveSoulCanyon(level, this.blockPosition(), 1024.0, excluded).orElse(null);
       if (cluster == null) {
          return false;
-      } else if (!this.hasUnquarantinedSoulAtCanyon(level, cluster)) {
+      }
+
+      if (!this.hasUnquarantinedSoulAtCanyon(level, cluster)) {
          this.rejectCanyon(level, cluster, 6000L);
          return false;
-      } else {
-         BlockPos entrance = (BlockPos)SiftLandmarkTracker.nearestOther(SiftLandmarkTracker.Kind.SOUL_CANYON_ENTRANCE, cluster, (double)96.0F, (BlockPos)null).orElse(null);
-         if (entrance == null) {
-            return false;
-         } else {
-            BlockPos midpoint = (BlockPos)SiftLandmarkTracker.nearestOther(SiftLandmarkTracker.Kind.SOUL_CANYON_MIDPOINT, cluster, (double)72.0F, (BlockPos)null).orElse(null);
-            BlockPos approach = this.canyonApproach(level, entrance, cluster);
-            if (approach == null) {
-               this.rejectCanyon(level, cluster, 2400L);
-               return false;
-            } else if (this.horizontalDistanceSqr(approach) > (double)9216.0F) {
-               if (!cluster.equals(this.distantCanyonHint)) {
-                  this.distantCanyonHint = cluster;
-                  this.explorationHeading = Mth.atan2((double)approach.getZ() + (double)0.5F - this.getZ(), (double)approach.getX() + (double)0.5F - this.getX());
-                  this.explorationTarget = null;
-                  this.explorationTargetTicks = 0;
-                  this.navigationGoal = null;
-                  this.repathCooldown = 0;
-                  this.getNavigation().stop();
-               }
+      }
 
-               return false;
-            } else {
-               this.distantCanyonHint = null;
-               this.canyonCluster = cluster;
-               this.canyonEntrance = entrance;
-               this.canyonMidpoint = midpoint;
-               this.enteredCanyon = false;
-               this.exitMidpointPassed = false;
-               this.emptyCanyonChecks = 0;
-               this.canyonEntryAttempts = 0;
-               this.canyonDepthAttempts = 0;
-               return true;
-            }
+      BlockPos entrance = SiftLandmarkTracker.nearestOther(SiftLandmarkTracker.Kind.SOUL_CANYON_ENTRANCE, cluster, 96.0, null).orElse(null);
+      if (entrance == null) {
+         return false;
+      }
+
+      BlockPos midpoint = SiftLandmarkTracker.nearestOther(SiftLandmarkTracker.Kind.SOUL_CANYON_MIDPOINT, cluster, 72.0, null).orElse(null);
+      BlockPos approach = this.canyonApproach(level, entrance, cluster);
+      if (approach == null) {
+         this.rejectCanyon(level, cluster, 2400L);
+         return false;
+      }
+
+      if (this.horizontalDistanceSqr(approach) > 9216.0) {
+         if (!cluster.equals(this.distantCanyonHint)) {
+            this.distantCanyonHint = cluster;
+            this.explorationHeading = Mth.atan2(approach.getZ() + 0.5 - this.getZ(), approach.getX() + 0.5 - this.getX());
+            this.explorationTarget = null;
+            this.explorationTargetTicks = 0;
+            this.navigationGoal = null;
+            this.repathCooldown = 0;
+            this.getNavigation().stop();
          }
+
+         return false;
+      } else {
+         this.distantCanyonHint = null;
+         this.canyonCluster = cluster;
+         this.canyonEntrance = entrance;
+         this.canyonMidpoint = midpoint;
+         this.enteredCanyon = false;
+         this.exitMidpointPassed = false;
+         this.emptyCanyonChecks = 0;
+         this.canyonEntryAttempts = 0;
+         this.canyonDepthAttempts = 0;
+         return true;
       }
    }
 
    private boolean hasUnquarantinedSoulAtCanyon(ServerLevel level, BlockPos cluster) {
       long gameTime = level.getGameTime();
 
-      for (BlockPos soul : (Iterable<BlockPos>) SiftLandmarkTracker.activeSoulBlocksNear(level, cluster, 38, 28)) {
+      for (BlockPos soul : SiftLandmarkTracker.activeSoulBlocksNear(level, cluster, 38, 28)) {
          if (this.canReachSoulWithHands(level, soul) || !this.isSoulGloballyRejected(soul, gameTime)) {
             return true;
          }
@@ -1057,8 +1070,8 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    }
 
    private void purgeExpiredRejections(long gameTime) {
-      this.unavailableCanyons.entrySet().removeIf(entry -> ((Long)((Map.Entry<?, ?>) entry).getValue()) <= gameTime);
-      this.unreachableSoulBlocks.entrySet().removeIf(entry -> ((Long)((Map.Entry<?, ?>) entry).getValue()) <= gameTime);
+      this.unavailableCanyons.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
+      this.unreachableSoulBlocks.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
    }
 
    private void rejectCanyon(ServerLevel level, BlockPos canyon, long duration) {
@@ -1067,7 +1080,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          if (canyon.equals(this.distantCanyonHint)) {
             this.distantCanyonHint = null;
          }
-
       }
    }
 
@@ -1082,8 +1094,8 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       this.routeFailures = 0;
       this.explorationTarget = null;
       this.explorationTargetTicks = 0;
-      double turn = (double)1.75F + this.random.nextDouble() * 0.7;
-      this.explorationHeading += this.random.nextBoolean() ? turn : -turn;
+      double turn = 1.75 + this.random.nextDouble() * 0.7;
+      this.explorationHeading = this.explorationHeading + (this.random.nextBoolean() ? turn : -turn);
       this.explorationTurnTicks = 600 + this.random.nextInt(601);
       this.explorationTarget = this.chooseExplorationTarget(level);
       this.resetRouteProgressSample();
@@ -1092,7 +1104,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private BlockPos ensureReachableExit(ServerLevel level) {
       if (this.canyonEntrance == null) {
          BlockPos origin = this.canyonCluster == null ? this.blockPosition() : this.canyonCluster;
-         this.canyonEntrance = (BlockPos)SiftLandmarkTracker.nearestOther(SiftLandmarkTracker.Kind.SOUL_CANYON_ENTRANCE, origin, (double)112.0F, (BlockPos)null).orElse(null);
+         this.canyonEntrance = SiftLandmarkTracker.nearestOther(SiftLandmarkTracker.Kind.SOUL_CANYON_ENTRANCE, origin, 112.0, null).orElse(null);
          this.navigationGoal = null;
          this.repathCooldown = 0;
       }
@@ -1117,36 +1129,36 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private BlockPos findReachableSurfaceExit(ServerLevel level) {
       if (!this.tryAcquireCriticalExitPathBudget(level, 5)) {
          return null;
-      } else {
-         Set<BlockPos> candidates = new HashSet();
-         double phase = this.explorationHeading;
-         int minimumExitY = this.canyonEntrance == null ? this.blockPosition().getY() + 2 : this.canyonEntrance.getY() - 2;
+      }
 
-         for (int radius : new int[]{8, 14, 20, 28}) {
-            for (int direction = 0; direction < 8; ++direction) {
-               double angle = phase + (double)direction * Math.PI * (double)2.0F / (double)8.0F;
-               int x = Mth.floor(this.getX() + Math.cos(angle) * (double)radius);
-               int z = Mth.floor(this.getZ() + Math.sin(angle) * (double)radius);
-               int y = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-               BlockPos feet = new BlockPos(x, y, z);
-               if (y >= minimumExitY && level.isLoaded(feet) && level.canSeeSky(feet.above())) {
-                  candidates.add(feet);
-               }
+      Set<BlockPos> candidates = new HashSet<>();
+      double phase = this.explorationHeading;
+      int minimumExitY = this.canyonEntrance == null ? this.blockPosition().getY() + 2 : this.canyonEntrance.getY() - 2;
+
+      for (int radius : new int[]{8, 14, 20, 28}) {
+         for (int direction = 0; direction < 8; direction++) {
+            double angle = phase + direction * Math.PI * 2.0 / 8.0;
+            int x = Mth.floor(this.getX() + Math.cos(angle) * radius);
+            int z = Mth.floor(this.getZ() + Math.sin(angle) * radius);
+            int y = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+            BlockPos feet = new BlockPos(x, y, z);
+            if (y >= minimumExitY && level.isLoaded(feet) && level.canSeeSky(feet.above())) {
+               candidates.add(feet);
             }
          }
+      }
 
-         if (candidates.isEmpty()) {
-            return null;
+      if (candidates.isEmpty()) {
+         return null;
+      } else {
+         Path path = this.getNavigation().createPath(candidates, 2);
+         if (path != null && path.getEndNode() != null && path.canReach()) {
+            BlockPos target = path.getEndNode().asBlockPos().immutable();
+            this.preparedExitPath = path;
+            this.preparedExitPathTarget = target;
+            return target;
          } else {
-            Path path = this.getNavigation().createPath(candidates, 2);
-            if (path != null && path.getEndNode() != null && path.canReach()) {
-               BlockPos target = path.getEndNode().asBlockPos().immutable();
-               this.preparedExitPath = path;
-               this.preparedExitPathTarget = target;
-               return target;
-            } else {
-               return null;
-            }
+            return null;
          }
       }
    }
@@ -1160,11 +1172,15 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             this.repathCooldown = 1 + (this.getId() & 1);
          } else {
             int surfaceY = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, this.blockPosition().getX(), this.blockPosition().getZ());
-            Vec3 upward = new Vec3(this.getX() + Math.cos(this.explorationHeading) * (double)18.0F, Math.max(this.getY() + (double)8.0F, (double)surfaceY), this.getZ() + Math.sin(this.explorationHeading) * (double)18.0F);
-            Vec3 waypoint = DefaultRandomPos.getPosTowards(this, 22, 18, upward, (Math.PI / 2D));
+            Vec3 upward = new Vec3(
+               this.getX() + Math.cos(this.explorationHeading) * 18.0,
+               Math.max(this.getY() + 8.0, surfaceY),
+               this.getZ() + Math.sin(this.explorationHeading) * 18.0
+            );
+            Vec3 waypoint = DefaultRandomPos.getPosTowards(this, 22, 18, upward, Math.PI / 2);
             if (waypoint == null || !this.getNavigation().moveTo(waypoint.x, waypoint.y, waypoint.z, 0.84)) {
-               this.explorationHeading += (this.random.nextBoolean() ? (double)1.0F : (double)-1.0F) * (0.65 + this.random.nextDouble() * 0.55);
-               ++this.routeFailures;
+               this.explorationHeading = this.explorationHeading + (this.random.nextBoolean() ? 1.0 : -1.0) * (0.65 + this.random.nextDouble() * 0.55);
+               this.routeFailures++;
             }
 
             this.monitorRouteProgress(false);
@@ -1173,29 +1189,24 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    }
 
    private BlockPos canyonApproach() {
-      Level var2 = this.level();
-      if (var2 instanceof ServerLevel level) {
-         return this.canyonApproach(level, this.canyonEntrance, this.canyonCluster);
-      } else {
-         return this.canyonEntrance;
-      }
+      return this.level() instanceof ServerLevel level ? this.canyonApproach(level, this.canyonEntrance, this.canyonCluster) : this.canyonEntrance;
    }
 
    private BlockPos canyonApproach(ServerLevel level, BlockPos entrance, BlockPos cluster) {
       if (entrance != null && cluster != null) {
-         double dx = (double)(entrance.getX() - cluster.getX());
-         double dz = (double)(entrance.getZ() - cluster.getZ());
+         double dx = entrance.getX() - cluster.getX();
+         double dz = entrance.getZ() - cluster.getZ();
          double length = Math.sqrt(dx * dx + dz * dz);
-         if (length < (double)1.0F) {
+         if (length < 1.0) {
             return entrance;
-         } else {
-            int x = entrance.getX() + (int)Math.round(dx / length * (double)7.0F);
-            int z = entrance.getZ() + (int)Math.round(dz / length * (double)7.0F);
-            BlockPos heightProbe = new BlockPos(x, entrance.getY(), z);
-            int y = level.isLoaded(heightProbe) ? level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) : entrance.getY();
-            BlockPos approach = new BlockPos(x, y, z);
-            return this.horizontalDistanceSqr(approach) <= (double)16.0F ? entrance : approach;
          }
+
+         int x = entrance.getX() + (int)Math.round(dx / length * 7.0);
+         int z = entrance.getZ() + (int)Math.round(dz / length * 7.0);
+         BlockPos heightProbe = new BlockPos(x, entrance.getY(), z);
+         int y = level.isLoaded(heightProbe) ? level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) : entrance.getY();
+         BlockPos approach = new BlockPos(x, y, z);
+         return this.horizontalDistanceSqr(approach) <= 16.0 ? entrance : approach;
       } else {
          return entrance;
       }
@@ -1212,91 +1223,95 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private boolean navigateToward(BlockPos target, double speed, boolean criticalExit) {
       if (target == null) {
          return false;
-      } else {
-         if (!target.equals(this.navigationGoal)) {
-            this.navigationGoal = target.immutable();
+      }
+
+      if (!target.equals(this.navigationGoal)) {
+         this.navigationGoal = target.immutable();
+         this.repathCooldown = 0;
+         this.getNavigation().stop();
+         if (!target.equals(this.preparedExitPathTarget)) {
+            this.clearPreparedExitPath();
+         }
+      }
+
+      if (this.getNavigation().isInProgress() && !this.getNavigation().isStuck()) {
+         return true;
+      }
+
+      if (criticalExit && target.equals(this.preparedExitPathTarget) && this.preparedExitPath != null) {
+         Path prepared = this.preparedExitPath;
+         this.clearPreparedExitPath();
+         if (this.getNavigation().moveTo(prepared, speed)) {
             this.repathCooldown = 0;
-            this.getNavigation().stop();
-            if (!target.equals(this.preparedExitPathTarget)) {
-               this.clearPreparedExitPath();
-            }
+            this.routeFailures = Math.max(0, this.routeFailures - 1);
+            return true;
+         } else {
+            this.routeFailures++;
+            this.repathCooldown = 2;
+            return false;
+         }
+      } else {
+         if (--this.repathCooldown > 0) {
+            return false;
          }
 
-         if (this.getNavigation().isInProgress() && !this.getNavigation().isStuck()) {
-            return true;
-         } else if (criticalExit && target.equals(this.preparedExitPathTarget) && this.preparedExitPath != null) {
-            Path prepared = this.preparedExitPath;
-            this.clearPreparedExitPath();
-            if (this.getNavigation().moveTo(prepared, speed)) {
-               this.repathCooldown = 0;
-               this.routeFailures = Math.max(0, this.routeFailures - 1);
-               return true;
-            } else {
-               ++this.routeFailures;
-               this.repathCooldown = 2;
-               return false;
-            }
-         } else if (--this.repathCooldown > 0) {
+         ServerLevel serverLevel = (ServerLevel)this.level();
+         boolean acquired = criticalExit ? this.tryAcquireCriticalExitPathBudget(serverLevel, 4) : this.tryAcquirePathBudget(serverLevel, 4);
+         if (!acquired) {
+            this.repathCooldown = 1 + (this.getId() & 1);
             return false;
-         } else {
-            ServerLevel serverLevel = (ServerLevel)this.level();
-            boolean acquired = criticalExit ? this.tryAcquireCriticalExitPathBudget(serverLevel, 4) : this.tryAcquirePathBudget(serverLevel, 4);
-            if (!acquired) {
-               this.repathCooldown = 1 + (this.getId() & 1);
+         }
+
+         this.repathCooldown = 10 + this.random.nextInt(7);
+         Vec3 exact = Vec3.atBottomCenterOf(target);
+         Vec3 destination = exact;
+         double exactDx = exact.x - this.getX();
+         double exactDz = exact.z - this.getZ();
+         if (!criticalExit && exactDx * exactDx + exactDz * exactDz > 1600.0) {
+            Vec3 waypoint = this.forwardWaypoint(exact);
+            if (waypoint == null) {
+               this.routeFailures++;
+               this.repathCooldown = 4;
                return false;
-            } else {
-               this.repathCooldown = 10 + this.random.nextInt(7);
-               Vec3 exact = Vec3.atBottomCenterOf(target);
-               Vec3 destination = exact;
-               double exactDx = exact.x - this.getX();
-               double exactDz = exact.z - this.getZ();
-               if (!criticalExit && exactDx * exactDx + exactDz * exactDz > (double)1600.0F) {
-                  Vec3 waypoint = this.forwardWaypoint(exact);
-                  if (waypoint == null) {
-                     ++this.routeFailures;
-                     this.repathCooldown = 4;
-                     return false;
-                  }
+            }
 
-                  destination = waypoint;
-               }
+            destination = waypoint;
+         }
 
-               BlockPos pathTarget = BlockPos.containing(destination);
-               Path path;
-               if (criticalExit) {
-                  Set<BlockPos> rampWidth = new HashSet();
+         BlockPos pathTarget = BlockPos.containing(destination);
+         Path path;
+         if (criticalExit) {
+            Set<BlockPos> rampWidth = new HashSet<>();
 
-                  for (int dx = -1; dx <= 1; ++dx) {
-                     for (int dz = -1; dz <= 1; ++dz) {
-                        rampWidth.add(pathTarget.offset(dx, 0, dz));
-                     }
-                  }
-
-                  path = this.getNavigation().createPath(rampWidth, 1);
-               } else {
-                  path = this.getNavigation().createPath(pathTarget, 1);
-               }
-
-               float acceptedDistance = criticalExit ? 10.0F : 4.0F;
-               if (path != null && path.getEndNode() != null && (path.canReach() || !(path.getEndNode().distanceToSqr(pathTarget) > acceptedDistance))) {
-                  if (!this.getNavigation().moveTo(path, speed)) {
-                     ++this.routeFailures;
-                     this.repathCooldown = 4;
-                     return false;
-                  } else {
-                     this.repathCooldown = 0;
-                     if (this.routeFailures > 0) {
-                        --this.routeFailures;
-                     }
-
-                     return true;
-                  }
-               } else {
-                  ++this.routeFailures;
-                  this.repathCooldown = 4;
-                  return false;
+            for (int dx = -1; dx <= 1; dx++) {
+               for (int dz = -1; dz <= 1; dz++) {
+                  rampWidth.add(pathTarget.offset(dx, 0, dz));
                }
             }
+
+            path = this.getNavigation().createPath(rampWidth, 1);
+         } else {
+            path = this.getNavigation().createPath(pathTarget, 1);
+         }
+
+         float acceptedDistance = criticalExit ? 10.0F : 4.0F;
+         if (path != null && path.getEndNode() != null && (path.canReach() || !(path.getEndNode().distanceToSqr(pathTarget) > acceptedDistance))) {
+            if (!this.getNavigation().moveTo(path, speed)) {
+               this.routeFailures++;
+               this.repathCooldown = 4;
+               return false;
+            }
+
+            this.repathCooldown = 0;
+            if (this.routeFailures > 0) {
+               this.routeFailures--;
+            }
+
+            return true;
+         } else {
+            this.routeFailures++;
+            this.repathCooldown = 4;
+            return false;
          }
       }
    }
@@ -1308,11 +1323,11 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       } else {
          resetPathBudgetTick(now);
          if (pathsUsedThisTick >= 1) {
-            this.nextAllowedPathfindTick = now + 1L + (long)(this.getId() & 1);
+            this.nextAllowedPathfindTick = now + 1L + (this.getId() & 1);
             return false;
          } else {
-            ++pathsUsedThisTick;
-            this.nextAllowedPathfindTick = now + (long)Math.max(1, personalInterval);
+            pathsUsedThisTick++;
+            this.nextAllowedPathfindTick = now + Math.max(1, personalInterval);
             return true;
          }
       }
@@ -1325,11 +1340,11 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       } else {
          resetPathBudgetTick(now);
          if (criticalExitPathsUsedThisTick >= 1) {
-            this.nextAllowedPathfindTick = now + 1L + (long)(this.getId() & 1);
+            this.nextAllowedPathfindTick = now + 1L + (this.getId() & 1);
             return false;
          } else {
-            ++criticalExitPathsUsedThisTick;
-            this.nextAllowedPathfindTick = now + (long)Math.max(1, personalInterval);
+            criticalExitPathsUsedThisTick++;
+            this.nextAllowedPathfindTick = now + Math.max(1, personalInterval);
             return true;
          }
       }
@@ -1352,30 +1367,30 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       double dx = exact.x - this.getX();
       double dz = exact.z - this.getZ();
       double length = Math.sqrt(dx * dx + dz * dz);
-      if (length < (double)1.0F) {
+      if (length < 1.0) {
          return exact;
-      } else {
-         double forwardX = dx / length;
-         double forwardZ = dz / length;
-         double sideX = -forwardZ;
-         double sideZ = forwardX;
-         double[] lateral = new double[]{(double)0.0F, (double)4.0F, (double)-4.0F, (double)8.0F, (double)-8.0F};
-         int first = Math.min(this.routeFailures, lateral.length - 1);
+      }
 
-         for (int distance : new int[]{24, 18, 12}) {
-            for (int index = 0; index < lateral.length; ++index) {
-               double side = lateral[(first + index) % lateral.length];
-               int x = Mth.floor(this.getX() + forwardX * (double)distance + sideX * side);
-               int z = Mth.floor(this.getZ() + forwardZ * (double)distance + sideZ * side);
-               if (this.level().isLoaded(new BlockPos(x, this.blockPosition().getY(), z))) {
-                  int y = this.level().getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-                  return new Vec3((double)x + (double)0.5F, (double)y, (double)z + (double)0.5F);
-               }
+      double forwardX = dx / length;
+      double forwardZ = dz / length;
+      double sideX = -forwardZ;
+      double sideZ = forwardX;
+      double[] lateral = new double[]{0.0, 4.0, -4.0, 8.0, -8.0};
+      int first = Math.min(this.routeFailures, lateral.length - 1);
+
+      for (int distance : new int[]{24, 18, 12}) {
+         for (int index = 0; index < lateral.length; index++) {
+            double side = lateral[(first + index) % lateral.length];
+            int x = Mth.floor(this.getX() + forwardX * distance + sideX * side);
+            int z = Mth.floor(this.getZ() + forwardZ * distance + sideZ * side);
+            if (this.level().isLoaded(new BlockPos(x, this.blockPosition().getY(), z))) {
+               int y = this.level().getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+               return new Vec3(x + 0.5, y, z + 0.5);
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
    private void monitorRouteProgress(boolean exploring) {
@@ -1401,12 +1416,12 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                if (exploring) {
                   this.forceExplorationTurn(serverLevel, true);
                } else if (!this.hasSoulBlock() && this.missionState() != EchoGolemEntity.MissionState.CARRY) {
-                  switch (this.routePhase.ordinal()) {
-                     case 1:
-                     case 2:
+                  switch (this.routePhase) {
+                     case APPROACH_CANYON:
+                     case ENTER_CANYON:
                         this.abandonBlockedCanyon(serverLevel, 2400L);
                         break;
-                     case 3:
+                     case SEEK_SOUL:
                         if (this.soulTarget != null) {
                            this.soulApproach = null;
                            this.targetCooldown = 0;
@@ -1417,19 +1432,18 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                            this.setRoutePhase(EchoGolemEntity.RoutePhase.LEAVE_EMPTY_CANYON);
                         }
                         break;
-                     case 4:
+                     case LEAVE_EMPTY_CANYON:
                         this.routeFailures += 4;
                         break;
-                     case 5:
-                     case 6:
+                     case EXIT_CANYON:
+                     case DELIVER:
                      default:
                         this.forceExplorationTurn(serverLevel, false);
                         break;
-                     case 7:
+                     case DESCEND_CANYON:
                         this.markCurrentCanyonUnavailable(serverLevel, 2400L);
                         this.setRoutePhase(EchoGolemEntity.RoutePhase.LEAVE_EMPTY_CANYON);
                   }
-
                } else {
                   this.routeFailures += 4;
                }
@@ -1456,7 +1470,13 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.livenessSampleX = this.getX();
          this.livenessSampleY = this.getY();
          this.livenessSampleZ = this.getZ();
-         boolean expectsMovement = this.soulTarget != null || this.navigationGoal != null || this.explorationTarget != null || this.routePhase == EchoGolemEntity.RoutePhase.APPROACH_CANYON || this.routePhase == EchoGolemEntity.RoutePhase.ENTER_CANYON || this.routePhase == EchoGolemEntity.RoutePhase.DESCEND_CANYON || this.routePhase == EchoGolemEntity.RoutePhase.LEAVE_EMPTY_CANYON;
+         boolean expectsMovement = this.soulTarget != null
+            || this.navigationGoal != null
+            || this.explorationTarget != null
+            || this.routePhase == EchoGolemEntity.RoutePhase.APPROACH_CANYON
+            || this.routePhase == EchoGolemEntity.RoutePhase.ENTER_CANYON
+            || this.routePhase == EchoGolemEntity.RoutePhase.DESCEND_CANYON
+            || this.routePhase == EchoGolemEntity.RoutePhase.LEAVE_EMPTY_CANYON;
          if (expectsMovement && !(movedSqr >= 0.09)) {
             if (++this.livenessStallSamples >= 3) {
                this.livenessStallSamples = 0;
@@ -1473,7 +1493,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                   } else {
                      this.routeFailures += 3;
                   }
-
                }
             }
          } else {
@@ -1484,8 +1503,11 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
 
    private void assistLocalStep() {
       if (this.horizontalCollision && this.onGround() && this.getNavigation().isInProgress() && (this.tickCount + this.getId()) % 6 == 0) {
-         Vec3 velocity = this.getDeltaMovement();
-         this.setDeltaMovement(velocity.x, Math.max(velocity.y, 0.34), velocity.z);
+         Path path = this.getNavigation().getPath();
+         if (path != null && !path.isDone() && path.getNextNodePos().getY() >= this.blockPosition().getY()) {
+            Vec3 velocity = this.getDeltaMovement();
+            this.setDeltaMovement(velocity.x, Math.max(velocity.y, 0.34), velocity.z);
+         }
       }
    }
 
@@ -1496,51 +1518,48 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.setRoutePhase(EchoGolemEntity.RoutePhase.EXPLORE);
          this.setMissionState(EchoGolemEntity.MissionState.SEARCH);
       }
-
    }
 
-   private SoulCandidate findReachableSoulBlock(ServerLevel level, BlockPos origin, int horizontal, int vertical) {
+   private EchoGolemEntity.SoulCandidate findReachableSoulBlock(ServerLevel level, BlockPos origin, int horizontal, int vertical) {
       this.purgeExpiredRejections(level.getGameTime());
-      List<BlockPos> candidates = new ArrayList(SiftLandmarkTracker.activeSoulBlocksNear(level, origin, horizontal, vertical));
+      List<BlockPos> candidates = new ArrayList<>(SiftLandmarkTracker.activeSoulBlocksNear(level, origin, horizontal, vertical));
       if (level.getGameTime() >= this.nextPhysicalSoulScanTick) {
          this.nextPhysicalSoulScanTick = level.getGameTime() + 40L;
          this.collectPhysicalSoulBlocks(level, this.blockPosition(), Math.min(horizontal, 12), Math.min(vertical, 8), candidates, 20);
       }
 
-      candidates.sort(Comparator.comparingDouble((candidatex) -> candidatex.distSqr(this.blockPosition())));
+      candidates.sort(Comparator.comparingDouble(candidatex -> candidatex.distSqr(this.blockPosition())));
 
       for (BlockPos candidate : candidates) {
-         if (level.isLoaded(candidate) && level.getBlockState(candidate).is(ModBlocks.SOUL_BLOCK)) {
-            if (!this.isSoulReservedByOther(level, candidate)) {
-               if (this.canReachSoulWithHands(level, candidate)) {
-                  this.forgetSoulFailure(candidate);
-                  return new SoulCandidate(candidate, this.blockPosition());
-               }
-
-               Long rejectedUntil = (Long)this.unreachableSoulBlocks.get(candidate.asLong());
-               if ((rejectedUntil == null || rejectedUntil <= level.getGameTime()) && !this.isSoulGloballyRejected(candidate, level.getGameTime())) {
-                  return new SoulCandidate(candidate, (BlockPos)null);
-               }
-            }
-         } else {
+         if (!level.isLoaded(candidate) || !level.getBlockState(candidate).is(ModBlocks.SOUL_BLOCK)) {
             this.forgetSoulFailure(candidate);
+         } else if (!this.isSoulReservedByOther(level, candidate)) {
+            if (this.canReachSoulWithHands(level, candidate)) {
+               this.forgetSoulFailure(candidate);
+               return new EchoGolemEntity.SoulCandidate(candidate, this.blockPosition());
+            }
+
+            Long rejectedUntil = this.unreachableSoulBlocks.get(candidate.asLong());
+            if ((rejectedUntil == null || rejectedUntil <= level.getGameTime()) && !this.isSoulGloballyRejected(candidate, level.getGameTime())) {
+               return new EchoGolemEntity.SoulCandidate(candidate, null);
+            }
          }
       }
 
       return null;
    }
 
-   private void collectPhysicalSoulBlocks(ServerLevel level, BlockPos center, int horizontal, int vertical, List output, int maximumAdded) {
-      BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+   private void collectPhysicalSoulBlocks(ServerLevel level, BlockPos center, int horizontal, int vertical, List<BlockPos> output, int maximumAdded) {
+      MutableBlockPos cursor = new MutableBlockPos();
       int added = 0;
 
-      for (int ring = 0; ring <= horizontal; ++ring) {
-         for (int dx = -ring; dx <= ring; ++dx) {
-            for (int dz = -ring; dz <= ring; ++dz) {
+      for (int ring = 0; ring <= horizontal; ring++) {
+         for (int dx = -ring; dx <= ring; dx++) {
+            for (int dz = -ring; dz <= ring; dz++) {
                if (Math.max(Math.abs(dx), Math.abs(dz)) == ring && dx * dx + dz * dz <= horizontal * horizontal) {
                   cursor.set(center.getX() + dx, center.getY(), center.getZ() + dz);
                   if (level.isLoaded(cursor)) {
-                     for (int index = 0; index <= vertical * 2; ++index) {
+                     for (int index = 0; index <= vertical * 2; index++) {
                         int magnitude = (index + 1) / 2;
                         int dy = index == 0 ? 0 : (index % 2 == 1 ? -magnitude : magnitude);
                         cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
@@ -1548,8 +1567,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                            BlockPos found = cursor.immutable();
                            if (!output.contains(found)) {
                               output.add(found);
-                              ++added;
-                              if (added >= maximumAdded) {
+                              if (++added >= maximumAdded) {
                                  return;
                               }
                            }
@@ -1560,71 +1578,68 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
             }
          }
       }
-
    }
 
    private BlockPos findReachableSoulApproach(ServerLevel level, BlockPos soul) {
       if (this.canReachSoulWithHands(level, soul)) {
          return this.blockPosition();
-      } else {
-         Set<BlockPos> approaches = new HashSet();
+      }
 
-         for (int yOffset = -1; yOffset <= 2; ++yOffset) {
-            for (int dx = -1; dx <= 1; ++dx) {
-               for (int dz = -1; dz <= 1; ++dz) {
-                  approaches.add(soul.offset(dx, yOffset, dz));
-               }
+      Set<BlockPos> approaches = new HashSet<>();
+
+      for (int yOffset = -1; yOffset <= 2; yOffset++) {
+         for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+               approaches.add(soul.offset(dx, yOffset, dz));
             }
          }
-
-         Path path = this.getNavigation().createPath(approaches, 1);
-         if (path != null && path.getEndNode() != null && !(path.getEndNode().distanceToSqr(soul.above()) > 3.4F)) {
-            return path.getEndNode().asBlockPos().immutable();
-         } else {
-            return null;
-         }
       }
+
+      Path path = this.getNavigation().createPath(approaches, 1);
+      return path != null && path.getEndNode() != null && !(path.getEndNode().distanceToSqr(soul.above()) > 3.4F)
+         ? path.getEndNode().asBlockPos().immutable()
+         : null;
    }
 
    private boolean canReachSoulWithHands(ServerLevel level, BlockPos soul) {
       if (level.isLoaded(soul) && level.getBlockState(soul).is(ModBlocks.SOUL_BLOCK)) {
          AABB body = this.getBoundingBox();
          AABB block = new AABB(soul);
-         double gapX = Math.max((double)0.0F, Math.max(block.minX - body.maxX, body.minX - block.maxX));
-         double gapY = Math.max((double)0.0F, Math.max(block.minY - body.maxY, body.minY - block.maxY));
-         double gapZ = Math.max((double)0.0F, Math.max(block.minZ - body.maxZ, body.minZ - block.maxZ));
-         if (gapX * gapX + gapY * gapY + gapZ * gapZ > (double)3.0625F) {
+         double gapX = Math.max(0.0, Math.max(block.minX - body.maxX, body.minX - block.maxX));
+         double gapY = Math.max(0.0, Math.max(block.minY - body.maxY, body.minY - block.maxY));
+         double gapZ = Math.max(0.0, Math.max(block.minZ - body.maxZ, body.minZ - block.maxZ));
+         if (gapX * gapX + gapY * gapY + gapZ * gapZ > 3.0625) {
             return false;
-         } else {
-            Vec3 target = new Vec3((double)soul.getX() + (double)0.5F, (double)soul.getY() + 0.85, (double)soul.getZ() + (double)0.5F);
-            Vec3 handOrigin = new Vec3(Math.max(body.minX + 0.01, Math.min(body.maxX - 0.01, target.x)), Math.max(body.minY + 0.1, Math.min(body.maxY - 0.1, target.y)), Math.max(body.minZ + 0.01, Math.min(body.maxZ - 0.01, target.z)));
-            BlockHitResult hit = level.clip(new ClipContext(handOrigin, target, Block.COLLIDER, Fluid.NONE, this));
-            return hit.getType() == Type.MISS || soul.equals(hit.getBlockPos());
          }
+
+         Vec3 target = new Vec3(soul.getX() + 0.5, soul.getY() + 0.85, soul.getZ() + 0.5);
+         Vec3 handOrigin = new Vec3(
+            Math.max(body.minX + 0.01, Math.min(body.maxX - 0.01, target.x)),
+            Math.max(body.minY + 0.1, Math.min(body.maxY - 0.1, target.y)),
+            Math.max(body.minZ + 0.01, Math.min(body.maxZ - 0.01, target.z))
+         );
+         BlockHitResult hit = level.clip(new ClipContext(handOrigin, target, Block.COLLIDER, Fluid.NONE, this));
+         return hit.getType() == Type.MISS || soul.equals(hit.getBlockPos());
       } else {
          return false;
       }
    }
 
    private boolean isSoulReservedByOther(ServerLevel level, BlockPos soul) {
-      UUID owner = (UUID)SOUL_RESERVATIONS.get(soul.asLong());
+      UUID owner = SOUL_RESERVATIONS.get(soul.asLong());
       if (owner != null && !owner.equals(this.getUUID())) {
-         Entity entity = level.getEntityInAnyDimension(owner);
-         if (entity instanceof EchoGolemEntity) {
-            EchoGolemEntity other = (EchoGolemEntity)entity;
-            if (other.isAlive() && soul.equals(other.soulTarget)) {
-               return true;
-            }
+         if (level.getEntityInAnyDimension(owner) instanceof EchoGolemEntity other && other.isAlive() && soul.equals(other.soulTarget)) {
+            return true;
+         } else {
+            SOUL_RESERVATIONS.remove(soul.asLong(), owner);
+            return false;
          }
-
-         SOUL_RESERVATIONS.remove(soul.asLong(), owner);
-         return false;
       } else {
          return false;
       }
    }
 
-   private void claimSoulTarget(SoulCandidate candidate) {
+   private void claimSoulTarget(EchoGolemEntity.SoulCandidate candidate) {
       this.clearSoulTargetReservation();
       this.soulTarget = candidate.soul();
       this.soulApproach = candidate.approach();
@@ -1642,24 +1657,22 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private void rememberSoulFailure(ServerLevel level, BlockPos soul, long minimumDuration) {
       long now = level.getGameTime();
       long packed = soul.asLong();
-      SoulFailureMemory previous = (SoulFailureMemory)SOUL_FAILURE_MEMORY.get(packed);
+      EchoGolemEntity.SoulFailureMemory previous = SOUL_FAILURE_MEMORY.get(packed);
       int failures = previous != null && previous.forgetAfter() > now ? Math.min(4, previous.failures() + 1) : 1;
-      long var10000;
-      switch (failures) {
-         case 1 -> var10000 = 100L;
-         case 2 -> var10000 = 400L;
-         default -> var10000 = 2400L;
-      }
 
-      long penalty = var10000;
+      long penalty = switch (failures) {
+         case 1 -> 100L;
+         case 2 -> 400L;
+         default -> 2400L;
+      };
       penalty = Math.max(penalty, minimumDuration);
       long retryAfter = now + penalty;
-      SOUL_FAILURE_MEMORY.put(packed, new SoulFailureMemory(failures, retryAfter, retryAfter + 12000L));
+      SOUL_FAILURE_MEMORY.put(packed, new EchoGolemEntity.SoulFailureMemory(failures, retryAfter, retryAfter + 12000L));
       this.unreachableSoulBlocks.put(packed, retryAfter);
    }
 
    private boolean isSoulGloballyRejected(BlockPos soul, long gameTime) {
-      SoulFailureMemory memory = (SoulFailureMemory)SOUL_FAILURE_MEMORY.get(soul.asLong());
+      EchoGolemEntity.SoulFailureMemory memory = SOUL_FAILURE_MEMORY.get(soul.asLong());
       if (memory == null) {
          return false;
       } else if (memory.forgetAfter() <= gameTime) {
@@ -1688,21 +1701,21 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    }
 
    private double horizontalDistanceSqr(BlockPos pos) {
-      double dx = (double)pos.getX() + (double)0.5F - this.getX();
-      double dz = (double)pos.getZ() + (double)0.5F - this.getZ();
+      double dx = pos.getX() + 0.5 - this.getX();
+      double dz = pos.getZ() + 0.5 - this.getZ();
       return dx * dx + dz * dz;
    }
 
    private boolean isNear(BlockPos pos, double horizontal, double vertical) {
-      return pos != null && this.horizontalDistanceSqr(pos) <= horizontal * horizontal && Math.abs(this.getY() - (double)pos.getY()) <= vertical;
+      return pos != null && this.horizontalDistanceSqr(pos) <= horizontal * horizontal && Math.abs(this.getY() - pos.getY()) <= vertical;
    }
 
    private boolean needsCanyonMidpointForExit() {
       if (this.canyonMidpoint != null && this.canyonEntrance != null) {
-         double midDx = (double)(this.canyonMidpoint.getX() - this.canyonEntrance.getX());
-         double midDz = (double)(this.canyonMidpoint.getZ() - this.canyonEntrance.getZ());
+         double midDx = this.canyonMidpoint.getX() - this.canyonEntrance.getX();
+         double midDz = this.canyonMidpoint.getZ() - this.canyonEntrance.getZ();
          double midpointFromEntrance = midDx * midDx + midDz * midDz;
-         return this.horizontalDistanceSqr(this.canyonEntrance) > midpointFromEntrance + (double)16.0F;
+         return this.horizontalDistanceSqr(this.canyonEntrance) > midpointFromEntrance + 16.0;
       } else {
          return false;
       }
@@ -1711,22 +1724,20 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
    private boolean releaseCarriedSoul(ServerLevel level) {
       if (!this.hasSoulBlock()) {
          return false;
-      } else {
-         this.entityData.set(DATA_HAS_SOUL, false);
-         this.spawnAtLocation(level, new ItemStack(ModBlocks.SOUL_BLOCK_ITEM), 0.8F);
-         level.playSound((Entity)null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_DROP, this.getSoundSource(), 1.0F, 1.0F);
-         this.sitAfterLosingSoul();
-         return true;
       }
+
+      this.entityData.set(DATA_HAS_SOUL, false);
+      this.spawnAtLocation(level, new ItemStack(ModBlocks.SOUL_BLOCK_ITEM), 0.8F);
+      level.playSound(null, this.blockPosition(), ModSounds.ECHO_GOLEM_ITEM_DROP, this.getSoundSource(), 1.0F, 1.0F);
+      this.sitAfterLosingSoul();
+      return true;
    }
 
    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
       ItemStack held = player.getItemInHand(hand);
       if (held.getItem() == Items.ECHO_SHARD) {
          if (this.bondedPlayer == null && this.bondedPlayerName == null && !(Boolean)this.entityData.get(DATA_BONDED)) {
-            Level var7 = this.level();
-            if (var7 instanceof ServerLevel) {
-               ServerLevel level = (ServerLevel)var7;
+            if (this.level() instanceof ServerLevel level) {
                this.bondedPlayer = player.getUUID();
                this.bondedPlayerName = player.getName().getString();
                this.entityData.set(DATA_BONDED, true);
@@ -1738,9 +1749,13 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
                   held.shrink(1);
                }
 
-               level.sendParticles(ParticleTypes.HEART, this.getX(), this.getY() + (double)this.getBbHeight() * 0.7, this.getZ(), 7, 0.45, 0.55, 0.45, 0.08);
+               level.sendParticles(ParticleTypes.HEART, this.getX(), this.getY() + this.getBbHeight() * 0.7, this.getZ(), 7, 0.45, 0.55, 0.45, 0.08);
                if (this.missionState() == EchoGolemEntity.MissionState.BOW) {
-                  this.setRoutePhase(this.hasSoulBlock() ? (this.hasReachedSurface() ? EchoGolemEntity.RoutePhase.DELIVER : EchoGolemEntity.RoutePhase.EXIT_CANYON) : EchoGolemEntity.RoutePhase.EXPLORE);
+                  this.setRoutePhase(
+                     this.hasSoulBlock()
+                        ? (this.hasReachedSurface() ? EchoGolemEntity.RoutePhase.DELIVER : EchoGolemEntity.RoutePhase.EXIT_CANYON)
+                        : EchoGolemEntity.RoutePhase.EXPLORE
+                  );
                   this.setMissionState(this.hasSoulBlock() ? EchoGolemEntity.MissionState.CARRY : EchoGolemEntity.MissionState.SEARCH);
                }
 
@@ -1754,15 +1769,11 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       } else if (this.hasSoulBlock()) {
          if (!this.isBondedTo(player)) {
             return InteractionResult.PASS;
+         } else if (this.level() instanceof ServerLevel level) {
+            this.releaseCarriedSoul(level);
+            return InteractionResult.SUCCESS_SERVER;
          } else {
-            Level var5 = this.level();
-            if (var5 instanceof ServerLevel) {
-               ServerLevel level = (ServerLevel)var5;
-               this.releaseCarriedSoul(level);
-               return InteractionResult.SUCCESS_SERVER;
-            } else {
-               return InteractionResult.SUCCESS;
-            }
+            return InteractionResult.SUCCESS;
          }
       } else {
          return super.mobInteract(player, hand);
@@ -1863,7 +1874,6 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       if (this.deliveryAnchor != null) {
          output.putLong("delivery_anchor", this.deliveryAnchor.asLong());
       }
-
    }
 
    protected void readAdditionalSaveData(ValueInput input) {
@@ -1882,27 +1892,27 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       }
 
       this.routeTicks = Math.max(0, input.getIntOr("route_ticks", 0));
-      this.soulTarget = (BlockPos)input.getLong("soul_target").map(BlockPos::of).orElse(null);
-      this.soulApproach = (BlockPos)input.getLong("soul_approach").map(BlockPos::of).orElse(null);
-      this.canyonEntrance = (BlockPos)input.getLong("canyon_entrance").or(() -> input.getLong("exit_target")).map(BlockPos::of).orElse(null);
-      this.canyonMidpoint = (BlockPos)input.getLong("canyon_midpoint").map(BlockPos::of).orElse(null);
-      this.canyonCluster = (BlockPos)input.getLong("canyon_cluster").map(BlockPos::of).orElse(null);
-      this.ignoredCanyon = (BlockPos)input.getLong("ignored_canyon").map(BlockPos::of).orElse(null);
+      this.soulTarget = input.getLong("soul_target").<BlockPos>map(BlockPos::of).orElse(null);
+      this.soulApproach = input.getLong("soul_approach").<BlockPos>map(BlockPos::of).orElse(null);
+      this.canyonEntrance = input.getLong("canyon_entrance").or(() -> input.getLong("exit_target")).<BlockPos>map(BlockPos::of).orElse(null);
+      this.canyonMidpoint = input.getLong("canyon_midpoint").<BlockPos>map(BlockPos::of).orElse(null);
+      this.canyonCluster = input.getLong("canyon_cluster").<BlockPos>map(BlockPos::of).orElse(null);
+      this.ignoredCanyon = input.getLong("ignored_canyon").<BlockPos>map(BlockPos::of).orElse(null);
       this.ignoredCanyonTicks = Math.max(0, input.getIntOr("ignored_canyon_ticks", 0));
       this.enteredCanyon = input.getBooleanOr("entered_canyon", false);
       this.exitMidpointPassed = input.getBooleanOr("exit_midpoint_passed", !this.needsCanyonMidpointForExit());
       this.explorationHeading = input.getDoubleOr("exploration_heading", this.explorationHeading);
-      this.singerTarget = (UUID)input.getString("singer_target").flatMap((value) -> {
+      this.singerTarget = input.getString("singer_target").flatMap(value -> {
          try {
             return Optional.of(UUID.fromString(value));
-         } catch (IllegalArgumentException var2) {
+         } catch (IllegalArgumentException exception) {
             return Optional.empty();
          }
       }).orElse(null);
-      this.bondedPlayer = (UUID)input.getString("bonded_player").flatMap((value) -> {
+      this.bondedPlayer = input.getString("bonded_player").flatMap(value -> {
          try {
             return Optional.of(UUID.fromString(value));
-         } catch (IllegalArgumentException var2) {
+         } catch (IllegalArgumentException exception) {
             return Optional.empty();
          }
       }).orElse(null);
@@ -1910,7 +1920,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       this.bondedPlayerName = savedBondedPlayerName.isBlank() ? null : savedBondedPlayerName;
       boolean bonded = this.bondedPlayer != null || this.bondedPlayerName != null;
       this.entityData.set(DATA_BONDED, bonded);
-      this.deliveryAnchor = (BlockPos)input.getLong("delivery_anchor").map(BlockPos::of).orElse(null);
+      this.deliveryAnchor = input.getLong("delivery_anchor").<BlockPos>map(BlockPos::of).orElse(null);
       if (bonded) {
          this.setPersistenceRequired();
          this.singerTarget = null;
@@ -1930,27 +1940,23 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       if (savedRoute < 0 && !this.hasSoulBlock() && this.canyonCluster != null && this.canyonEntrance != null) {
          this.routePhase = this.enteredCanyon ? EchoGolemEntity.RoutePhase.SEEK_SOUL : EchoGolemEntity.RoutePhase.APPROACH_CANYON;
       }
-
    }
 
-   public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add(new AnimationController("mission", 4, (state) -> {
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(new AnimationController("mission", 4, state -> {
          EchoGolemEntity golem = (EchoGolemEntity)state.animatable();
-         RawAnimation var10000;
-         switch (golem.missionState().ordinal()) {
-            case 0 -> var10000 = golem.isWalkingForAnimation() ? WALK : IDLE;
-            case 1 -> var10000 = PICKUP;
-            case 2 -> var10000 = golem.isWalkingForAnimation() ? CARRY_WALK : CARRY_IDLE;
-            case 3 -> var10000 = BOW;
-            case 4 -> var10000 = SIT;
-            default -> throw new MatchException((String)null, (Throwable)null);
-         }
 
-         RawAnimation animation = var10000;
+         RawAnimation animation = switch (golem.missionState()) {
+            case SEARCH -> golem.isWalkingForAnimation() ? WALK : IDLE;
+            case PICKUP -> PICKUP;
+            case CARRY -> golem.isWalkingForAnimation() ? CARRY_WALK : CARRY_IDLE;
+            case BOW -> BOW;
+            case SIT -> SIT;
+         };
          state.controller().setAnimation(animation);
          return PlayState.CONTINUE;
       }));
-      controllers.add(new AnimationController("soul_visibility", 0, (state) -> {
+      controllers.add(new AnimationController("soul_visibility", 0, state -> {
          EchoGolemEntity golem = (EchoGolemEntity)state.animatable();
          state.controller().setAnimation(golem.hasSoulBlock() ? SOUL_VISIBLE : SOUL_HIDDEN);
          return PlayState.CONTINUE;
@@ -1961,35 +1967,15 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       return this.cache;
    }
 
-   static {
-      DATA_MISSION_STATE = SynchedEntityData.defineId(EchoGolemEntity.class, EntityDataSerializers.INT);
-      DATA_HAS_SOUL = SynchedEntityData.defineId(EchoGolemEntity.class, EntityDataSerializers.BOOLEAN);
-      DATA_BONDED = SynchedEntityData.defineId(EchoGolemEntity.class, EntityDataSerializers.BOOLEAN);
-      IDLE = RawAnimation.begin().thenLoop("idle");
-      WALK = RawAnimation.begin().thenLoop("walk");
-      PICKUP = RawAnimation.begin().thenPlay("pickup");
-      CARRY_IDLE = RawAnimation.begin().thenLoop("carry_idle");
-      CARRY_WALK = RawAnimation.begin().thenLoop("carry_walk");
-      BOW = RawAnimation.begin().thenPlay("bow");
-      SIT = RawAnimation.begin().thenLoop("sit");
-      SOUL_VISIBLE = RawAnimation.begin().thenLoop("soul_visible");
-      SOUL_HIDDEN = RawAnimation.begin().thenLoop("soul_hidden");
-   }
-
-   public static enum MissionState {
+   public enum MissionState {
       SEARCH,
       PICKUP,
       CARRY,
       BOW,
       SIT;
-
-      // $FF: synthetic method
-      private static MissionState[] $values() {
-         return new MissionState[]{SEARCH, PICKUP, CARRY, BOW, SIT};
-      }
    }
 
-   private static enum RoutePhase {
+   private enum RoutePhase {
       EXPLORE,
       APPROACH_CANYON,
       ENTER_CANYON,
@@ -1998,16 +1984,11 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
       EXIT_CANYON,
       DELIVER,
       DESCEND_CANYON;
-
-      // $FF: synthetic method
-      private static RoutePhase[] $values() {
-         return new RoutePhase[]{EXPLORE, APPROACH_CANYON, ENTER_CANYON, SEEK_SOUL, LEAVE_EMPTY_CANYON, EXIT_CANYON, DELIVER, DESCEND_CANYON};
-      }
    }
 
-   private static record SoulCandidate(BlockPos soul, BlockPos approach) {
+   private record SoulCandidate(BlockPos soul, BlockPos approach) {
    }
 
-   private static record SoulFailureMemory(int failures, long retryAfter, long forgetAfter) {
+   private record SoulFailureMemory(int failures, long retryAfter, long forgetAfter) {
    }
 }

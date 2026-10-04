@@ -1,9 +1,9 @@
 package mielon.thesift.block;
 
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public final class OvergrownWillowVinesPlantBlock extends OvergrownWillowVinesBlock {
-   public OvergrownWillowVinesPlantBlock(BlockBehaviour.Properties properties) {
+   public OvergrownWillowVinesPlantBlock(Properties properties) {
       super(properties);
    }
 }

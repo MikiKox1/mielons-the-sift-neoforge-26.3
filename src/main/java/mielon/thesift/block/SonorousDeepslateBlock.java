@@ -14,21 +14,21 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 
 public class SonorousDeepslateBlock extends BaseEntityBlock {
-   public static final EnumProperty MODE = EnumProperty.create("mode", Mode.class);
+   public static final EnumProperty<SonorousDeepslateBlock.Mode> MODE = EnumProperty.create("mode", SonorousDeepslateBlock.Mode.class);
 
-   public SonorousDeepslateBlock(BlockBehaviour.Properties properties) {
+   public SonorousDeepslateBlock(Properties properties) {
       super(properties);
       this.registerDefaultState((BlockState)((BlockState)this.stateDefinition.any()).setValue(MODE, SonorousDeepslateBlock.Mode.HORN));
    }
 
-   protected void createBlockStateDefinition(StateDefinition.Builder builder) {
+   protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
       builder.add(new Property[]{MODE});
    }
 
@@ -38,7 +38,10 @@ public class SonorousDeepslateBlock extends BaseEntityBlock {
          stack = new ItemStack(ModBlocks.SONOROUS_DEEPSLATE_ITEM);
       }
 
-      stack.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of(MODE.getName(), ((Mode)state.getValue(MODE)).getSerializedName())));
+      stack.set(
+         DataComponents.BLOCK_STATE,
+         new BlockItemStateProperties(Map.of(MODE.getName(), ((SonorousDeepslateBlock.Mode)state.getValue(MODE)).getSerializedName()))
+      );
       return stack;
    }
 
@@ -46,27 +49,22 @@ public class SonorousDeepslateBlock extends BaseEntityBlock {
       return new SonorousDeepslateBlockEntity(pos, state);
    }
 
-   public BlockEntityTicker getTicker(Level level, BlockState state, BlockEntityType type) {
+   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
       return createTickerHelper(type, ModBlocks.SONOROUS_DEEPSLATE_BLOCK_ENTITY, SonorousDeepslateBlockEntity::tick);
    }
 
-   public static enum Mode implements StringRepresentable {
+   public enum Mode implements StringRepresentable {
       HORN("horn"),
       NOTE("note");
 
       private final String name;
 
-      private Mode(String name) {
+      Mode(String name) {
          this.name = name;
       }
 
       public String getSerializedName() {
          return this.name;
-      }
-
-      // $FF: synthetic method
-      private static Mode[] $values() {
-         return new Mode[]{HORN, NOTE};
       }
    }
 }

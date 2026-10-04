@@ -11,17 +11,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({AnvilMenu.class})
+@Mixin(AnvilMenu.class)
 public abstract class AnvilMenuMixin {
    @Shadow
    @Final
    private DataSlot cost;
 
-   @Inject(
-      method = {"createResult"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "createResult", at = @At("HEAD"), cancellable = true)
    private void theSift$blockCharoiteCombination(CallbackInfo ci) {
       AnvilMenu menu = (AnvilMenu)(Object)this;
       ItemStack base = menu.getSlot(0).getItem();

@@ -15,6 +15,7 @@ import mielon.thesift.fluid.ModFluids;
 import mielon.thesift.item.BlubItems;
 import mielon.thesift.item.ModItems;
 import mielon.thesift.network.RiftLoadingPayload;
+import mielon.thesift.network.SiftIntroReadyPayload;
 import mielon.thesift.particle.ModParticles;
 import mielon.thesift.portal.PortalGrowth;
 import mielon.thesift.portal.SonorousAutoplay;
@@ -33,6 +34,8 @@ import mielon.thesift.worldgen.SiftLandmarkTracker;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.ServerStopped;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndTick;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -57,6 +60,7 @@ public final class TheSiftMod implements ModInitializer {
       ModAdvancements.register();
       SiftiteRecoveryManager.register();
       RiftLoadingPayload.register();
+      SiftIntroReadyPayload.register();
       ServerTickEvents.START_SERVER_TICK.register(RiftDirectory::tick);
       registerEntityAttributes();
       registerSpawnPlacements();
@@ -79,19 +83,21 @@ public final class TheSiftMod implements ModInitializer {
    }
 
    private static void registerSpawnPlacements() {
-      SpawnPlacements.register(ModEntities.ECHO_GOLEM, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, EchoGolemEntity::checkEchoGolemSpawnRules);
+      SpawnPlacements.register(
+         ModEntities.ECHO_GOLEM, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, EchoGolemEntity::checkEchoGolemSpawnRules
+      );
       SpawnPlacements.register(ModEntities.BLUB, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, BlubEntity::checkBlubSpawnRules);
       SpawnPlacements.register(ModEntities.SIFTER, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, SifterEntity::checkSifterSpawnRules);
    }
 
    private static void registerServerLifecycle() {
-      ServerTickEvents.END_SERVER_TICK.register((ServerTickEvents.EndTick)(server) -> {
+      ServerTickEvents.END_SERVER_TICK.register((EndTick)server -> {
          SiftTeleportManager.tick(server);
          RiftManager.tick(server);
          SiftiteRecoveryManager.tick(server);
          IchorWaterlogging.tick(server);
       });
-      ServerLifecycleEvents.SERVER_STOPPED.register((ServerLifecycleEvents.ServerStopped)(server) -> {
+      ServerLifecycleEvents.SERVER_STOPPED.register((ServerStopped)server -> {
          SonorousConsoles.clearTransientBuffers();
          SiftTeleportManager.clearTransientState();
          RiftManager.clearTransientState();

@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-@Mixin({Hud.class})
+@Mixin(Hud.class)
 public abstract class IchorAirHudMixin {
    private static final Identifier VANILLA_AIR = Identifier.withDefaultNamespace("hud/air");
    private static final Identifier VANILLA_BURSTING = Identifier.withDefaultNamespace("hud/air_bursting");
@@ -19,11 +19,11 @@ public abstract class IchorAirHudMixin {
    private static final Identifier ICHOR_BURSTING = id("hud/ichor_air_bursting");
 
    @ModifyArg(
-      method = {"extractAirBubbles"},
-      at = {@At(
-   value = "INVOKE",
-   target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"
-)},
+      method = "extractAirBubbles",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"
+      ),
       index = 1
    )
    private Identifier theSift$useIchorAirSprite(Identifier original) {

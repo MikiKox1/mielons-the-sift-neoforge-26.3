@@ -1,8 +1,6 @@
 package mielon.thesift.entity;
 
 import java.util.Comparator;
-import java.util.Objects;
-import java.util.stream.Stream;
 import mielon.thesift.worldgen.SiftLandmarkTracker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -17,10 +15,11 @@ public final class SoulExchangeManager {
 
    public static SingerEntity requestSinger(ServerLevel level, EchoGolemEntity golem) {
       if (golem.hasSoulBlock() && golem.canInteractWithSinger()) {
-         AABB search = golem.getBoundingBox().inflate((double)52.0F, (double)32.0F, (double)52.0F);
-         Stream var10000 = level.getEntitiesOfClass(SingerEntity.class, search, SingerEntity::isSoulEvent).stream();
-         Objects.requireNonNull(golem);
-         SingerEntity existing = (SingerEntity)var10000.min(Comparator.comparingDouble((SingerEntity s) -> golem.distanceToSqr(s))).orElse(null);
+         AABB search = golem.getBoundingBox().inflate(52.0, 32.0, 52.0);
+         SingerEntity existing = level.getEntitiesOfClass(SingerEntity.class, search, SingerEntity::isSoulEvent)
+            .stream()
+            .min(Comparator.comparingDouble(golem::distanceToSqr))
+            .orElse(null);
          if (existing != null) {
             if (!golem.tryAcquirePathBudget(level, 6)) {
                return null;
@@ -44,7 +43,7 @@ public final class SoulExchangeManager {
                if (singer == null) {
                   return null;
                } else {
-                  singer.snapTo((double)spawn.getX() + (double)0.5F, (double)spawn.getY(), (double)spawn.getZ() + (double)0.5F, level.getRandom().nextFloat() * 360.0F, 0.0F);
+                  singer.snapTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, level.getRandom().nextFloat() * 360.0F, 0.0F);
                   singer.beginSoulEvent(golem.getUUID());
                   singer.setPersistenceRequired();
                   if (!level.addFreshEntity(singer)) {
@@ -62,20 +61,22 @@ public final class SoulExchangeManager {
    }
 
    private static BlockPos findNaturalSpawn(ServerLevel level, BlockPos around) {
-      BlockPos activeCanyon = (BlockPos)SiftLandmarkTracker.nearestActiveSoulCanyon(level, around, (double)48.0F).orElse(null);
-      double phase = level.getRandom().nextDouble() * Math.PI * (double)2.0F;
+      BlockPos activeCanyon = SiftLandmarkTracker.nearestActiveSoulCanyon(level, around, 48.0).orElse(null);
+      double phase = level.getRandom().nextDouble() * Math.PI * 2.0;
 
-      for (int attempt = 0; attempt < 16; ++attempt) {
-         double angle = phase + (double)attempt * (Math.PI / 8D);
+      for (int attempt = 0; attempt < 16; attempt++) {
+         double angle = phase + attempt * (Math.PI / 8);
          int radius = 7 + level.getRandom().nextInt(6);
-         int x = around.getX() + (int)Math.round(Math.cos(angle) * (double)radius);
-         int z = around.getZ() + (int)Math.round(Math.sin(angle) * (double)radius);
+         int x = around.getX() + (int)Math.round(Math.cos(angle) * radius);
+         int z = around.getZ() + (int)Math.round(Math.sin(angle) * radius);
          int y = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
          BlockPos feet = new BlockPos(x, y, z);
-         if ((activeCanyon == null || !(horizontalDistanceSqr(feet, activeCanyon) < (double)576.0F)) && level.isLoaded(feet) && level.getBlockState(feet.below()).isCollisionShapeFullBlock(level, feet.below())) {
+         if ((activeCanyon == null || !(horizontalDistanceSqr(feet, activeCanyon) < 576.0))
+            && level.isLoaded(feet)
+            && level.getBlockState(feet.below()).isCollisionShapeFullBlock(level, feet.below())) {
             boolean clear = true;
 
-            for (int dy = 0; dy <= 4; ++dy) {
+            for (int dy = 0; dy <= 4; dy++) {
                if (!level.getBlockState(feet.above(dy)).isAir()) {
                   clear = false;
                   break;
@@ -92,8 +93,8 @@ public final class SoulExchangeManager {
    }
 
    private static double horizontalDistanceSqr(BlockPos first, BlockPos second) {
-      double dx = (double)(first.getX() - second.getX());
-      double dz = (double)(first.getZ() - second.getZ());
+      double dx = first.getX() - second.getX();
+      double dz = first.getZ() - second.getZ();
       return dx * dx + dz * dz;
    }
 }

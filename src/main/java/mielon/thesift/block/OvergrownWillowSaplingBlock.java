@@ -11,15 +11,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.BushBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class OvergrownWillowSaplingBlock extends BushBlock implements BonemealableBlock {
-   private static final VoxelShape SHAPE = Block.box((double)2.0F, (double)0.0F, (double)2.0F, (double)14.0F, (double)12.0F, (double)14.0F);
+   private static final VoxelShape SHAPE = Block.box(2.0, 0.0, 2.0, 14.0, 12.0, 14.0);
 
-   public OvergrownWillowSaplingBlock(BlockBehaviour.Properties properties) {
+   public OvergrownWillowSaplingBlock(Properties properties) {
       super(properties);
    }
 
@@ -35,7 +35,6 @@ public final class OvergrownWillowSaplingBlock extends BushBlock implements Bone
       if (level.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextInt(7) == 0) {
          this.growTree(level, pos, state, random);
       }
-
    }
 
    public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state, BonemealSource source) {
@@ -55,6 +54,5 @@ public final class OvergrownWillowSaplingBlock extends BushBlock implements Bone
       if (!OvergrownWillowTreeFeature.growFromSapling(level, random, pos)) {
          level.setBlock(pos, state, 3);
       }
-
    }
 }

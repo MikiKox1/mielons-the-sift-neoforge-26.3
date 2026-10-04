@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import mielon.thesift.block.ModBlocks;
+import mielon.thesift.network.RiftLoadingPayload;
+import mielon.thesift.sound.ModSounds;
 import mielon.thesift.worldgen.SiftAllaySpawner;
 import mielon.thesift.worldgen.SiftDeferredSnifferSpawner;
 import mielon.thesift.worldgen.SiftEchoGolemSpawner;
@@ -13,35 +15,43 @@ import mielon.thesift.worldgen.SiftLandmarkTracker;
 import mielon.thesift.worldgen.SiftSifterSpawner;
 import mielon.thesift.worldgen.SiftSoulCanyonParticles;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class SiftTeleportManager {
-   private static final Set WAITING_FOR_EXIT = new HashSet();
-   private static final Set PORTAL_GUARD_CHECKED = new HashSet();
-   private static final Set INITIALIZED_PLAYERS = new HashSet();
-   private static final Set PORTAL_CONTACTS = new HashSet();
+   private static final Set<UUID> WAITING_FOR_EXIT = new HashSet<>();
+   private static final Set<UUID> PORTAL_GUARD_CHECKED = new HashSet<>();
+   private static final Set<UUID> INITIALIZED_PLAYERS = new HashSet<>();
+   private static final Set<UUID> PORTAL_CONTACTS = new HashSet<>();
    private static int cleanupCooldown;
 
    private SiftTeleportManager() {
    }
 
    public static void tick(MinecraftServer server) {
-      SiftDeferredSnifferSpawner.tick(server);
       SiftLandmarkTracker.tick(server);
       SiftSoulCanyonParticles.tick(server);
-      SiftEchoGolemSpawner.tick(server);
-      SiftAllaySpawner.tick(server);
-      SiftSifterSpawner.tick(server);
-      ServerLevel overworld = server.getLevel(Level.OVERWORLD);
       ServerLevel sift = server.getLevel(TheSiftDimension.LEVEL_KEY);
+      if (sift != null && (Boolean)sift.getGameRules().get(GameRules.SPAWN_MOBS)) {
+         SiftDeferredSnifferSpawner.tick(server);
+         SiftEchoGolemSpawner.tick(server);
+         SiftAllaySpawner.tick(server);
+         SiftSifterSpawner.tick(server);
+      }
+
+      ServerLevel overworld = server.getLevel(Level.OVERWORLD);
       if (overworld != null && sift != null) {
          for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             processPlayer(server, player);
@@ -51,11 +61,22 @@ public final class SiftTeleportManager {
          releaseNonPlayerGuards(server, overworld);
          if (--cleanupCooldown <= 0) {
             cleanupCooldown = 600;
-            WAITING_FOR_EXIT.removeIf((id) -> overworld.getEntityInAnyDimension((UUID) id) == null);
-            PORTAL_GUARD_CHECKED.removeIf((id) -> overworld.getEntityInAnyDimension((UUID) id) == null);
-            INITIALIZED_PLAYERS.removeIf((id) -> server.getPlayerList().getPlayer((UUID) id) == null);
+            WAITING_FOR_EXIT.removeIf(id -> overworld.getEntityInAnyDimension(id) == null);
+            PORTAL_GUARD_CHECKED.removeIf(id -> overworld.getEntityInAnyDimension(id) == null);
+            INITIALIZED_PLAYERS.removeIf(id -> server.getPlayerList().getPlayer(id) == null);
          }
+      }
+   }
 
+   public static void playFirstIntro(ServerPlayer player) {
+      MinecraftServer server = player.level().getServer();
+      if (server != null && player.level().dimension().equals(TheSiftDimension.LEVEL_KEY) && SiftWorldStorage.claimFirstSiftEntry(server, player.getUUID())) {
+         player.connection
+            .send(
+               new ClientboundSoundEntityPacket(
+                  BuiltInRegistries.SOUND_EVENT.wrapAsHolder(ModSounds.SIFT_INTRO), SoundSource.AMBIENT, player, 0.4F, 1.0F, player.getRandom().nextLong()
+               )
+            );
       }
    }
 
@@ -88,12 +109,10 @@ public final class SiftTeleportManager {
             if (touchingPortal) {
                WAITING_FOR_EXIT.add(id);
             }
-
          } else if (INITIALIZED_PLAYERS.add(id)) {
             if (touchingPortal) {
                suppressUntilExit(player);
             }
-
          } else {
             processTouchState(server, player, touchingPortal);
          }
@@ -104,12 +123,11 @@ public final class SiftTeleportManager {
       if (!(entity instanceof ServerPlayer) && !entity.isRemoved() && entity.isAlive() && entity.level() instanceof ServerLevel) {
          PORTAL_CONTACTS.add(entity.getUUID());
       }
-
    }
 
    private static void processPortalContacts(MinecraftServer server, ServerLevel overworld) {
       if (!PORTAL_CONTACTS.isEmpty()) {
-         Set<UUID> contacts = new HashSet(PORTAL_CONTACTS);
+         Set<UUID> contacts = new HashSet<>(PORTAL_CONTACTS);
          PORTAL_CONTACTS.clear();
 
          for (UUID id : contacts) {
@@ -118,22 +136,24 @@ public final class SiftTeleportManager {
                processTouchState(server, entity, true);
             }
          }
-
       }
    }
 
    private static void releaseNonPlayerGuards(MinecraftServer server, ServerLevel overworld) {
       Iterator<UUID> iterator = WAITING_FOR_EXIT.iterator();
 
-      while(iterator.hasNext()) {
-         UUID id = (UUID)iterator.next();
+      while (iterator.hasNext()) {
+         UUID id = iterator.next();
          Entity entity = overworld.getEntityInAnyDimension(id);
-         if (entity != null && !(entity instanceof ServerPlayer) && !PortalTransitGuard.isBlocked(entity) && !isTouchingPortal(entity) && !RiftManager.isTouchingRift(entity)) {
+         if (entity != null
+            && !(entity instanceof ServerPlayer)
+            && !PortalTransitGuard.isBlocked(entity)
+            && !isTouchingPortal(entity)
+            && !RiftManager.isTouchingRift(entity)) {
             iterator.remove();
             SiftWorldStorage.clearPortalExitRequired(server, id);
          }
       }
-
    }
 
    private static void processTouchState(MinecraftServer server, Entity entity, boolean touchingPortal) {
@@ -148,65 +168,90 @@ public final class SiftTeleportManager {
                WAITING_FOR_EXIT.remove(id);
                SiftWorldStorage.clearPortalExitRequired(server, id);
             }
-
          } else if (touchingPortal) {
-            ResourceKeyMatch dimension = classifyDimension(entity.level());
-            if (dimension == SiftTeleportManager.ResourceKeyMatch.OVERWORLD) {
-               teleportIntoSift(server, entity);
-            } else if (dimension == SiftTeleportManager.ResourceKeyMatch.THE_SIFT) {
-               teleportBackToOverworld(server, entity);
-            }
-
-         }
-      }
-   }
-
-   private static void teleportIntoSift(MinecraftServer server, Entity entity) {
-      ServerLevel sift = server.getLevel(TheSiftDimension.LEVEL_KEY);
-      if (sift != null) {
-         Optional<BlockPos> anchorOptional = SiftPortalStructure.ensurePortal(server, sift);
-         if (!anchorOptional.isEmpty()) {
-            SiftWorldStorage.saveReturnPoint(entity);
-            BlockPos anchor = (BlockPos)anchorOptional.get();
-            Vec3 destination = new Vec3((double)anchor.getX() + (double)0.5F, (double)anchor.getY(), (double)anchor.getZ() + (double)0.5F);
-            Entity teleported = teleport(entity, sift, destination, entity.getYRot(), entity.getXRot());
-            if (teleported != null) {
-               suppressUntilExit(teleported);
-            }
-
-         }
-      }
-   }
-
-   private static void teleportBackToOverworld(MinecraftServer server, Entity entity) {
-      ServerLevel overworld = server.getLevel(Level.OVERWORLD);
-      if (overworld != null) {
-         Optional<SiftWorldStorage.ReturnPoint> stored = SiftWorldStorage.getReturnPoint(server, entity.getUUID());
-         if (stored.isPresent()) {
-            BlockPos entrance = ((SiftWorldStorage.ReturnPoint)stored.get()).portalBlock();
-            overworld.getChunk(entrance);
-            if (!overworld.getBlockState(entrance).is(ModBlocks.SIFT_PORTAL)) {
-               RiftManager.returnFromPortal(entity, true);
-            } else {
-               SiftWorldStorage.ReturnPoint point = (SiftWorldStorage.ReturnPoint)stored.get();
-               Vec3 destination = new Vec3(point.x(), point.y(), point.z());
-               float yaw = point.yaw();
-               float pitch = point.pitch();
-               Entity teleported = teleport(entity, overworld, destination, yaw, pitch);
-               if (teleported != null) {
-                  suppressUntilExit(teleported);
-                  SiftWorldStorage.clearReturnPoint(server, entity.getUUID());
+            SiftTeleportManager.ResourceKeyMatch dimension = classifyDimension(entity.level());
+            if (dimension == SiftTeleportManager.ResourceKeyMatch.OVERWORLD || dimension == SiftTeleportManager.ResourceKeyMatch.THE_SIFT) {
+               ServerPlayer player = entity instanceof ServerPlayer serverPlayer ? serverPlayer : null;
+               if (player != null) {
+                  RiftLoadingPayload.send(player, true, false);
                }
 
+               boolean transferring = false;
+
+               try {
+                  transferring = dimension == SiftTeleportManager.ResourceKeyMatch.OVERWORLD
+                     ? teleportIntoSift(server, entity)
+                     : teleportBackToOverworld(server, entity);
+               } finally {
+                  if (!transferring && player != null) {
+                     RiftLoadingPayload.send(player, false, false);
+                  }
+               }
             }
-         } else {
-            RiftManager.returnFromPortal(entity, false);
          }
+      }
+   }
+
+   private static boolean teleportIntoSift(MinecraftServer server, Entity entity) {
+      ServerLevel sift = server.getLevel(TheSiftDimension.LEVEL_KEY);
+      if (sift == null) {
+         return false;
+      }
+
+      Optional<BlockPos> anchorOptional = SiftPortalStructure.ensurePortal(server, sift);
+      if (anchorOptional.isEmpty()) {
+         return false;
+      }
+
+      SiftWorldStorage.saveReturnPoint(entity);
+      BlockPos anchor = anchorOptional.get();
+      Vec3 destination = new Vec3(anchor.getX() + 0.5, anchor.getY(), anchor.getZ() + 0.5);
+      Entity teleported = teleport(entity, sift, destination, entity.getYRot(), entity.getXRot());
+      if (teleported != null) {
+         suppressUntilExit(teleported);
+      }
+
+      return teleported != null;
+   }
+
+   private static boolean teleportBackToOverworld(MinecraftServer server, Entity entity) {
+      ServerLevel overworld = server.getLevel(Level.OVERWORLD);
+      if (overworld == null) {
+         return false;
+      }
+
+      Optional<SiftWorldStorage.ReturnPoint> stored = SiftWorldStorage.getReturnPoint(server, entity.getUUID());
+      if (stored.isPresent()) {
+         BlockPos entrance = stored.get().portalBlock();
+         overworld.getChunk(entrance);
+         if (!overworld.getBlockState(entrance).is(ModBlocks.SIFT_PORTAL)) {
+            RiftManager.returnFromPortal(entity, true);
+            return true;
+         }
+
+         SiftWorldStorage.ReturnPoint point = stored.get();
+         Vec3 destination = new Vec3(point.x(), point.y(), point.z());
+         float yaw = point.yaw();
+         float pitch = point.pitch();
+         Entity teleported = teleport(entity, overworld, destination, yaw, pitch);
+         if (teleported != null) {
+            suppressUntilExit(teleported);
+            SiftWorldStorage.clearReturnPoint(server, entity.getUUID());
+         }
+
+         return teleported != null;
+      } else {
+         RiftManager.returnFromPortal(entity, false);
+         return true;
       }
    }
 
    private static Entity teleport(Entity entity, ServerLevel destinationLevel, Vec3 destination, float yaw, float pitch) {
-      return entity.teleport(new TeleportTransition(destinationLevel, destination, Vec3.ZERO, yaw, pitch, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET)));
+      return entity.teleport(
+         new TeleportTransition(
+            destinationLevel, destination, Vec3.ZERO, yaw, pitch, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET)
+         )
+      );
    }
 
    public static boolean isTouchingPortal(Entity entity) {
@@ -218,11 +263,11 @@ public final class SiftTeleportManager {
       int maxX = Mth.floor(box.maxX);
       int maxY = Mth.floor(box.maxY);
       int maxZ = Mth.floor(box.maxZ);
-      BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+      MutableBlockPos pos = new MutableBlockPos();
 
-      for (int x = minX; x <= maxX; ++x) {
-         for (int y = minY; y <= maxY; ++y) {
-            for (int z = minZ; z <= maxZ; ++z) {
+      for (int x = minX; x <= maxX; x++) {
+         for (int y = minY; y <= maxY; y++) {
+            for (int z = minZ; z <= maxZ; z++) {
                pos.set(x, y, z);
                if (level.getBlockState(pos).is(ModBlocks.SIFT_PORTAL)) {
                   return true;
@@ -234,22 +279,19 @@ public final class SiftTeleportManager {
       return false;
    }
 
-   private static ResourceKeyMatch classifyDimension(Level level) {
+   private static SiftTeleportManager.ResourceKeyMatch classifyDimension(Level level) {
       if (level.dimension().equals(Level.OVERWORLD)) {
          return SiftTeleportManager.ResourceKeyMatch.OVERWORLD;
       } else {
-         return level.dimension().equals(TheSiftDimension.LEVEL_KEY) ? SiftTeleportManager.ResourceKeyMatch.THE_SIFT : SiftTeleportManager.ResourceKeyMatch.OTHER;
+         return level.dimension().equals(TheSiftDimension.LEVEL_KEY)
+            ? SiftTeleportManager.ResourceKeyMatch.THE_SIFT
+            : SiftTeleportManager.ResourceKeyMatch.OTHER;
       }
    }
 
-   private static enum ResourceKeyMatch {
+   private enum ResourceKeyMatch {
       OVERWORLD,
       THE_SIFT,
       OTHER;
-
-      // $FF: synthetic method
-      private static ResourceKeyMatch[] $values() {
-         return new ResourceKeyMatch[]{OVERWORLD, THE_SIFT, OTHER};
-      }
    }
 }

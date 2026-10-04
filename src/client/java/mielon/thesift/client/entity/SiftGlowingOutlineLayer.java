@@ -1,5 +1,6 @@
 package mielon.thesift.client.entity;
 
+import com.geckolib.animatable.GeoAnimatable;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.renderer.base.GeoRenderer;
 import com.geckolib.renderer.base.RenderPassInfo;
@@ -7,13 +8,14 @@ import com.geckolib.renderer.layer.GeoRenderLayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.world.entity.Entity;
 
-public final class SiftGlowingOutlineLayer extends GeoRenderLayer {
-   public SiftGlowingOutlineLayer(GeoRenderer renderer) {
+public final class SiftGlowingOutlineLayer<T extends Entity & GeoAnimatable> extends GeoRenderLayer<T, Void, EntityRenderState> {
+   public SiftGlowingOutlineLayer(GeoRenderer<T, Void, EntityRenderState> renderer) {
       super(renderer);
    }
 
-   public void submitRenderTask(RenderPassInfo renderPassInfo, SubmitNodeCollector renderTasks) {
+   public void submitRenderTask(RenderPassInfo<EntityRenderState> renderPassInfo, SubmitNodeCollector renderTasks) {
       EntityRenderState state = (EntityRenderState)renderPassInfo.renderState();
       if (renderPassInfo.willRender() && state.appearsGlowing()) {
          int previousColor = (Integer)renderPassInfo.getOrDefaultGeckolibData(DataTickets.RENDER_COLOR, -1);
@@ -25,7 +27,6 @@ public final class SiftGlowingOutlineLayer extends GeoRenderLayer {
          } finally {
             state.addGeckolibData(DataTickets.RENDER_COLOR, previousColor);
          }
-
       }
    }
 }

@@ -8,17 +8,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 
 public class SiftslateGrowthBlock extends Block {
-   public static final BooleanProperty SNOWY;
+   public static final BooleanProperty SNOWY = BlockStateProperties.SNOWY;
 
-   public SiftslateGrowthBlock(BlockBehaviour.Properties properties) {
+   public SiftslateGrowthBlock(Properties properties) {
       super(properties);
       this.registerDefaultState((BlockState)((BlockState)this.stateDefinition.any()).setValue(SNOWY, false));
    }
@@ -37,15 +37,25 @@ public class SiftslateGrowthBlock extends Block {
       } else {
          level.setBlockAndUpdate(pos, ModBlocks.SIFTSLATE.defaultBlockState());
       }
-
    }
 
-   protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess scheduledTickAccess, BlockPos pos, Direction direction, BlockPos neighbourPos, BlockState neighbourState, RandomSource random) {
+   protected BlockState updateShape(
+      BlockState state,
+      LevelReader level,
+      ScheduledTickAccess scheduledTickAccess,
+      BlockPos pos,
+      Direction direction,
+      BlockPos neighbourPos,
+      BlockState neighbourState,
+      RandomSource random
+   ) {
       if (direction == Direction.UP) {
          if (isIchorSnowCover(neighbourState)) {
             return (BlockState)state.setValue(SNOWY, true);
          } else {
-            return neighbourState.isCollisionShapeFullBlock(level, neighbourPos) ? ModBlocks.SIFTSLATE.defaultBlockState() : (BlockState)state.setValue(SNOWY, false);
+            return neighbourState.isCollisionShapeFullBlock(level, neighbourPos)
+               ? ModBlocks.SIFTSLATE.defaultBlockState()
+               : (BlockState)state.setValue(SNOWY, false);
          }
       } else {
          return super.updateShape(state, level, scheduledTickAccess, pos, direction, neighbourPos, neighbourState, random);
@@ -60,18 +70,13 @@ public class SiftslateGrowthBlock extends Block {
             level.setBlockAndUpdate(pos, (BlockState)state.setValue(SNOWY, snowy));
          }
       }
-
    }
 
    public static boolean isIchorSnowCover(BlockState state) {
       return state.is(ModBlocks.ICHOR_SNOW) || state.is(ModBlocks.ICHOR_SNOW_BLOCK);
    }
 
-   protected void createBlockStateDefinition(StateDefinition.Builder builder) {
+   protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
       builder.add(new Property[]{SNOWY});
-   }
-
-   static {
-      SNOWY = BlockStateProperties.SNOWY;
    }
 }

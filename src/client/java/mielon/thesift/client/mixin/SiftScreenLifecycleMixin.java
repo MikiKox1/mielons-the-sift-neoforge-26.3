@@ -9,16 +9,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({Screen.class})
+@Mixin(Screen.class)
 public abstract class SiftScreenLifecycleMixin {
-   @Inject(
-      method = {"removed"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "removed", at = @At("TAIL"))
    private void theSift$clearAfterLoadingScreenIsRemoved(CallbackInfo ci) {
       if ((Object)this instanceof LevelLoadingScreen && !((Object)this instanceof SiftTransitionScreen) && SiftLoadingScreenState.isActive()) {
          SiftLoadingScreenState.clear();
       }
-
    }
 }

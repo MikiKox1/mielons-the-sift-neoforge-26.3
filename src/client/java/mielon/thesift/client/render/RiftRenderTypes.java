@@ -6,6 +6,8 @@ import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Builder;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -22,13 +24,27 @@ public final class RiftRenderTypes {
    }
 
    private static RenderPipeline createPipeline(boolean glow) {
-      RenderPipeline.Builder builder = RenderPipeline.builder(new RenderPipeline.Snippet[0]).withLocation(id(glow ? "pipeline/rift_glow" : "pipeline/rift_surface")).withVertexShader(id("core/rift")).withFragmentShader(id("core/rift")).withBindGroupLayout(BindGroupLayouts.GLOBALS).withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS).withBindGroupLayout(BindGroupLayouts.PROJECTION).withBindGroupLayout(BindGroupLayouts.SAMPLER0).withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR).withPrimitiveTopology(PrimitiveTopology.QUADS).withDepthStencilState(new DepthStencilState(DepthStencilState.DEFAULT.depthTest(), !glow)).withColorTargetState(glow ? new ColorTargetState(BlendFunction.TRANSLUCENT) : ColorTargetState.DEFAULT).withCull(true);
+      Builder builder = RenderPipeline.builder(new Snippet[0])
+         .withLocation(id(glow ? "pipeline/rift_glow" : "pipeline/rift_surface"))
+         .withVertexShader(id("core/rift"))
+         .withFragmentShader(id("core/rift"))
+         .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+         .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+         .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+         .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+         .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
+         .withPrimitiveTopology(PrimitiveTopology.QUADS)
+         .withDepthStencilState(new DepthStencilState(DepthStencilState.DEFAULT.depthTest(), !glow))
+         .withColorTargetState(glow ? new ColorTargetState(BlendFunction.TRANSLUCENT) : ColorTargetState.DEFAULT)
+         .withCull(true);
       return builder.build();
    }
 
    private static RenderType createType(boolean sift, boolean glow) {
       Identifier texture = id("textures/entity/rift/" + (sift ? "sift" : "overworld") + ".png");
-      return RenderType.create("sift_rift_" + sift + "_" + glow, RenderSetup.builder(glow ? GLOW_PIPELINE : SURFACE_PIPELINE).withTexture("Sampler0", texture).createRenderSetup());
+      return RenderType.create(
+         "sift_rift_" + sift + "_" + glow, RenderSetup.builder(glow ? GLOW_PIPELINE : SURFACE_PIPELINE).withTexture("Sampler0", texture).createRenderSetup()
+      );
    }
 
    private static Identifier id(String path) {

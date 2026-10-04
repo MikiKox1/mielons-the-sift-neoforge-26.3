@@ -15,11 +15,11 @@ import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
 
 public final class SiftIchorSnowFeature implements Feature {
-   public static final MapCodec CODEC = MapCodec.unit(SiftIchorSnowFeature::new);
+   public static final MapCodec<SiftIchorSnowFeature> CODEC = MapCodec.unit(SiftIchorSnowFeature::new);
    private static final long SNOW_SALT = 5279142693729160783L;
    private static final long DETAIL_SALT = 6002822589557593153L;
 
-   public MapCodec codec() {
+   public MapCodec<SiftIchorSnowFeature> codec() {
       return CODEC;
    }
 
@@ -29,8 +29,8 @@ public final class SiftIchorSnowFeature implements Feature {
       long seed = level.getSeed();
       boolean changed = false;
 
-      for (int x = minX; x < minX + 16; ++x) {
-         for (int z = minZ; z < minZ + 16; ++z) {
+      for (int x = minX; x < minX + 16; x++) {
+         for (int z = minZ; z < minZ + 16; z++) {
             int groundY = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
             if (groundY >= level.getMinY() && groundY < level.getMaxY() - 2) {
                BlockPos groundPos = new BlockPos(x, groundY, z);
@@ -65,23 +65,28 @@ public final class SiftIchorSnowFeature implements Feature {
          BlockState snow = (BlockState)ModBlocks.ICHOR_SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, layers);
          if (!snow.canSurvive(level, snowPos)) {
             return false;
-         } else {
-            clearUpperSnifferHalf(level, snowPos, above);
-            level.setBlock(snowPos, snow, 2);
-            BlockState support = level.getBlockState(supportPos);
-            if (support.is(ModBlocks.SIFTSLATE_GROWTH) && !(Boolean)support.getValue(SiftslateGrowthBlock.SNOWY)) {
-               level.setBlock(supportPos, (BlockState)support.setValue(SiftslateGrowthBlock.SNOWY, true), 2);
-            }
-
-            return true;
          }
+
+         clearUpperSnifferHalf(level, snowPos, above);
+         level.setBlock(snowPos, snow, 2);
+         BlockState support = level.getBlockState(supportPos);
+         if (support.is(ModBlocks.SIFTSLATE_GROWTH) && !(Boolean)support.getValue(SiftslateGrowthBlock.SNOWY)) {
+            level.setBlock(supportPos, (BlockState)support.setValue(SiftslateGrowthBlock.SNOWY, true), 2);
+         }
+
+         return true;
       } else {
          return false;
       }
    }
 
    private static boolean isNaturalMountainSurface(BlockState state) {
-      return state.is(ModBlocks.SIFTSLATE) || state.is(ModBlocks.SIFTSLATE_GROWTH) || state.is(ModBlocks.HEALTHY_SCULK) || state.is(ModBlocks.DRY_HEALTHY_SCULK) || state.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH) || state.is(Blocks.SCULK);
+      return state.is(ModBlocks.SIFTSLATE)
+         || state.is(ModBlocks.SIFTSLATE_GROWTH)
+         || state.is(ModBlocks.HEALTHY_SCULK)
+         || state.is(ModBlocks.DRY_HEALTHY_SCULK)
+         || state.is(ModBlocks.DRY_HEALTHY_SCULK_GROWTH)
+         || state.is(Blocks.SCULK);
    }
 
    private static boolean isWillowSnowSupport(BlockState state) {
@@ -89,7 +94,21 @@ public final class SiftIchorSnowFeature implements Feature {
    }
 
    private static boolean isReplaceablePeakVegetation(BlockState state) {
-      return state.is(ModBlocks.HEALTHY_SCULK_SPROUTS) || state.is(ModBlocks.DRY_HEALTHY_SCULK_SPROUTS) || state.is(ModBlocks.SIFTSLATE_STALKS) || state.is(ModBlocks.OVERGROWN_FRONDS) || state.is(ModBlocks.OVERGROWN_CHARD) || state.is(ModBlocks.OVERGROWN_STALKS) || state.is(ModBlocks.OVERGROWN_LOTUS) || state.is(ModBlocks.SUNBURST_PLANT) || state.is(ModBlocks.WHISPERBLOOM) || state.is(Blocks.SCULK_VEIN) || state.is(Blocks.WILDFLOWERS) || state.is(Blocks.TORCHFLOWER) || state.is(Blocks.TORCHFLOWER_CROP) || state.is(Blocks.PITCHER_CROP) || state.is(Blocks.PITCHER_PLANT);
+      return state.is(ModBlocks.HEALTHY_SCULK_SPROUTS)
+         || state.is(ModBlocks.DRY_HEALTHY_SCULK_SPROUTS)
+         || state.is(ModBlocks.SIFTSLATE_STALKS)
+         || state.is(ModBlocks.OVERGROWN_FRONDS)
+         || state.is(ModBlocks.OVERGROWN_CHARD)
+         || state.is(ModBlocks.OVERGROWN_STALKS)
+         || state.is(ModBlocks.OVERGROWN_LOTUS)
+         || state.is(ModBlocks.SUNBURST_PLANT)
+         || state.is(ModBlocks.WHISPERBLOOM)
+         || state.is(Blocks.SCULK_VEIN)
+         || state.is(Blocks.WILDFLOWERS)
+         || state.is(Blocks.TORCHFLOWER)
+         || state.is(Blocks.TORCHFLOWER_CROP)
+         || state.is(Blocks.PITCHER_CROP)
+         || state.is(Blocks.PITCHER_PLANT);
    }
 
    private static void clearUpperSnifferHalf(WorldGenLevel level, BlockPos lowerPos, BlockState lowerState) {
@@ -99,17 +118,16 @@ public final class SiftIchorSnowFeature implements Feature {
          if ((upperState.is(Blocks.PITCHER_CROP) || upperState.is(Blocks.PITCHER_PLANT)) && level.ensureCanWrite(upperPos)) {
             level.setBlock(upperPos, Blocks.AIR.defaultBlockState(), 2);
          }
-
       }
    }
 
    private static double valueNoise(long seed, int x, int z, int scale) {
       int cellX = Math.floorDiv(x, scale);
       int cellZ = Math.floorDiv(z, scale);
-      double localX = (double)Math.floorMod(x, scale) / (double)scale;
-      double localZ = (double)Math.floorMod(z, scale) / (double)scale;
-      double smoothX = localX * localX * ((double)3.0F - (double)2.0F * localX);
-      double smoothZ = localZ * localZ * ((double)3.0F - (double)2.0F * localZ);
+      double localX = (double)Math.floorMod(x, scale) / scale;
+      double localZ = (double)Math.floorMod(z, scale) / scale;
+      double smoothX = localX * localX * (3.0 - 2.0 * localX);
+      double smoothZ = localZ * localZ * (3.0 - 2.0 * localZ);
       double a = unit(seed, cellX, cellZ);
       double b = unit(seed, cellX + 1, cellZ);
       double c = unit(seed, cellX, cellZ + 1);
@@ -118,13 +136,13 @@ public final class SiftIchorSnowFeature implements Feature {
    }
 
    private static double unit(long seed, int x, int z) {
-      long value = seed ^ (long)x * -7046029254386353131L ^ (long)z * -4417276706812531889L;
+      long value = seed ^ x * -7046029254386353131L ^ z * -4417276706812531889L;
       value ^= value >>> 30;
       value *= -4658895280553007687L;
       value ^= value >>> 27;
       value *= -7723592293110705685L;
       value ^= value >>> 31;
-      return (double)(value >>> 11) * (double)1.110223E-16F;
+      return (value >>> 11) * 1.110223E-16F;
    }
 
    private static double lerp(double delta, double start, double end) {
