@@ -246,7 +246,7 @@ public final class SiftSurfaceSculkRegionFeature implements Feature {
    }
 
    private static double unit(long value) {
-      return (value >>> 11) * 1.110223E-16F;
+      return (value >>> 11) * 0x1.0p-53;
    }
 
    private record DarkSpawnPlan(SiftSurfaceSculkRegionFeature.SculkBlob blob, List<BlockPos> sites) {

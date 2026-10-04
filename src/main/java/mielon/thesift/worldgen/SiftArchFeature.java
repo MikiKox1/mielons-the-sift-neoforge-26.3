@@ -338,7 +338,7 @@ public final class SiftArchFeature implements Feature {
       value ^= value >>> 27;
       value *= -7723592293110705685L;
       value ^= value >>> 31;
-      return (value >>> 11) * 1.110223E-16F;
+      return (value >>> 11) * 0x1.0p-53;
    }
 
    private static double smootherstep(double value) {

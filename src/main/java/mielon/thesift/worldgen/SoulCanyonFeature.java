@@ -460,7 +460,7 @@ public final class SoulCanyonFeature implements Feature {
       value ^= value >>> 30;
       value *= -4658895280553007687L;
       value ^= value >>> 27;
-      return ((value ^ value >>> 31) >>> 11) * 1.110223E-16F;
+      return ((value ^ value >>> 31) >>> 11) * 0x1.0p-53;
    }
 
    private record CanyonColumn(int x, int z, int surfaceY, int floorY, int depth, double progress, int alongStep, int sideDistance, double signedSide) {
