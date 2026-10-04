@@ -23,16 +23,16 @@ The exact release behavior was reconstructed from the official 1.1.1 artifact wi
 
 Before beginning the loader port, the reconstructed Fabric 1.1.1 source was required to build successfully on the release toolchain recorded in its manifest (Gradle 9.6.0 / Fabric Loom 1.17.21 / Java 25). The rebuilt artifact contains exactly the same 317 class paths and the same 1104 gameplay/resource entries as the published 1.1.1 JAR. Re-decompiling the rebuilt JAR yields the same 216 top-level Java source paths; 196/216 are text-identical to the official-release decompilation and the remaining 20 were reviewed as compiler/decompiler-equivalent source-shape differences. Seven deterministic worldgen helpers were explicitly corrected to preserve the official release's double-precision `2^-53` arithmetic before this comparison.
 
-The working tree additionally retains the two public upstream commits that are newer than the 1.1.1 publication date:
+The working tree additionally retains two public upstream changes that are not present in the published 1.1.1 artifact:
 
 - `f57d2f6` — Russian translation
 - `8eb1757` — multiplayer compatibility fix
 
-The multiplayer commit's `ModItems` jukebox change was already present in the 1.1.1 release and was therefore not duplicated; only the missing post-release client compatibility pieces were applied.
+`f57d2f6` predates the September 30 release chronologically, but its Russian translation is absent from the published 1.1.1 JAR and is therefore retained as an upstream overlay. The October 1 multiplayer commit is retained in full, including its safer delayed jukebox lookup for the Rift music disc.
 
 ## Current validated source baseline
 
-The working branch intentionally layers the public post-release upstream commits on top of the reconstructed 1.1.1 behavior. This keeps the Russian translation and the October 1 multiplayer compatibility fix (`VanillaPaletteRemapper`, `IdMapperMixin`, `SiftServerDetectionMixin`) because the port targets the newest available upstream state rather than the September 30 release in isolation. This combined baseline builds successfully on Fabric and contains 320 class entries.
+The working branch intentionally layers the public upstream changes missing from the release artifact on top of the reconstructed 1.1.1 behavior. This keeps the Russian translation and the October 1 multiplayer compatibility fix (`VanillaPaletteRemapper`, `IdMapperMixin`, `SiftServerDetectionMixin`, plus the Rift jukebox lookup change) because the port targets the newest available upstream state rather than the September 30 release in isolation. This combined baseline builds successfully on Fabric and contains 320 class entries.
 
 The project additionally preserves `LICENSE_the_sift` from upstream.
 

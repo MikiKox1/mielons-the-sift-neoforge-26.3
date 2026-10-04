@@ -31,6 +31,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.JukeboxPlayable;
 import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SmithingTemplateItem;
@@ -141,7 +142,14 @@ public final class ModItems {
       Registries.JUKEBOX_SONG, Identifier.fromNamespaceAndPath("the_sift", "rift")
    );
    public static final Item MUSIC_DISC_RIFT = registerItem(
-      "music_disc_rift", new Properties().stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(RIFT_JUKEBOX_SONG_KEY)
+      "music_disc_rift",
+      new Properties()
+         .stacksTo(1)
+         .rarity(Rarity.RARE)
+         .delayedComponent(
+            DataComponents.JUKEBOX_PLAYABLE,
+            provider -> provider.get(RIFT_JUKEBOX_SONG_KEY).map(JukeboxPlayable::new).orElse(null)
+         )
    );
    public static final ResourceKey<JukeboxSong> WELLSPRING_JUKEBOX_SONG_KEY = ResourceKey.create(
       Registries.JUKEBOX_SONG, Identifier.fromNamespaceAndPath("the_sift", "wellspring")
