@@ -3,9 +3,7 @@ package mielon.thesift.mixin;
 import mielon.thesift.block.ModBlocks;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.LightLayer;
@@ -91,12 +89,4 @@ public abstract class ServerLevelWeatherMixin {
       }
    }
 
-   @Redirect(
-      method = "advanceWeatherCycle",
-      at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;broadcastAll(Lnet/minecraft/network/protocol/Packet;)V")
-   )
-   private void theSift$broadcastWeatherInsideDimension(PlayerList players, Packet<?> packet) {
-      ServerLevel self = (ServerLevel)(Object)this;
-      players.broadcastAll(packet, self.dimension());
-   }
 }

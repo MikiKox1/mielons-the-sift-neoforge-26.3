@@ -1,23 +1,37 @@
 package mielon.thesift.fluid;
 
+import mielon.thesift.block.ModBlocks;
 import mielon.thesift.platform.ModRegistration;
 import mielon.thesift.sound.ModSounds;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.SoundActions;
+import net.neoforged.neoforge.fluids.FluidInteractionRegistry;
 import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.RegisterCauldronFluidContentEvent;
+import net.neoforged.neoforge.fluids.FluidInteractionRegistry.InteractionInformation;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.transfer.fluid.BucketResourceHandler;
 
 public final class ModFluids {
+   private static boolean neoForgeInteractionsRegistered;
+
    public static final FluidType ICHOR_TYPE = ModRegistration.register(
       NeoForgeRegistries.FLUID_TYPES,
       id("ichor"),
@@ -58,6 +72,46 @@ public final class ModFluids {
 
    public static void initialize() {
       IchorState.source = ICHOR.getSource(false);
+   }
+
+   public static void registerNeoForgeInteractions() {
+      if (neoForgeInteractionsRegistered) {
+         return;
+      }
+
+      neoForgeInteractionsRegistered = true;
+      FluidInteractionRegistry.addInteraction(
+         NeoForgeMod.LAVA_TYPE.value(),
+         new InteractionInformation(
+            (level, pos, neighborPos, lava) -> {
+               if (!IchorWaterlogging.isIchor(level.getFluidState(neighborPos).getType())) {
+                  return false;
+               }
+
+               // Fabric's LiquidBlock contact hook gives ordinary water priority
+               // over Ichor regardless of which adjacent direction is visited first.
+               for (Direction direction : LiquidBlock.POSSIBLE_FLOW_DIRECTIONS) {
+                  FluidState neighbor = level.getFluidState(pos.relative(direction.getOpposite()));
+                  if (neighbor.is(FluidTags.WATER) && !IchorWaterlogging.isIchor(neighbor.getType())) {
+                     return false;
+                  }
+               }
+
+               return true;
+            },
+            lava -> lava.isSource() ? Blocks.OBSIDIAN.defaultBlockState() : ModBlocks.COBBLED_SIFTSLATE.defaultBlockState()
+         )
+      );
+   }
+
+   public static void registerCauldronFluidContent(RegisterCauldronFluidContentEvent event) {
+      event.register(ModBlocks.ICHOR_CAULDRON, ICHOR, FluidType.BUCKET_VOLUME, LayeredCauldronBlock.LEVEL);
+   }
+
+   public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+      // NeoForge's fallback bucket provider deliberately covers exact BucketItem
+      // instances only; IchorBucketItem is a subclass and must opt in explicitly.
+      event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new BucketResourceHandler(access), ICHOR_BUCKET);
    }
 
    private static Identifier id(String path) {

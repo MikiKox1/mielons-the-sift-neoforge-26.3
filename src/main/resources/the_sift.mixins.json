@@ -42,7 +42,8 @@
     "SiftStemMixins$Growing",
     "SiftStemMixins$Attached",
     "SiftAfterBlockBreakMixin",
-    "SiftAfterDeathMixin"
+    "SiftAfterDeathMixin",
+    "SiftAfterPlayerDeathMixin"
   ],
   "injectors": {
     "defaultRequire": 1

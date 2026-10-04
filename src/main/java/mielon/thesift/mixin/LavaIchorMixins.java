@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
+import net.neoforged.neoforge.event.EventHooks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -44,7 +45,7 @@ public final class LavaIchorMixins {
 
             if (!touchesWater && touchesIchor) {
                BlockState resultx = level.getFluidState(pos).isSource() ? Blocks.OBSIDIAN.defaultBlockState() : ModBlocks.COBBLED_SIFTSLATE.defaultBlockState();
-               level.setBlockAndUpdate(pos, resultx);
+               level.setBlockAndUpdate(pos, EventHooks.fireFluidPlaceBlockEvent(level, pos, pos, resultx));
                level.levelEvent(1501, pos, 0);
                cir.setReturnValue(false);
             }
@@ -70,7 +71,12 @@ public final class LavaIchorMixins {
 
             BlockState ichorState = level.getBlockState(ichorPos);
             if (ichorState.getBlock() instanceof LiquidBlock && IchorWaterlogging.isIchor(ichorState.getFluidState().getType())) {
-               level.setBlock(ichorPos, ModBlocks.SIFTSLATE.defaultBlockState(), 3);
+               BlockPos lavaPos = state.is(Blocks.LAVA) ? pos : pos.above();
+               level.setBlock(
+                  ichorPos,
+                  EventHooks.fireFluidPlaceBlockEvent(level, ichorPos, lavaPos, ModBlocks.SIFTSLATE.defaultBlockState()),
+                  3
+               );
                level.levelEvent(1501, ichorPos, 0);
             }
          }
@@ -82,7 +88,11 @@ public final class LavaIchorMixins {
       @Inject(method = "spreadTo", at = @At("HEAD"), cancellable = true)
       private void theSift$solidifyOnFlow(LevelAccessor level, BlockPos pos, BlockState state, Direction direction, FluidState fluid, CallbackInfo ci) {
          if (direction == Direction.DOWN && state.getBlock() instanceof LiquidBlock && IchorWaterlogging.isIchor(level.getFluidState(pos).getType())) {
-            level.setBlock(pos, ModBlocks.SIFTSLATE.defaultBlockState(), 3);
+            level.setBlock(
+               pos,
+               EventHooks.fireFluidPlaceBlockEvent(level, pos, pos.above(), ModBlocks.SIFTSLATE.defaultBlockState()),
+               3
+            );
             level.levelEvent(1501, pos, 0);
             ci.cancel();
          }

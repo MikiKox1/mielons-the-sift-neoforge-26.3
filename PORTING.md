@@ -97,6 +97,22 @@ The stage 3 commit contains only the three access transformations corresponding 
 - Full `compileJava` now has no Stage 5 errors. The remaining compiler failures are confined to eight later client/render files: the Fabric client entrypoints/shader loader compatibility and the GeckoLib 5.5.7 renderer-state migration.
 - No live NeoPack files have been modified or deployed.
 
+### Stage 6 common Mixins / gameplay status
+
+- Every common/server mixin target was re-audited against the published Fabric 1.1.1 behavior and the patched Minecraft classes shipped by NeoForge `26.3.0.43-beta`. Existing release mixins were kept when NeoForge has no exact timing/behavior replacement rather than being rewritten merely for loader symmetry.
+- NeoForge patches `LiquidBlock#neighborChanged` to use `FluidInteractionRegistry` instead of the vanilla/Fabric `shouldSpreadLiquid` path. A native lava-type interaction now restores Ichor horizontal-contact solidification for later neighbor updates while preserving the Fabric priority rule that real water wins when both water and Ichor touch the same lava block. The original `shouldSpreadLiquid` mixin remains for placement-time contact, because `.43-beta` still uses it from `LiquidBlock#onPlace`.
+- Direct Ichor/lava conversions that still require mixins now route their replacement states through NeoForge `EventHooks.fireFluidPlaceBlockEvent(...)`, matching the platform hook used by patched lava interactions while retaining the same default Obsidian/Cobbled Siftslate/Siftslate results.
+- Ichor cauldrons are registered through `RegisterCauldronFluidContentEvent`, and the custom `IchorBucketItem` explicitly exposes `Capabilities.Fluid.ITEM`. NeoForge's fallback bucket provider intentionally handles only exact `BucketItem` instances, so the subclass requires this registration for native fluid-transfer interop.
+- The obsolete Fabric weather packet redirect was removed. `.43-beta` already broadcasts weather packets with `PlayerList.broadcastAll(packet, dimension)`, so retaining the one-argument redirect would fail mixin application under `defaultRequire = 1`. Per-dimension weather data and Ichor snow precipitation hooks remain in place because NeoForge does not replace those release behaviors.
+- Fabric's `ServerLivingEntityEvents.AFTER_DEATH` parity is complete for players as well as ordinary living entities: `ServerPlayer` has its own `die` override, so a dedicated `ServerPlayer.die @TAIL` mixin mirrors Fabric Entity Events and does not double-dispatch through `LivingEntity.die`.
+- The Charoite anvil restriction now applies at `AnvilMenu#createResult` TAIL on NeoForge. This preserves the same final empty output / cost `1`, while allowing `.43-beta`'s wrapped `CommonHooks.onAnvilUpdate(...)` / `AnvilUpdateEvent` to execute first instead of being skipped by a cancellable HEAD injection.
+- `IchorBlockPlacementMixin` now wraps the actual `BlockItem#placeBlock(updatedPlaceContext, state)` invocation and uses that invocation context. This fixes an upstream 1.1.1 placement bug where scaffolding could inspect the original clicked position rather than the moved placement target, causing Ichor loss or duplication.
+- The custom Sonorous/Horn `NoteBlockMixin` intentionally remains release-first: its target methods are valid on `.43-beta`, but its custom eight-sound paths bypass NeoForge `NoteBlockEvent.Change/Play`. Mapping arbitrary external note/instrument mutations onto The Sift's eight custom sounds is not well-defined, so no speculative compatibility behavior was added.
+- Two additional inherited Fabric issues were confirmed but deliberately left unchanged during the loader port: a weakly-consistent persistence race in `SiftLandmarkTracker` and the absence of an explicit shutdown flush in `RiftDirectory`. They are upstream gameplay follow-ups, not NeoForge regressions.
+- Forced Stage 6 common/server compilation (`--rerun-tasks`) plus `processResources`: `BUILD SUCCESSFUL` on Java 25 / NeoForge `26.3.0.43-beta`.
+- Full `compileJava` still fails only in the same eight Stage 7 client/render files, with zero errors in Stage 6 files.
+- No live NeoPack files have been modified or deployed.
+
 ## Porting rules
 
 1. Preserve Minecraft 26.3 gameplay/data/render behavior from the reconstructed 1.1.1 source.

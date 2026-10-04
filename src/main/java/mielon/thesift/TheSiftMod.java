@@ -48,6 +48,8 @@ import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.fluids.RegisterCauldronFluidContentEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.slf4j.Logger;
@@ -67,6 +69,8 @@ public final class TheSiftMod {
       modBus.addListener(TheSiftMod::modifyDefaultComponents);
       modBus.addListener(TheSiftMod::addVanillaBlockEntityBlocks);
       modBus.addListener(TheSiftMod::registerPayloads);
+      modBus.addListener(TheSiftMod::registerCauldronFluidContent);
+      modBus.addListener(TheSiftMod::registerCapabilities);
    }
 
    private void registerContent(RegisterEvent event) {
@@ -96,6 +100,7 @@ public final class TheSiftMod {
 
    private void onInitialize() {
       ModBlocks.initialize();
+      ModFluids.registerNeoForgeInteractions();
       SiftPlantInteractions.register();
       SiftLocateCommand.register();
       SiftWeatherCommand.register();
@@ -143,6 +148,14 @@ public final class TheSiftMod {
    private static void registerPayloads(RegisterPayloadHandlersEvent event) {
       RiftLoadingPayload.register(event);
       SiftIntroReadyPayload.register(event);
+   }
+
+   private static void registerCauldronFluidContent(RegisterCauldronFluidContentEvent event) {
+      ModFluids.registerCauldronFluidContent(event);
+   }
+
+   private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+      ModFluids.registerCapabilities(event);
    }
 
    private static void registerServerLifecycle() {
