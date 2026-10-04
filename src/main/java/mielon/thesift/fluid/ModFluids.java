@@ -1,6 +1,7 @@
 package mielon.thesift.fluid;
 
 import mielon.thesift.platform.ModRegistration;
+import mielon.thesift.sound.ModSounds;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -12,8 +13,29 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.common.SoundActions;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 public final class ModFluids {
+   public static final FluidType ICHOR_TYPE = ModRegistration.register(
+      NeoForgeRegistries.FLUID_TYPES,
+      id("ichor"),
+      new FluidType(
+         FluidType.Properties.create()
+            .descriptionId("block.the_sift.ichor")
+            .lightLevel(12)
+            .canSwim(true)
+            .canDrown(true)
+            .fallDistanceModifier(0.0F)
+            .canExtinguish(true)
+            .supportsBoating(true)
+            .canHydrate(true)
+            .isWaterLike(true)
+            .sound(SoundActions.BUCKET_FILL, ModSounds.ICHOR_BUCKET_FILL)
+            .sound(SoundActions.BUCKET_EMPTY, ModSounds.ICHOR_BUCKET_EMPTY)
+      ) {}
+   );
    public static final ResourceKey<Fluid> ICHOR_KEY = ResourceKey.create(BuiltInRegistries.FLUID.key(), id("ichor"));
    public static final ResourceKey<Fluid> FLOWING_ICHOR_KEY = ResourceKey.create(BuiltInRegistries.FLUID.key(), id("flowing_ichor"));
    public static final FlowingFluid ICHOR = (FlowingFluid)ModRegistration.register(BuiltInRegistries.FLUID, ICHOR_KEY, new IchorFluid.Source());

@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.WaterFluid;
+import net.neoforged.neoforge.fluids.FluidType;
 
 public abstract class IchorFluid extends WaterFluid {
    private static final int REGENERATION_TICKS_AFTER_EXIT = 101;
@@ -38,6 +39,11 @@ public abstract class IchorFluid extends WaterFluid {
 
    public Item getBucket() {
       return ModFluids.ICHOR_BUCKET;
+   }
+
+   @Override
+   public FluidType getFluidType() {
+      return ModFluids.ICHOR_TYPE;
    }
 
    public Optional<SoundEvent> getPickupSound() {

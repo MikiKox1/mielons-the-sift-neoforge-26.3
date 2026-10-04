@@ -14,7 +14,6 @@ import mielon.thesift.client.particle.SiftParallaxParticle;
 import mielon.thesift.client.particle.SingerSoundWaveParticle;
 import mielon.thesift.client.particle.SoulParticle;
 import mielon.thesift.client.particle.SoundWaveParticle;
-import mielon.thesift.client.render.IchorFluidRendering;
 import mielon.thesift.client.render.SiftCloudRenderPipelines;
 import mielon.thesift.client.render.SiftPortalRenderer;
 import mielon.thesift.client.render.SiftProceduralSkyRenderer;
@@ -50,7 +49,6 @@ public final class TheSiftClient implements ClientModInitializer {
       SiftShaderCompat.initialize();
       SonorousBeamRenderTypes.initialize();
       SiftProceduralSkyRenderer.initialize();
-      IchorFluidRendering.register();
       SiftCloudRenderPipelines.initialize();
       ModelLayerRegistry.registerModelLayer(OVERGROWN_WILLOW_BOAT_LAYER, BoatModel::createBoatModel);
       ModelLayerRegistry.registerModelLayer(OVERGROWN_WILLOW_CHEST_BOAT_LAYER, BoatModel::createChestBoatModel);

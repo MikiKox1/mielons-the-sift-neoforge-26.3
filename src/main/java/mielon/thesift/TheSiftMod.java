@@ -14,6 +14,8 @@ import mielon.thesift.fluid.IchorWaterlogging;
 import mielon.thesift.fluid.ModFluids;
 import mielon.thesift.item.BlubItems;
 import mielon.thesift.item.ModItems;
+import mielon.thesift.network.RiftLoadingPayload;
+import mielon.thesift.network.SiftIntroReadyPayload;
 import mielon.thesift.particle.ModParticles;
 import mielon.thesift.platform.ModRegistration;
 import mielon.thesift.platform.NeoEvents;
@@ -46,6 +48,7 @@ import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +66,7 @@ public final class TheSiftMod {
       modBus.addListener(TheSiftMod::registerSpawnPlacements);
       modBus.addListener(TheSiftMod::modifyDefaultComponents);
       modBus.addListener(TheSiftMod::addVanillaBlockEntityBlocks);
+      modBus.addListener(TheSiftMod::registerPayloads);
    }
 
    private void registerContent(RegisterEvent event) {
@@ -134,6 +138,11 @@ public final class TheSiftMod {
 
    private static void addVanillaBlockEntityBlocks(BlockEntityTypeAddBlocksEvent event) {
       ModBlocks.addVanillaBlockEntityBlocks(event);
+   }
+
+   private static void registerPayloads(RegisterPayloadHandlersEvent event) {
+      RiftLoadingPayload.register(event);
+      SiftIntroReadyPayload.register(event);
    }
 
    private static void registerServerLifecycle() {

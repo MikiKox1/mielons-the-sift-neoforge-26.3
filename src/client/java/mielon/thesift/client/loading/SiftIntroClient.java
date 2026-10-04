@@ -2,10 +2,10 @@ package mielon.thesift.client.loading;
 
 import mielon.thesift.network.SiftIntroReadyPayload;
 import mielon.thesift.world.TheSiftDimension;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 public final class SiftIntroClient {
    private static ClientLevel trackedLevel;
@@ -28,7 +28,9 @@ public final class SiftIntroClient {
             if (minecraft.gui.screen() == null && !SiftLoadingScreenState.isActive() && hasGroundBelow(minecraft)) {
                if (++readyTicks >= 20) {
                   reported = true;
-                  ClientPlayNetworking.send(new SiftIntroReadyPayload());
+                  if (minecraft.getConnection() != null && minecraft.getConnection().hasChannel(SiftIntroReadyPayload.TYPE)) {
+                     ClientPacketDistributor.sendToServer(new SiftIntroReadyPayload());
+                  }
                }
             } else {
                readyTicks = 0;

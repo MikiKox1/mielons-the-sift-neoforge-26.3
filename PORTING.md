@@ -82,6 +82,21 @@ The stage 3 commit contains only the three access transformations corresponding 
 - Full `compileJava` now fails only in 12 files that belong to later stages: the two Fabric networking classes plus ten client/render compatibility files (including the known GeckoLib 5.5.7 render-state migration). No Stage 4 file appears in the compiler error set.
 - No live NeoPack files have been modified or deployed.
 
+### Stage 5 networking / Ichor status
+
+- Both play payloads now use NeoForge `RegisterPayloadHandlersEvent` / `PayloadRegistrar` with protocol version `1`; the existing `CustomPacketPayload.Type` ids and `RegistryFriendlyByteBuf` codecs are unchanged. Both registrations are optional, matching Fabric's advertised-channel behavior instead of turning absence into a NeoForge handshake rejection.
+- `RiftLoadingPayload` is registered as play-to-client without a common-side client handler. Its handler is attached only on `Dist.CLIENT` through `RegisterClientPayloadHandlersEvent`, preventing common/dedicated-server code from loading client classes.
+- Server-to-client Rift sends preserve the Fabric `canSend` guard through NeoForge's negotiated `player.connection.hasChannel(TYPE)` before `PacketDistributor.sendToPlayer(...)`.
+- `SiftIntroReadyPayload` is play-to-server. NeoForge `.43-beta` payload handlers execute on the main thread by default, so the old Fabric `server.execute(...)` hop was intentionally removed. Client sends use the client-only `ClientPacketDistributor.sendToServer(...)` after checking the negotiated channel, which is required for safe optional-channel sends.
+- Ichor now owns a registered `the_sift:ichor` `FluidType` in `NeoForgeRegistries.FLUID_TYPES`, and both source/flowing Ichor override `getFluidType()` to return it. This is mandatory on `.43-beta`; the vanilla fallback rejects mod fluids.
+- The Ichor `FluidType` keeps NeoForge's water defaults for density/viscosity instead of importing the historical 1.21.1 Neo-only `1500/1500` values. Explicit properties preserve release behavior that Fabric got from `WaterFluid` plus `#minecraft:water`: water-like movement, swimming/drowning, extinguishing, boating, hydration, zero fall-distance carryover, custom fill/empty sounds, and light level 12. Source conversion remains disabled.
+- Ichor terrain rendering now uses client-only `RegisterFluidModelsEvent` and the existing `FluidModel.Unbaked` still/flow/water-overlay materials with untinted `-1` color semantics. No legacy `FluidRenderingRegistry` or old `IClientFluidTypeExtensions` texture registration is used.
+- The exact `.43-beta` custom-registry ordering was checked: vanilla `FLUID` registration occurs before modded registry events, so loading `ModFluids` during the fluid event safely queues `ICHOR_TYPE` before the later `neoforge:fluid_type` `RegisterEvent`.
+- Stage 5 validation (`src/main/java` plus the complete client loading/network surface and Ichor fluid model registration): `BUILD SUCCESSFUL` on Java 25 / NeoForge `26.3.0.43-beta`.
+- `generateModMetadata` and `processResources`: PASS after Stage 5.
+- Full `compileJava` now has no Stage 5 errors. The remaining compiler failures are confined to eight later client/render files: the Fabric client entrypoints/shader loader compatibility and the GeckoLib 5.5.7 renderer-state migration.
+- No live NeoPack files have been modified or deployed.
+
 ## Porting rules
 
 1. Preserve Minecraft 26.3 gameplay/data/render behavior from the reconstructed 1.1.1 source.
