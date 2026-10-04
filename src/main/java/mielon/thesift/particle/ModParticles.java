@@ -1,22 +1,21 @@
 package mielon.thesift.particle;
 
-import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
-import net.minecraft.core.Registry;
+import mielon.thesift.platform.ModRegistration;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 
 public final class ModParticles {
-   public static final SimpleParticleType SIFT_PARALLAX = FabricParticleTypes.simple();
-   public static final SimpleParticleType SIFT_NOTE = FabricParticleTypes.simple();
-   public static final SimpleParticleType SOUND_WAVE = FabricParticleTypes.simple();
-   public static final SimpleParticleType SINGER_SOUND_WAVE = FabricParticleTypes.simple();
-   public static final SimpleParticleType CANYON_SOUL = FabricParticleTypes.simple();
-   public static final SimpleParticleType SOUL_FRAGMENT = FabricParticleTypes.simple();
-   public static final SimpleParticleType ICHOR_SURFACE_MIST = FabricParticleTypes.simple();
-   public static final SimpleParticleType ICHOR_BUBBLE = FabricParticleTypes.simple();
-   public static final SimpleParticleType ICHOR_SPLASH = FabricParticleTypes.simple();
-   public static final SimpleParticleType ICHOR_RAIN_SPLASH = FabricParticleTypes.simple();
+   public static final SimpleParticleType SIFT_PARALLAX = new SimpleParticleType(false);
+   public static final SimpleParticleType SIFT_NOTE = new SimpleParticleType(false);
+   public static final SimpleParticleType SOUND_WAVE = new SimpleParticleType(false);
+   public static final SimpleParticleType SINGER_SOUND_WAVE = new SimpleParticleType(false);
+   public static final SimpleParticleType CANYON_SOUL = new SimpleParticleType(false);
+   public static final SimpleParticleType SOUL_FRAGMENT = new SimpleParticleType(false);
+   public static final SimpleParticleType ICHOR_SURFACE_MIST = new SimpleParticleType(false);
+   public static final SimpleParticleType ICHOR_BUBBLE = new SimpleParticleType(false);
+   public static final SimpleParticleType ICHOR_SPLASH = new SimpleParticleType(false);
+   public static final SimpleParticleType ICHOR_RAIN_SPLASH = new SimpleParticleType(false);
 
    private ModParticles() {
    }
@@ -25,7 +24,7 @@ public final class ModParticles {
    }
 
    private static void register(String name, SimpleParticleType type) {
-      Registry.register(BuiltInRegistries.PARTICLE_TYPE, Identifier.fromNamespaceAndPath("the_sift", name), type);
+      ModRegistration.register(BuiltInRegistries.PARTICLE_TYPE, Identifier.fromNamespaceAndPath("the_sift", name), type);
    }
 
    static {

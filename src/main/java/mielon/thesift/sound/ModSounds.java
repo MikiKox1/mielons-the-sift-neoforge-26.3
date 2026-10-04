@@ -1,6 +1,6 @@
 package mielon.thesift.sound;
 
-import net.minecraft.core.Registry;
+import mielon.thesift.platform.ModRegistration;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -75,12 +75,12 @@ public final class ModSounds {
 
    private static SoundEvent register(String path) {
       ResourceKey<SoundEvent> key = key(path);
-      return (SoundEvent)Registry.register(BuiltInRegistries.SOUND_EVENT, key, SoundEvent.createVariableRangeEvent(key.identifier()));
+      return (SoundEvent)ModRegistration.register(BuiltInRegistries.SOUND_EVENT, key, SoundEvent.createVariableRangeEvent(key.identifier()));
    }
 
    private static SoundEvent registerFixedRange(String path, float range) {
       ResourceKey<SoundEvent> key = key(path);
-      return (SoundEvent)Registry.register(BuiltInRegistries.SOUND_EVENT, key, SoundEvent.createFixedRangeEvent(key.identifier(), range));
+      return (SoundEvent)ModRegistration.register(BuiltInRegistries.SOUND_EVENT, key, SoundEvent.createFixedRangeEvent(key.identifier(), range));
    }
 
    private static ResourceKey<SoundEvent> key(String path) {

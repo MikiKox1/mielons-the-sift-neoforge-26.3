@@ -1,7 +1,7 @@
 package mielon.thesift.worldgen;
 
+import mielon.thesift.platform.ModRegistration;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.feature.Feature;
@@ -30,7 +30,7 @@ public final class ModWorldgen {
    }
 
    private static <F extends Feature> MapCodec<F> register(String name, MapCodec<F> codec) {
-      return (MapCodec<F>)Registry.register(BuiltInRegistries.FEATURE_TYPE, Identifier.fromNamespaceAndPath("the_sift", name), codec);
+      return (MapCodec<F>)ModRegistration.register(BuiltInRegistries.FEATURE_TYPE, Identifier.fromNamespaceAndPath("the_sift", name), codec);
    }
 
    public static void initialize() {

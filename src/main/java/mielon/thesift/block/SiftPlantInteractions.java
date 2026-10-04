@@ -1,7 +1,7 @@
 package mielon.thesift.block;
 
 import java.util.List;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import mielon.thesift.platform.NeoEvents.UseBlockCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Plane;

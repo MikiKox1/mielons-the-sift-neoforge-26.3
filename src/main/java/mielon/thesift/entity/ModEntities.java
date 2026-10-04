@@ -1,7 +1,7 @@
 package mielon.thesift.entity;
 
+import mielon.thesift.platform.ModRegistration;
 import mielon.thesift.item.ModItems;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -67,7 +67,7 @@ public final class ModEntities {
 
    private static <T extends Entity> EntityType<T> register(String path, Builder<T> builder) {
       ResourceKey<EntityType<?>> key = key(path);
-      return (EntityType<T>)Registry.register(BuiltInRegistries.ENTITY_TYPE, key, builder.build(key));
+      return (EntityType<T>)ModRegistration.register(BuiltInRegistries.ENTITY_TYPE, key, builder.build(key));
    }
 
    public static void initialize() {

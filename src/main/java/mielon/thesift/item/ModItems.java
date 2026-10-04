@@ -1,5 +1,7 @@
 package mielon.thesift.item;
 
+import mielon.thesift.platform.ModRegistration;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,11 +11,7 @@ import mielon.thesift.block.SonorousDeepslateBlock;
 import mielon.thesift.entity.ModEntities;
 import mielon.thesift.fluid.ModFluids;
 import mielon.thesift.sound.ModSounds;
-import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
-import net.fabricmc.fabric.api.item.v1.DefaultItemComponentEvents;
-import net.fabricmc.fabric.api.item.v1.DefaultItemComponentEvents.ModifyCallback;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -49,24 +47,25 @@ import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Constant;
+import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 
 public final class ModItems {
    public static final ResourceKey<Item> SINGER_SPAWN_EGG_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "singer_spawn_egg")
    );
-   public static final Item SINGER_SPAWN_EGG = (Item)Registry.register(
+   public static final Item SINGER_SPAWN_EGG = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM, SINGER_SPAWN_EGG_KEY, new SpawnEggItem(new Properties().setId(SINGER_SPAWN_EGG_KEY).spawnEgg(ModEntities.SINGER))
    );
    public static final ResourceKey<Item> ECHO_GOLEM_SPAWN_EGG_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "echo_golem_spawn_egg")
    );
-   public static final Item ECHO_GOLEM_SPAWN_EGG = (Item)Registry.register(
+   public static final Item ECHO_GOLEM_SPAWN_EGG = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM, ECHO_GOLEM_SPAWN_EGG_KEY, new SpawnEggItem(new Properties().setId(ECHO_GOLEM_SPAWN_EGG_KEY).spawnEgg(ModEntities.ECHO_GOLEM))
    );
    public static final ResourceKey<Item> DARK_SNIFFER_SPAWN_EGG_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "dark_sniffer_spawn_egg")
    );
-   public static final Item DARK_SNIFFER_SPAWN_EGG = (Item)Registry.register(
+   public static final Item DARK_SNIFFER_SPAWN_EGG = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM,
       DARK_SNIFFER_SPAWN_EGG_KEY,
       new SpawnEggItem(new Properties().setId(DARK_SNIFFER_SPAWN_EGG_KEY).spawnEgg(ModEntities.DARK_SNIFFER))
@@ -74,13 +73,13 @@ public final class ModItems {
    public static final ResourceKey<Item> SIFTER_SPAWN_EGG_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "sifter_spawn_egg")
    );
-   public static final Item SIFTER_SPAWN_EGG = (Item)Registry.register(
+   public static final Item SIFTER_SPAWN_EGG = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM, SIFTER_SPAWN_EGG_KEY, new SpawnEggItem(new Properties().setId(SIFTER_SPAWN_EGG_KEY).spawnEgg(ModEntities.SIFTER))
    );
    public static final ResourceKey<Item> OVERGROWN_WILLOW_BOAT_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "overgrown_willow_boat")
    );
-   public static final Item OVERGROWN_WILLOW_BOAT = (Item)Registry.register(
+   public static final Item OVERGROWN_WILLOW_BOAT = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM,
       OVERGROWN_WILLOW_BOAT_KEY,
       new BoatItem(ModEntities.OVERGROWN_WILLOW_BOAT, new Properties().stacksTo(1).setId(OVERGROWN_WILLOW_BOAT_KEY))
@@ -88,7 +87,7 @@ public final class ModItems {
    public static final ResourceKey<Item> OVERGROWN_WILLOW_CHEST_BOAT_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "overgrown_willow_chest_boat")
    );
-   public static final Item OVERGROWN_WILLOW_CHEST_BOAT = (Item)Registry.register(
+   public static final Item OVERGROWN_WILLOW_CHEST_BOAT = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM,
       OVERGROWN_WILLOW_CHEST_BOAT_KEY,
       new BoatItem(ModEntities.OVERGROWN_WILLOW_CHEST_BOAT, new Properties().stacksTo(1).setId(OVERGROWN_WILLOW_CHEST_BOAT_KEY))
@@ -110,7 +109,15 @@ public final class ModItems {
    );
    public static final ArmorMaterial SIFTITE_ARMOR_MATERIAL = new ArmorMaterial(
       ArmorMaterials.NETHERITE.durability() + 4,
-      ArmorMaterials.makeDefense(3, 6, 8, 3, 19),
+      new EnumMap<>(
+         Map.of(
+            ArmorType.BOOTS, 3,
+            ArmorType.LEGGINGS, 6,
+            ArmorType.CHESTPLATE, 8,
+            ArmorType.HELMET, 3,
+            ArmorType.BODY, 19
+         )
+      ),
       ArmorMaterials.NETHERITE.enchantmentValue(),
       BuiltInRegistries.SOUND_EVENT.wrapAsHolder(ModSounds.SIFTITE_ARMOR_EQUIP),
       3.0F,
@@ -160,7 +167,7 @@ public final class ModItems {
    public static final ResourceKey<Item> SCULKFLOWER_SEEDS_KEY = ResourceKey.create(
       BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", "sculkflower_seeds")
    );
-   public static final Item SCULKFLOWER_SEEDS = (Item)Registry.register(
+   public static final Item SCULKFLOWER_SEEDS = (Item)ModRegistration.register(
       BuiltInRegistries.ITEM, SCULKFLOWER_SEEDS_KEY, new BlockItem(ModBlocks.SCULKFLOWER_CROP, new Properties().setId(SCULKFLOWER_SEEDS_KEY))
    );
    public static final Item SIFTITE_SWORD = registerItem("siftite_sword", new Properties().sword(SIFTITE_TOOL_MATERIAL, 3.0F, -2.4F).fireResistant());
@@ -226,7 +233,7 @@ public final class ModItems {
    public static final ResourceKey<CreativeModeTab> CREATIVE_TAB_KEY = ResourceKey.create(
       BuiltInRegistries.CREATIVE_MODE_TAB.key(), Identifier.fromNamespaceAndPath("the_sift", "the_sift")
    );
-   public static final CreativeModeTab CREATIVE_TAB = FabricCreativeModeTab.builder()
+   public static final CreativeModeTab CREATIVE_TAB = CreativeModeTab.builder()
       .title(Component.translatable("itemGroup.the_sift"))
       .icon(() -> new ItemStack(ModBlocks.DRY_HEALTHY_SCULK_GROWTH_ITEM))
       .displayItems(
@@ -336,25 +343,32 @@ public final class ModItems {
       )
       .build();
 
+   static {
+      ModRegistration.register(BuiltInRegistries.CREATIVE_MODE_TAB, CREATIVE_TAB_KEY, CREATIVE_TAB);
+   }
+
    private ModItems() {
+   }
+
+   public static void bootstrap() {
+   }
+
+   public static void modifyDefaultComponents(ModifyDefaultComponentsEvent event) {
+      event.modify(SCULKFLOWER_SEEDS, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, new Compostable(new Constant(30))));
+      event.modify(ModBlocks.SCULKFLOWER_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, new Compostable(new Constant(65))));
    }
 
    public static void initialize() {
       IchorBottleItem.registerInteractions();
-      DefaultItemComponentEvents.MODIFY.register((ModifyCallback)context -> {
-         context.modify(SCULKFLOWER_SEEDS, builder -> builder.set(DataComponents.COMPOSTABLE, new Compostable(new Constant(30))));
-         context.modify(ModBlocks.SCULKFLOWER_ITEM, builder -> builder.set(DataComponents.COMPOSTABLE, new Compostable(new Constant(65))));
-      });
-      Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, CREATIVE_TAB_KEY, CREATIVE_TAB);
    }
 
    private static Item registerItem(String name, Properties properties) {
       ResourceKey<Item> key = ResourceKey.create(BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", name));
-      return (Item)Registry.register(BuiltInRegistries.ITEM, key, new Item(properties.setId(key)));
+      return (Item)ModRegistration.register(BuiltInRegistries.ITEM, key, new Item(properties.setId(key)));
    }
 
    private static <T extends Item> T registerItem(String name, Function<Properties, T> factory, Properties properties) {
       ResourceKey<Item> key = ResourceKey.create(BuiltInRegistries.ITEM.key(), Identifier.fromNamespaceAndPath("the_sift", name));
-      return (T)Registry.register(BuiltInRegistries.ITEM, key, factory.apply(properties.setId(key)));
+      return (T)ModRegistration.register(BuiltInRegistries.ITEM, key, factory.apply(properties.setId(key)));
    }
 }

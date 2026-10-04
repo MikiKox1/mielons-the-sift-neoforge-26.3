@@ -1,8 +1,8 @@
 package mielon.thesift.item;
 
 import mielon.thesift.fluid.ModFluids;
+import mielon.thesift.platform.NeoEvents.UseItemCallback;
 import mielon.thesift.sound.ModSounds;
-import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;

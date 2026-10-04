@@ -40,7 +40,9 @@
     "LavaIchorMixins$DownwardContact",
     "LavaIchorMixins$Flow",
     "SiftStemMixins$Growing",
-    "SiftStemMixins$Attached"
+    "SiftStemMixins$Attached",
+    "SiftAfterBlockBreakMixin",
+    "SiftAfterDeathMixin"
   ],
   "injectors": {
     "defaultRequire": 1

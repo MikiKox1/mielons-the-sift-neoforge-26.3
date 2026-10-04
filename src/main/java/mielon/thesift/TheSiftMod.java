@@ -14,9 +14,13 @@ import mielon.thesift.fluid.IchorWaterlogging;
 import mielon.thesift.fluid.ModFluids;
 import mielon.thesift.item.BlubItems;
 import mielon.thesift.item.ModItems;
-import mielon.thesift.network.RiftLoadingPayload;
-import mielon.thesift.network.SiftIntroReadyPayload;
 import mielon.thesift.particle.ModParticles;
+import mielon.thesift.platform.ModRegistration;
+import mielon.thesift.platform.NeoEvents;
+import mielon.thesift.platform.NeoEvents.ServerLifecycleEvents;
+import mielon.thesift.platform.NeoEvents.ServerLifecycleEvents.ServerStopped;
+import mielon.thesift.platform.NeoEvents.ServerTickEvents;
+import mielon.thesift.platform.NeoEvents.ServerTickEvents.EndTick;
 import mielon.thesift.portal.PortalGrowth;
 import mielon.thesift.portal.SonorousAutoplay;
 import mielon.thesift.portal.SonorousConsoles;
@@ -31,41 +35,70 @@ import mielon.thesift.world.SiftiteRecoveryManager;
 import mielon.thesift.worldgen.ModWorldgen;
 import mielon.thesift.worldgen.SiftFeaturePlacementGuard;
 import mielon.thesift.worldgen.SiftLandmarkTracker;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.ServerStopped;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndTick;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.SpawnPlacementTypes;
-import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
+import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class TheSiftMod implements ModInitializer {
+@Mod(TheSiftMod.MOD_ID)
+public final class TheSiftMod {
    public static final String MOD_ID = "the_sift";
    public static final Logger LOGGER = LoggerFactory.getLogger("the_sift");
 
-   public void onInitialize() {
-      ModFluids.initialize();
+   public TheSiftMod(IEventBus modBus) {
+      NeoEvents.bootstrap();
+      modBus.addListener(this::registerContent);
+      modBus.addListener(this::commonSetup);
+      modBus.addListener(TheSiftMod::registerEntityAttributes);
+      modBus.addListener(TheSiftMod::registerSpawnPlacements);
+      modBus.addListener(TheSiftMod::modifyDefaultComponents);
+      modBus.addListener(TheSiftMod::addVanillaBlockEntityBlocks);
+   }
+
+   private void registerContent(RegisterEvent event) {
+      if (event.getRegistryKey().equals(BuiltInRegistries.PARTICLE_TYPE.key())) {
+         ModParticles.initialize();
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.SOUND_EVENT.key())) {
+         ModSounds.initialize();
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.FLUID.key())) {
+         ModFluids.initialize();
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.BLOCK.key())) {
+         ModBlocks.bootstrap();
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.ENTITY_TYPE.key())) {
+         ModEntities.initialize();
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.ITEM.key())) {
+         ModItems.bootstrap();
+         BlubItems.initialize();
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.FEATURE_TYPE.key())) {
+         ModWorldgen.initialize();
+      }
+
+      ModRegistration.onRegister(event);
+   }
+
+   private void commonSetup(FMLCommonSetupEvent event) {
+      event.enqueueWork(this::onInitialize);
+   }
+
+   private void onInitialize() {
       ModBlocks.initialize();
-      ModWorldgen.initialize();
       SiftPlantInteractions.register();
       SiftLocateCommand.register();
       SiftWeatherCommand.register();
-      ModEntities.initialize();
       ModItems.initialize();
-      BlubItems.initialize();
       ModAdvancements.register();
       SiftiteRecoveryManager.register();
-      RiftLoadingPayload.register();
-      SiftIntroReadyPayload.register();
       ServerTickEvents.START_SERVER_TICK.register(RiftDirectory::tick);
-      registerEntityAttributes();
-      registerSpawnPlacements();
-      ModParticles.initialize();
-      ModSounds.initialize();
       SonorousIgnition.register();
       SingerSummoner.register();
       SonorousAutoplay.register();
@@ -74,20 +107,33 @@ public final class TheSiftMod implements ModInitializer {
       LOGGER.info("The Sift initialized.");
    }
 
-   private static void registerEntityAttributes() {
-      FabricDefaultAttributeRegistry.register(ModEntities.SINGER, SingerEntity.createAttributes());
-      FabricDefaultAttributeRegistry.register(ModEntities.ECHO_GOLEM, EchoGolemEntity.createAttributes());
-      FabricDefaultAttributeRegistry.register(ModEntities.DARK_SNIFFER, DarkSnifferEntity.createAttributes());
-      FabricDefaultAttributeRegistry.register(ModEntities.BLUB, BlubEntity.createAttributes());
-      FabricDefaultAttributeRegistry.register(ModEntities.SIFTER, SifterEntity.createAttributes());
+   private static void registerEntityAttributes(EntityAttributeCreationEvent event) {
+      event.put(ModEntities.SINGER, SingerEntity.createAttributes().build());
+      event.put(ModEntities.ECHO_GOLEM, EchoGolemEntity.createAttributes().build());
+      event.put(ModEntities.DARK_SNIFFER, DarkSnifferEntity.createAttributes().build());
+      event.put(ModEntities.BLUB, BlubEntity.createAttributes().build());
+      event.put(ModEntities.SIFTER, SifterEntity.createAttributes().build());
    }
 
-   private static void registerSpawnPlacements() {
-      SpawnPlacements.register(
-         ModEntities.ECHO_GOLEM, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, EchoGolemEntity::checkEchoGolemSpawnRules
+   private static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+      event.register(
+         ModEntities.ECHO_GOLEM,
+         SpawnPlacementTypes.ON_GROUND,
+         Types.MOTION_BLOCKING_NO_LEAVES,
+         EchoGolemEntity::checkEchoGolemSpawnRules,
+         Operation.REPLACE
       );
-      SpawnPlacements.register(ModEntities.BLUB, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, BlubEntity::checkBlubSpawnRules);
-      SpawnPlacements.register(ModEntities.SIFTER, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, SifterEntity::checkSifterSpawnRules);
+      event.register(ModEntities.BLUB, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, BlubEntity::checkBlubSpawnRules, Operation.REPLACE);
+      event.register(ModEntities.SIFTER, SpawnPlacementTypes.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, SifterEntity::checkSifterSpawnRules, Operation.REPLACE);
+   }
+
+   private static void modifyDefaultComponents(ModifyDefaultComponentsEvent event) {
+      ModBlocks.modifyDefaultComponents(event);
+      ModItems.modifyDefaultComponents(event);
+   }
+
+   private static void addVanillaBlockEntityBlocks(BlockEntityTypeAddBlocksEvent event) {
+      ModBlocks.addVanillaBlockEntityBlocks(event);
    }
 
    private static void registerServerLifecycle() {

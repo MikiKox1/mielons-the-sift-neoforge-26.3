@@ -63,7 +63,24 @@ The NeoForge baseline is intentionally pinned while this port is being brought u
 - `compileClasspath` resolution: PASS
 - `compileJava`: intentionally RED at the stage boundary because source migration has not started. The remaining failures are the expected Fabric-loader/API call sites (18 source files) plus NeoForge-facing source adaptations such as `ArmorMaterials.makeDefense` access and vanilla `BlockEntityType` extension. These belong to stage 4 and later, not to build-system bootstrap.
 
-Only the three access transformations corresponding to the published 26.3 Fabric access widener are enabled at this stage. No gameplay/platform-layer source changes are included in the stage 3 commit.
+The stage 3 commit contains only the three access transformations corresponding to the published 26.3 Fabric access widener. Stage 4 later adds one narrowly scoped `FireBlock#setFlammable` access transformation because NeoForge 26.3 has no equivalent flammability data map and the release registers explicit willow fire values.
+
+### Stage 4 common/platform status
+
+- The NeoForge entrypoint is native `@Mod` with an injected mod `IEventBus`.
+- The eight static registry-owner classes now defer insertion through `ModRegistration` and no longer call `Registry.register` directly. Objects, `ResourceKey`s, `setId(...)` calls and 26.3 constructors remain unchanged wherever possible.
+- Registry owners are initialized at their matching `.43-beta` `RegisterEvent`, rather than all at the first event. This preserves dependency order and, in particular, ensures `ModItems` receives the registered `SoundEvent` holder for the Siftite armor material instead of capturing a direct holder before the sound registry event completes.
+- `ModRegistration` rejects registrations queued after their target registry event has completed, turning a silent late-registration loss into an immediate startup failure.
+- Entity attributes use `EntityAttributeCreationEvent`; spawn placement uses the full `RegisterSpawnPlacementsEvent` overload with `Operation.REPLACE`, matching registration of new entity types.
+- Fabric default-item-component callbacks were replaced by `ModifyDefaultComponentsEvent`, and vanilla sign/hanging-sign/shelf block-entity extensions use `BlockEntityTypeAddBlocksEvent`.
+- The Fabric creative-tab builder and particle helper were replaced with their equivalent Minecraft 26.3 APIs. The private `ArmorMaterials.makeDefense(...)` helper was reconstructed as the same `3/6/8/3/19` `ArmorType` map.
+- Willow stripping is represented through NeoForge's `TRANSFORMABLES` data map at `data/neoforge/data_maps/block/transformables.json`, with the same copied axis, axe damage and strip sound as Fabric's 26.3 `BlockTransformerHelper.registerStripping` implementation.
+- Common/server Fabric callbacks are routed through a small `NeoEvents` adapter. The actual NeoForge game-bus listeners are installed during mod construction, while release-style callbacks can be attached later without registering listeners after the game bus starts.
+- Fabric's two timing-sensitive callbacks with no exact NeoForge event are preserved with narrow mixins: block-break `AFTER` dispatches after a successful removal immediately before `Block.destroy`, and living `AFTER_DEATH` dispatches immediately before `broadcastEntityEvent`, matching the Fabric 26.3 injection points inspected from the release API implementation.
+- `generateModMetadata` and `processResources`: PASS after the Stage 4 resource changes.
+- A dedicated Stage 4 compile validation, containing all common/server sources while excluding the two intentionally unported networking classes and replacing only their outbound send surface with a non-executed stub, is `BUILD SUCCESSFUL` against NeoForge `26.3.0.43-beta`.
+- Full `compileJava` now fails only in 12 files that belong to later stages: the two Fabric networking classes plus ten client/render compatibility files (including the known GeckoLib 5.5.7 render-state migration). No Stage 4 file appears in the compiler error set.
+- No live NeoPack files have been modified or deployed.
 
 ## Porting rules
 
