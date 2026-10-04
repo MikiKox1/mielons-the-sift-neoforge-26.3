@@ -21,7 +21,7 @@ The public Git repository does **not** contain the exact source for the publishe
 
 The exact release behavior was reconstructed from the official 1.1.1 artifact with Vineflower 1.12.0, using the public source as the authoritative reference for source-language constructs that decompilers cannot recover faithfully (notably Mixin `(Object) this` bridges and generic type witnesses).
 
-Before beginning the loader port, the reconstructed Fabric 1.1.1 source was required to build successfully. Rebuilding and decompiling it again produced the same 216 top-level Java source paths as the release; 189/216 decompiled identically, while the remaining differences were compiler-equivalent control-flow/source-shape differences. Non-class resources matched the published artifact byte-for-byte for 1104/1105 shared entries; the shared difference was the build manifest.
+Before beginning the loader port, the reconstructed Fabric 1.1.1 source was required to build successfully on the release toolchain recorded in its manifest (Gradle 9.6.0 / Fabric Loom 1.17.21 / Java 25). The rebuilt artifact contains exactly the same 317 class paths and the same 1104 gameplay/resource entries as the published 1.1.1 JAR. Re-decompiling the rebuilt JAR yields the same 216 top-level Java source paths; 196/216 are text-identical to the official-release decompilation and the remaining 20 were reviewed as compiler/decompiler-equivalent source-shape differences. Seven deterministic worldgen helpers were explicitly corrected to preserve the official release's double-precision `2^-53` arithmetic before this comparison.
 
 The working tree additionally retains the two public upstream commits that are newer than the 1.1.1 publication date:
 
@@ -32,7 +32,9 @@ The multiplayer commit's `ModItems` jukebox change was already present in the 1.
 
 ## Current validated source baseline
 
-The pre-port source baseline builds successfully on Fabric solely as a reconstruction/provenance check. The project JAR and the validated staging reconstruction contain identical bytes for all 320 class entries. The project additionally preserves `LICENSE_the_sift` from upstream.
+The working branch intentionally layers the public post-release upstream commits on top of the reconstructed 1.1.1 behavior. This keeps the Russian translation and the October 1 multiplayer compatibility fix (`VanillaPaletteRemapper`, `IdMapperMixin`, `SiftServerDetectionMixin`) because the port targets the newest available upstream state rather than the September 30 release in isolation. This combined baseline builds successfully on Fabric and contains 320 class entries.
+
+The project additionally preserves `LICENSE_the_sift` from upstream.
 
 No Fabric build is intended to be published from this branch. Fabric is only the source-of-truth baseline for Minecraft 26.3 behavior.
 
@@ -46,6 +48,22 @@ No Fabric build is intended to be published from this branch. Fabric is only the
 - Build system target: NeoForge ModDevGradle
 
 The NeoForge baseline is intentionally pinned while this port is being brought up. It must not be widened or upgraded without a compatibility audit.
+
+### Stage 3 build bootstrap status
+
+- Gradle wrapper: `9.2.1`
+- ModDevGradle: `2.0.147`
+- NeoForge: exactly `26.3.0.43-beta`
+- FML resolved by NeoForge: `12.0.8`
+- Java toolchain/runtime used for validation: `25`
+- GeckoLib: `geckolib-neoforge-26.3:5.5.7`
+- LambDynamicLights API: compile-only `4.13.0+26.3`
+- Architectury / Fabric API / Connector / Porting Lib: not present
+- `generateModMetadata` and `processResources`: PASS
+- `compileClasspath` resolution: PASS
+- `compileJava`: intentionally RED at the stage boundary because source migration has not started. The remaining failures are the expected Fabric-loader/API call sites (18 source files) plus NeoForge-facing source adaptations such as `ArmorMaterials.makeDefense` access and vanilla `BlockEntityType` extension. These belong to stage 4 and later, not to build-system bootstrap.
+
+Only the three access transformations corresponding to the published 26.3 Fabric access widener are enabled at this stage. No gameplay/platform-layer source changes are included in the stage 3 commit.
 
 ## Porting rules
 
