@@ -32,7 +32,7 @@ public class PortalFrameScanner {
 
    public static boolean isAirLikeInterior(Level level, BlockPos pos) {
       BlockState state = level.getBlockState(pos);
-      return state.isAir() || state.is(Blocks.SCULK_VEIN) || state.is(Blocks.GLOW_LICHEN);
+      return state.isAir() || state.is(Blocks.SCULK_VEIN) || state.is(Blocks.GLOW_LICHEN) || state.is(Blocks.SCULK_CATALYST);
    }
 
    private static boolean isOpenInterior(Level level, BlockPos pos, boolean closing) {
