@@ -29,13 +29,14 @@ public class SingerRenderer extends GeoEntityRenderer<SingerEntity, EntityRender
 
    @Override
    public boolean shouldRender(SingerEntity singer, Frustum frustum, double cameraX, double cameraY, double cameraZ, float partialTick) {
-      // LevelExtractor asks the renderer whether an entity should be rendered
-      // before it creates GeckoLib's render state. Keep a body-relative
-      // fallback source alive here so occlusion/frustum rejection cannot leave
-      // the Singer dark or its light at an old position. A visible render pass
-      // replaces this approximation with the exact animated head locator.
-      SingerHeadLightBridge.update(singer, singer.getPosition(partialTick).add(0.0, singer.getBbHeight() * 0.85, 0.0));
-      return super.shouldRender(singer, frustum, cameraX, cameraY, cameraZ, partialTick);
+      boolean visible = super.shouldRender(singer, frustum, cameraX, cameraY, cameraZ, partialTick);
+      if (!visible) {
+         // Preserve offscreen lighting without moving the visible light source
+         // back and forth between the body approximation and its animated head
+         // locator on every rendered frame. The model locator is 34 pixels high.
+         SingerHeadLightBridge.update(singer, singer.getPosition(partialTick).add(0.0, 34.0 / 16.0, 0.0));
+      }
+      return visible;
    }
 
    public void preRenderPass(RenderPassInfo<EntityRenderState> renderPassInfo, SubmitNodeCollector renderTasks) {
