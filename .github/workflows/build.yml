@@ -3,6 +3,7 @@ name: Build NeoForge port
 on:
   push:
     branches:
+      - main
       - neoforge-26.3
       - public/neoforge-26.3
   pull_request:
