@@ -25,4 +25,4 @@ The new community branch `1.1.1-neoforge.2-community.1` subsequently **passed `g
 
 **Save-data limitation:** a legacy world that has already lost its original Ancient City return coordinates cannot retroactively recover the lost coordinates. The safe main-exit fallback prevents generating an unrelated Rift.
 
-For development history see [PORTING.md](PORTING.md). For optional enchanting compatibility see [EASY_MAGIC_COMPAT.md](EASY_MAGIC_COMPAT.md). For AI involvement and provenance see [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
+For development history see [PORTING.md](PORTING.md). For source-origin limitations see [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md). For optional enchanting compatibility see [EASY_MAGIC_COMPAT.md](EASY_MAGIC_COMPAT.md). For AI involvement see [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
