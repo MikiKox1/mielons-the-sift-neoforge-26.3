@@ -1,6 +1,18 @@
 # NeoForge 26.3 community port: scope and validation
 
-## Community preview 2 — Singer light stability
+## Community preview 3 — restore Singer lighting reliably (candidate)
+
+**Regression in preview 2:** the user reported that Singer's dynamic light disappeared completely. In that release `SingerRenderer.shouldRender` only registered the light when the entity was culled, leaving the visible case entirely dependent on the `head_light` GeckoLib locator callback. In GeckoLib 5.5.7, locator callbacks run during deferred geometry rendering and may not be delivered when the locator is unavailable. They cannot serve as a guaranteed source-registration point. A regression test against the compiled preview-2 JAR reproduced a visible return path without calling the light bridge.
+
+Preview 3 restores the known-working unconditional light update from `shouldRender`, before the visibility result, and fixes its position at the model's resting head height (34/16 = 2.125 blocks). The deferred locator listener and its redundant render-state ticket are removed, so Singer has one update path per render extraction and no competing 3.4-vs-2.125-block movements. LambDynamicLights remains optional. Its light stays near the head without tracking secondary head/antler animation.
+
+This is a staged candidate awaiting the user's focused visual acceptance. The live NeoPack profile and world are not automatically modified; prior releases remain available for rollback.
+
+Technical research and a focused visual retest procedure: [Singer lighting investigation](docs/singer-dynamic-light-investigation.md).
+
+Validation: JDK 25 / NeoForge 26.3.0.64-beta Gradle `clean build` PASS; Easy Magic 26.3.0 binary compatibility 4/4 PASS; new compiled control-flow regression test correctly fails on Preview 2 (visible Singer can return without registering light) and passes on Preview 3. JAR comparison against the installed Preview 2 yielded identical paths for all 1,588 entries and precisely two changed contents: `SingerRenderer.class` and `META-INF/neoforge.mods.toml`. This is static/build verification; lighting stability still needs an in-game test.
+
+## Community preview 2 — Singer light stability (superseded; regression)
 
 An AMD Radeon ReLive recording from 2026-10-10 exposed visible light flicker around a moving Singer while LambDynamicLights was active. Previously, `SingerRenderer.shouldRender` moved its light to a body-relative estimate at 85% of the 4-block bounding-box height (3.4 blocks) on every render pass, immediately before the animated `head_light` locator moved the same source to a different world position. The Singer model's head locator has a resting height of 34 pixels (2.125 blocks); the competing updates could rapidly move the light by about 1.275 blocks vertically even when the entity itself had not changed position.
 
