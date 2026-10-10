@@ -33,6 +33,9 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon clean build
 
+      - name: Verify visible Singer registers dynamic lighting
+        run: python3 tools/tests/singer_light_registration_test.py -v
+
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
         with:
