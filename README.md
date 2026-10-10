@@ -1,35 +1,36 @@
 # Mielon's The Sift
 
-> **Community NeoForge 26.3 port (AI-assisted).** This branch ports [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) to Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. Port maintained by **MikiKox1**. Its source history was based on a [GitHub repository published by Arta48](https://github.com/Arta48/Mielons-The-Sift); **we have not verified that repository as Mielon's official source**. This independent community port is neither endorsed nor designated an official release by Mielon.
+> **Unofficial NeoForge 26.3 community port (AI-assisted).** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. Community port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
 >
 > The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). Source provenance is explained in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md), and the role of AI in porting, testing and troubleshooting in [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
 
 ## NeoForge port
 
+- **Latest release:** `1.1.1-neoforge.2-community.3` — [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest).
 - **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta; **Java:** 25.
 - **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
 - **Optional visuals:** LambDynamicLights and Iris/Sodium integrations. For Complementary Unbound 5.9.3, see the known shader limitation in [PORT_STATUS.md](PORT_STATUS.md).
 - Existing worlds retain the original `the_sift` mod ID; back up worlds before changing from another build of the mod.
 
-The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are retained from the original project.
+The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are adapted from the original project.
 
 To build from source, use JDK 25 and run `./gradlew build` (or `gradlew.bat build` on Windows). No Easy Magic dependency is needed for compilation. This branch's version number identifies the community port; it is not an upstream release.
 
 ## How to open the Ancient City Portal?
 
-To activate the portal, you need the **Note Blocks placed on Sonorous Deepslate in Note mode**.
+Portal activation requires **Note Blocks placed on Sonorous Deepslate in Note mode**.
 
 Each of these Note Blocks has **8 different Sift notes** instead of the normal Note Block sounds.
 
 1.  **Right-click a Note Block** to change its note.
 2.  The notes cycle from **1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 1**.
-3.  Set the Note Blocks to the notes you need.
+3.  Set the Note Blocks to the required notes.
 4.  **Left-click the Note Blocks** to play them in this exact order:
 
 **1 → 3 → 7 → 6 → 5 → 2 → 4 → 8**
 
-The physical placement of the notes does not need to match this order - what matters is the **order in which you play them**.
+The physical placement of the notes does not need to match this order. Only the **order in which the notes are played** matters.
 
 After the correct sequence is played, the Sonorous Deepslate will automatically replay the melody, the beams will activate, and the nearby Sift Portal will begin opening.
 
@@ -39,7 +40,7 @@ After the correct sequence is played, the Sonorous Deepslate will automatically 
 
 Track down the forgotten portal hidden in an Ancient City, awaken it with sound, and enter **The Sift** - a new dimension filled with siftslate, living sculk, Ichor, overgrown forests, strange creatures and unstable Rifts. 
 
-The Sift originally comes from Minecraft Dungeons II, but this mod **isn't** an exact replica. It's my interpretation of this dimension based on what we've seen in the trailers.
+Inspired by Minecraft Dungeons II, The Sift is **not** an exact replica. The dimension reflects Mielon's interpretation of the environments shown in the trailers.
 
 ## The Sift
 
@@ -71,7 +72,7 @@ A mysterious creature connected to the Ancient City portal and Soul Blocks. Sing
 
 A rare solitary creature that searches **Soul Canyons** for Soul Blocks and carries them back to the surface.
 
-Use an **Echo Shard** to permanently bond an Echo Golem to you, causing it to deliver Soul Blocks to you instead of a Singer.
+An **Echo Shard** permanently bonds an Echo Golem to a player, causing it to deliver Soul Blocks to that player instead of a Singer.
 
 ### Blub
 

@@ -13,11 +13,11 @@ The implementation uses an optional `@Pseudo` mixin whose target class is refere
 
 The integration was checked against the exact **Easy Magic 26.3.0 NeoForge** binary and its three-slot/enchantment recalculation implementation. The historical compatibility contract passed 4/4 checks, and separate dedicated-server startup tests succeeded both with Easy Magic + Puzzles Lib and without them. The NeoPack user also manually confirmed working Charoite enchantment behavior.
 
-This only establishes the tested 26.3.0 integration. If a future Easy Magic version changes its internal menu structure or method names, its optional mixin may need revising. Test upgrades against both installed and absent configurations.
+Compatibility is verified for Easy Magic 26.3.0. Changes to the internal menu structure or method names in later versions may require a mixin update. Future versions require verification with Easy Magic both installed and absent.
 
 ## Reproducing the binary contract check
 
-Place the original, unmodified `easymagic-v26.3.0-mc26.3.x+neoforge.jar` under `run/mods/`, or set the `THE_SIFT_EASY_MAGIC_JAR` environment variable to its location. Run with Python 3 and JDK 25's `javap` available in `PATH` or `JAVA_HOME`:
+Reproduction requires the original, unmodified `easymagic-v26.3.0-mc26.3.x+neoforge.jar` under `run/mods/`, or its path supplied through the `THE_SIFT_EASY_MAGIC_JAR` environment variable. Python 3 and JDK 25's `javap` must be available in `PATH` or `JAVA_HOME`:
 
 ```sh
 python tools/tests/easymagic_compat_test.py

@@ -1,12 +1,12 @@
 # The Sift — NeoForge 26.3 Port
 
-This repository is the working tree for a NeoForge-only port of Mielon's The Sift to Minecraft 26.3.
+The repository contains the NeoForge-only community port of Mielon's The Sift for Minecraft 26.3. The development stages below document the historical port from NeoForge 26.3.0.43-beta; the current release uses NeoForge 26.3.0.64-beta. Current acceptance results are recorded in [PORT_STATUS.md](PORT_STATUS.md).
 
 ## Upstream provenance
 
-- Upstream repository: `https://github.com/Arta48/Mielons-The-Sift`
-- Upstream baseline commit: `8eb175723efa810f45cff882df814fbcc62558dc` (`Fixed Multiplayer`)
-- Upstream tag available publicly: `1.0.2`
+- Public source snapshot: `https://github.com/Arta48/Mielons-The-Sift`
+- Source snapshot baseline commit: `8eb175723efa810f45cff882df814fbcc62558dc` (`Fixed Multiplayer`)
+- Public snapshot tag: `1.0.2`
 - License: MIT
 
 The public Git repository does **not** contain the exact source for the published Fabric 1.1.1 release. It has no `1.1.1` branch/tag and the published release does not ship a source JAR.
@@ -38,7 +38,7 @@ The project additionally preserves `LICENSE_the_sift` from upstream.
 
 No Fabric build is intended to be published from this branch. Fabric is only the source-of-truth baseline for Minecraft 26.3 behavior.
 
-## NeoForge target
+## NeoForge target (initial development baseline)
 
 - Minecraft: `26.3`
 - NeoForge: `26.3.0.43-beta`
@@ -47,7 +47,7 @@ No Fabric build is intended to be published from this branch. Fabric is only the
 - Loader target: NeoForge only
 - Build system target: NeoForge ModDevGradle
 
-The NeoForge baseline is intentionally pinned while this port is being brought up. It must not be widened or upgraded without a compatibility audit.
+NeoForge 26.3.0.43-beta was pinned during the initial porting stages. The released build was subsequently updated and validated against 26.3.0.64-beta. Historical stage details below retain their original toolchain versions.
 
 ### Stage 3 build bootstrap status
 

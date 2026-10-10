@@ -8,8 +8,8 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_author}"
 credits="Community NeoForge 26.3 port: MikiKox1, assisted by AI; ImpSteve — Dark Sniffer texture; Fuzja Jądrowa — Rift music disc; StrawberrySushi_ — Korean localization; Echo_Dev — Wellspring remix"
-displayURL="https://x.com/MielonDev"
-iconFile="assets/the_sift/icon.png"
+displayURL="https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3"
+logoFile="assets/the_sift/icon.png"
 description='''${mod_description}'''
 
 [[mixins]]

@@ -1,6 +1,6 @@
-# Singer lighting regression: research and reproducible evidence
+# Singer lighting regression: investigation and resolution
 
-Status: 2026-10-10, Minecraft 26.3 / NeoForge 26.3.0.64-beta. Candidate version `1.1.1-neoforge.2-community.3` is **pending manual visual acceptance**.
+Status: 2026-10-10, Minecraft 26.3 / NeoForge 26.3.0.64-beta. Version `1.1.1-neoforge.2-community.3` is **visually accepted for the tested setup** and promoted to stable release.
 
 ## Observations
 
@@ -17,9 +17,9 @@ Status: 2026-10-10, Minecraft 26.3 / NeoForge 26.3.0.64-beta. Candidate version 
 
 Reference APIs: [GeckoLib 5 RenderPassInfo](https://wiki.geckolib.com/docs/geckolib5/concepts/rendering/renderpassinfo/) and [LambDynamicLights](https://github.com/LambdAurora/LambDynamicLights).
 
-## Candidate design
+## Released fix
 
-Preview 3 calls `SingerHeadLightBridge.update` unconditionally, before the `shouldRender` visibility decision, with one source at the stable, body-relative head height 2.125. The competing deferred locator writer is removed. This restores the source registration that was present in Preview 1 and eliminates possible competing-position writes; it also removes exact head-animation tracking as an intentional stability tradeoff. The dynamic lights dependency remains optional and all gameplay code is unchanged.
+Restored unconditional `SingerHeadLightBridge.update` before the `shouldRender` visibility decision, with one stable source at the body-relative head height of 2.125 blocks. Removed the deferred locator writer, restoring light registration from Preview 1 and eliminating competing-position writes. Exact head animation tracking was intentionally replaced with stable head-height placement. Dynamic lights remain optional, and gameplay mechanics are unchanged.
 
 Verification to date:
 
@@ -27,10 +27,10 @@ Verification to date:
 - Easy Magic 26.3.0 (optional) binary contract tests — 4/4 PASS.
 - Singer binary regression contract — Preview 2 FAIL; Preview 3 PASS.
 - Production JAR ZIP/delta — 1,588 identical entry paths relative to Preview 2, with only `SingerRenderer.class` and `META-INF/neoforge.mods.toml` content changed.
-- **No in-world visual acceptance yet.** The previous release remains on GitHub with a published regression warning.
+- **Visual acceptance:** Stable Singer lighting with no observed flicker confirmed in the tested NeoForge 26.3.0.64-beta installation. Prior previews remain available, including the known-regression warning on Preview 2.
 
-## Manual acceptance and next research if needed
+## Regression checks for future versions
 
-After closing Minecraft, replace only the one active The Sift JAR with Preview 3 in a backed-up test profile. Observe the same Singer from a stationary camera for ~10 seconds while it animates, turn the camera through the visibility boundary, and watch the light on surrounding blocks during movement. Record a short before/after clip with identical shader and dynamic-light settings. Test with shaders disabled if the effect persists, to separate Iris/shader presentation from the dynamic light source.
+Future renderer changes should be tested with a stationary view of an animating Singer for approximately 10 seconds, camera rotation through the visibility boundary, and movement around surrounding illuminated blocks. Before/after recordings should use matching shader and dynamic-light settings. A shader-disabled comparison can distinguish Iris/shader presentation artifacts from the dynamic light source.
 
-If Preview 3 restores brightness but still flickers, instrument actual `SingerHeadLightBridge.update` counts, Lamb's `DynamicLightBehavior.hasChanged` frequency and chunk-rebuild cadence, and investigate the renderer-independent client `EntityTickEvent.Post` approach before attempting another render-side tweak. Avoid another public release until that concrete issue is understood and the user confirms the visible result.
+Any future recurrence should be investigated with `SingerHeadLightBridge.update` invocation counts, Lamb's `DynamicLightBehavior.hasChanged` frequency, and chunk-rebuild cadence. A renderer-independent client `EntityTickEvent.Post` registration path is available as a follow-up architectural option if measurements justify it.
