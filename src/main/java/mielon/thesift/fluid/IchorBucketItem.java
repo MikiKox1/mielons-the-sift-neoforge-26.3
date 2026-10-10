@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
+import org.jspecify.annotations.Nullable;
 
 public final class IchorBucketItem extends BucketItem {
    public IchorBucketItem(Fluid fluid, Properties properties) {
@@ -41,17 +42,26 @@ public final class IchorBucketItem extends BucketItem {
       return super.use(level, player, hand);
    }
 
-   public boolean emptyContents(LivingEntity user, Level level, BlockPos pos, BlockHitResult hitResult) {
+   @Override
+   @Deprecated
+   public boolean emptyContents(@Nullable LivingEntity user, Level level, BlockPos pos, @Nullable BlockHitResult hitResult) {
+      return this.emptyContents(user, level, pos, hitResult, null);
+   }
+
+   @Override
+   public boolean emptyContents(
+      @Nullable LivingEntity user, Level level, BlockPos pos, @Nullable BlockHitResult hitResult, @Nullable ItemStack containerItem
+   ) {
       BlockState state = level.getBlockState(pos);
       if (IchorWaterlogging.fill(level, pos, state)) {
          this.playEmptySound(user, level, pos);
          return true;
       } else {
-         return super.emptyContents(user, level, pos, hitResult);
+         return super.emptyContents(user, level, pos, hitResult, containerItem);
       }
    }
 
-   protected void playEmptySound(LivingEntity user, LevelAccessor level, BlockPos pos) {
+   protected void playEmptySound(@Nullable LivingEntity user, LevelAccessor level, BlockPos pos) {
       level.playSound(null, pos, ModSounds.ICHOR_BUCKET_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
    }
 }

@@ -14,6 +14,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 public final class SiftWorldStorage extends SavedData {
    private static final String DIMENSION_STATE = "dimension_state";
    private static final String RETURN_POINTS = "return_points";
+   private static final String MAIN_PORTAL_ENTRANCES = "main_portal_entrances";
    private static final String PORTAL_GUARDS = "portal_guards";
    private static final String RIFT_ROUTES = "rift_routes";
    private static final String FIRST_SIFT_ENTRIES = "first_sift_entries";
@@ -98,17 +99,25 @@ public final class SiftWorldStorage extends SavedData {
          tag.putInt("portal_x", portal.getX());
          tag.putInt("portal_y", portal.getY());
          tag.putInt("portal_z", portal.getZ());
-         data(server).putEntry("return_points", entity.getUUID(), tag);
+         SiftWorldStorage data = data(server);
+         data.putEntry(RETURN_POINTS, entity.getUUID(), tag);
+         // A Rift journey invalidates the immediate return ticket, but it
+         // must not erase the last genuine Overworld main-portal entrance.
+         data.putEntry(MAIN_PORTAL_ENTRANCES, entity.getUUID(), tag);
       }
    }
 
    public static Optional<SiftWorldStorage.ReturnPoint> getReturnPoint(MinecraftServer server, UUID entityId) {
-      Optional<CompoundTag> optional = data(server).getOrMigrateEntry(server, "return_points", entityId, "return/" + entityId);
-      if (optional.isEmpty()) {
-         return Optional.empty();
-      }
+      Optional<CompoundTag> optional = data(server).getOrMigrateEntry(server, RETURN_POINTS, entityId, "return/" + entityId);
+      return optional.flatMap(SiftWorldStorage::parseReturnPoint);
+   }
 
-      CompoundTag tag = optional.get();
+   public static Optional<SiftWorldStorage.ReturnPoint> getMainPortalEntrance(MinecraftServer server, UUID entityId) {
+      Optional<CompoundTag> section = data(server).root.getCompound(MAIN_PORTAL_ENTRANCES);
+      return section.flatMap(stored -> stored.getCompound(entityId.toString())).flatMap(SiftWorldStorage::parseReturnPoint);
+   }
+
+   private static Optional<SiftWorldStorage.ReturnPoint> parseReturnPoint(CompoundTag tag) {
       if (!tag.getBooleanOr("valid", false)) {
          return Optional.empty();
       }
@@ -131,8 +140,24 @@ public final class SiftWorldStorage extends SavedData {
    }
 
    public static void clearReturnPoint(MinecraftServer server, UUID entityId) {
-      data(server).removeEntry("return_points", entityId);
+      SiftWorldStorage data = data(server);
+      data.preserveMainPortalEntrance(server, entityId);
+      data.removeEntry(RETURN_POINTS, entityId);
       clearLegacyIfPresent(server, "return/" + entityId);
+   }
+
+   private void preserveMainPortalEntrance(MinecraftServer server, UUID entityId) {
+      Optional<CompoundTag> existing = this.root
+         .getCompound(MAIN_PORTAL_ENTRANCES)
+         .flatMap(section -> section.getCompound(entityId.toString()))
+         .flatMap(tag -> parseReturnPoint(tag).map(point -> tag));
+      if (existing.isPresent()) {
+         return;
+      }
+
+      this.getOrMigrateEntry(server, RETURN_POINTS, entityId, "return/" + entityId)
+         .filter(tag -> parseReturnPoint(tag).isPresent())
+         .ifPresent(tag -> this.putEntry(MAIN_PORTAL_ENTRANCES, entityId, tag));
    }
 
    public static void markPortalExitRequired(Entity entity) {

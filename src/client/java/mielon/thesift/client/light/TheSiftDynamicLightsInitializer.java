@@ -170,7 +170,7 @@ public final class TheSiftDynamicLightsInitializer implements DynamicLightsIniti
       @Override
       public void update(SingerEntity singer, Vec3 position) {
          TheSiftDynamicLightsInitializer.SingerHeadLightBehavior source = this.sources.get(singer);
-         if (source == null) {
+         if (source == null || source.isRemoved()) {
             source = new TheSiftDynamicLightsInitializer.SingerHeadLightBehavior(singer, position);
             this.sources.put(singer, source);
             this.manager.add(source);

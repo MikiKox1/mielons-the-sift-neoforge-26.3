@@ -52,7 +52,12 @@ public abstract class IchorFluid extends WaterFluid {
 
    protected void spreadTo(LevelAccessor level, BlockPos pos, BlockState state, Direction direction, FluidState fluid) {
       if (IchorWaterlogging.canIchorlog(state)) {
-         IchorWaterlogging.fill(level, pos, state);
+         // An Ichorlogged block represents a full source. Do not promote a
+         // flowing FluidState into another source when it reaches this block.
+         // Placing a real bucket source still uses IchorWaterlogging.fill.
+         if (fluid.isSource()) {
+            IchorWaterlogging.fill(level, pos, state);
+         }
       } else {
          super.spreadTo(level, pos, state, direction, fluid);
       }

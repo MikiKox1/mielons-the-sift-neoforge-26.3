@@ -57,6 +57,10 @@ public final class IchorWaterlogging {
       return fluid instanceof IchorFluid;
    }
 
+   public static boolean isIchorSource(Fluid fluid) {
+      return isIchor(fluid) && fluid.defaultFluidState().isSource();
+   }
+
    public static boolean canContain(BlockState state) {
       return canIchorlog(state) && (!state.hasProperty(BlockStateProperties.SLAB_TYPE) || state.getValue(BlockStateProperties.SLAB_TYPE) != SlabType.DOUBLE);
    }
@@ -84,6 +88,28 @@ public final class IchorWaterlogging {
          }
 
          level.scheduleTick(pos, ModFluids.ICHOR, ModFluids.ICHOR.getTickDelay(level));
+      }
+
+      return true;
+   }
+
+   /**
+    * Clears a single Ichorlogged source before awarding a filled bucket.
+    * Both vanilla BucketItem pickup and SimpleWaterloggedBlock pickup must
+    * follow the same path. A stale legacy marker never creates a bucket.
+    */
+   public static boolean drain(LevelAccessor level, BlockPos pos, BlockState state) {
+      if (!isIchorlogged(state)) {
+         return false;
+      }
+
+      if (!level.setBlock(pos, setFluidlogged(state, false), 3) || isIchorlogged(level.getBlockState(pos))) {
+         return false;
+      }
+
+      remove(level, pos);
+      if (!state.canSurvive(level, pos)) {
+         level.destroyBlock(pos, true);
       }
 
       return true;

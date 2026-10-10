@@ -1,5 +1,21 @@
 # Mielon's The Sift
 
+> **Community NeoForge 26.3 port (AI-assisted).** This branch ports [Mielon's original The Sift](https://github.com/Arta48/Mielons-The-Sift) to Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. Port maintained by **MikiKox1**. This is an independent community fork; the original author has not endorsed or designated it an official release.
+>
+> The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). The role of AI in porting, testing and troubleshooting is explained in [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
+
+## NeoForge port
+
+- **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta; **Java:** 25.
+- **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
+- **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
+- **Optional visuals:** LambDynamicLights and Iris/Sodium integrations. For Complementary Unbound 5.9.3, see the known shader limitation in [PORT_STATUS.md](PORT_STATUS.md).
+- Existing worlds retain the original `the_sift` mod ID; back up worlds before changing from another build of the mod.
+
+The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are retained from the original project.
+
+To build from source, use JDK 25 and run `./gradlew build` (or `gradlew.bat build` on Windows). No Easy Magic dependency is needed for compilation. This branch's version number identifies the community port; it is not an upstream release.
+
 ## How to open the Ancient City Portal?
 
 To activate the portal, you need the **Note Blocks placed on Sonorous Deepslate in Note mode**.
@@ -207,12 +223,11 @@ Added **20 advancements**, including a story path beginning in the Overworld and
 
 ## Requirements
 
-* **Minecraft 26.2**
-* **Fabric Loader 0.19.3+**
-* **Fabric API**
-* **GeckoLib 5.5.3+**
+* **Minecraft 26.3**
+* **NeoForge 26.3.0.64-beta**
+* **GeckoLib 5.5.7+**, compatible 5.x
 * **Java 25+**
 * Client and dedicated server compatible
 
-**LambDynamicLights 4.12.2+** is optional and recommended for dynamic Singer and Echo Golem lighting.
+**Easy Magic 26.3.0** and **LambDynamicLights 4.13.0+** are optional. See the compatibility and validation notes above.
 

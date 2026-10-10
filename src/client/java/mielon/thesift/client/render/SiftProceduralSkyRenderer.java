@@ -26,6 +26,18 @@ public final class SiftProceduralSkyRenderer {
    private static final int AZIMUTH_SEGMENTS = 192;
    private static final int ELEVATION_SEGMENTS = 112;
    private static final int VERTEX_COUNT = 86016;
+   // Complementary Unbound's gbuffers_basic forwards glColor as a *flat*
+   // varying. Finer tessellation near the zenith keeps those provoking-vertex
+   // color steps from appearing as wide concentric rings and visible diagonal
+   // triangles. Vanilla sky keeps the original inexpensive smooth mesh.
+   private static final int SHADER_MID_START_ROW = 89;
+   private static final int SHADER_TOP_START_ROW = 102;
+   // Keep one azimuth resolution across adjacent elevation bands. Changing
+   // it from row to row would produce slightly mismatched polygonal rims.
+   private static final int SHADER_AZIMUTH_SEGMENTS = 256;
+   private static final int SHADER_MID_SUBDIVISIONS = 2;
+   private static final int SHADER_TOP_SUBDIVISIONS = 4;
+   private static final int SHADER_VERTEX_COUNT = shaderQuadCount() * 4;
    private static final float RADIUS = 99.0F;
    private static final float TAU = (float) (Math.PI * 2);
    private static final float ART_BOTTOM_DEGREES = -14.0F;
@@ -38,6 +50,7 @@ public final class SiftProceduralSkyRenderer {
    private static final int NEAR_DAY = 4;
    private static final int NEAR_NIGHT = 5;
    private static final GpuBuffer[] BUFFERS = new GpuBuffer[6];
+   private static final GpuBuffer[] SHADER_BUFFERS = new GpuBuffer[6];
    private static final RenderPipeline SKY_PIPELINE = RenderPipelines.register(
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
          .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky"))
@@ -55,11 +68,18 @@ public final class SiftProceduralSkyRenderer {
    }
 
    public static void initialize() {
-      SiftShaderCompat.assignPipeline(SKY_PIPELINE, "SKY_BASIC");
+      // Complementary Unbound's gbuffers_skybasic path computes its own sky
+      // color, discarding our POSITION_COLOR rainbow dome. The BASIC program
+      // starts from glColor instead. This mapping is only used by Iris; the
+      // vanilla/debug sky pipeline is unchanged. Visual parity still needs
+      // an actual shader-enabled client test before release.
+      SiftShaderCompat.assignPipeline(SKY_PIPELINE, "BASIC");
    }
 
    public static void render(PoseStack poseStack, ClientLevel level, RenderPass pass, AutoStorageIndexBuffer quadIndices) {
-      ensureBuffers();
+      boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
+      ensureBuffers(shadersActive);
+      GpuBuffer[] buffers = shadersActive ? SHADER_BUFFERS : BUFFERS;
       long ticks = level.getDefaultClockTime();
       float night = SiftDayNightCycle.nightBlend(ticks);
       float day = 1.0F - night;
@@ -73,61 +93,86 @@ public final class SiftProceduralSkyRenderer {
          transform(poseStack, -time * 0.00205F, (float)Math.sin(time * 0.0065F + 1.8F) * 0.016F, weather, day * 0.78F),
          transform(poseStack, -time * 0.00205F, (float)Math.sin(time * 0.0065F + 1.8F) * 0.016F, weather, night * 0.82F)
       };
-      int indexCount = PrimitiveTopology.QUADS.indexCount(86016);
+      int indexCount = PrimitiveTopology.QUADS.indexCount(shadersActive ? SHADER_VERTEX_COUNT : VERTEX_COUNT);
       GpuBuffer indexBuffer = quadIndices.getBuffer(indexCount);
-      pass.setPipeline(RenderSystem.getCompiledPipeline(SiftShaderCompat.isShaderPackInUse() ? SKY_PIPELINE : RenderPipelines.DEBUG_QUADS));
+      pass.setPipeline(RenderSystem.getCompiledPipeline(shadersActive ? SKY_PIPELINE : RenderPipelines.DEBUG_QUADS));
       RenderSystem.bindDefaultUniforms(pass);
       pass.setIndexBuffer(indexBuffer, quadIndices.type());
 
-      for (int layer = 0; layer < BUFFERS.length; layer++) {
+      for (int layer = 0; layer < buffers.length; layer++) {
          float alpha = layer == 0 ? 1.0F : (layer == 1 ? night : (layer % 2 == 0 ? day : night));
          if (!(alpha <= 0.001F)) {
             pass.setUniform("DynamicTransforms", transforms[layer]);
-            pass.setVertexBuffer(0, BUFFERS[layer].slice());
+            pass.setVertexBuffer(0, buffers[layer].slice());
             pass.drawIndexed(indexCount, 1, 0, 0, 0);
          }
       }
    }
 
    public static void close() {
-      for (int i = 0; i < BUFFERS.length; i++) {
-         if (BUFFERS[i] != null) {
-            BUFFERS[i].close();
-            BUFFERS[i] = null;
+      closeBuffers(BUFFERS);
+      closeBuffers(SHADER_BUFFERS);
+   }
+
+   private static void closeBuffers(GpuBuffer[] buffers) {
+      for (int i = 0; i < buffers.length; i++) {
+         if (buffers[i] != null) {
+            buffers[i].close();
+            buffers[i] = null;
          }
       }
    }
 
-   private static void ensureBuffers() {
-      if (BUFFERS[0] == null) {
-         BUFFERS[0] = buildDome(false, 0);
-         BUFFERS[1] = buildDome(true, 0);
-         BUFFERS[2] = buildDome(false, 1);
-         BUFFERS[3] = buildDome(true, 1);
-         BUFFERS[4] = buildDome(false, 2);
-         BUFFERS[5] = buildDome(true, 2);
+   private static void ensureBuffers(boolean shaderMesh) {
+      GpuBuffer[] buffers = shaderMesh ? SHADER_BUFFERS : BUFFERS;
+      if (buffers[0] == null) {
+         buffers[0] = buildDome(false, 0, shaderMesh);
+         buffers[1] = buildDome(true, 0, shaderMesh);
+         buffers[2] = buildDome(false, 1, shaderMesh);
+         buffers[3] = buildDome(true, 1, shaderMesh);
+         buffers[4] = buildDome(false, 2, shaderMesh);
+         buffers[5] = buildDome(true, 2, shaderMesh);
       }
    }
 
-   private static GpuBuffer buildDome(boolean night, int layer) {
-      int byteCount = 86016 * DefaultVertexFormat.POSITION_COLOR.getVertexSize();
+   private static int shaderElevationSubdivisions(int row) {
+      return row >= SHADER_TOP_START_ROW ? SHADER_TOP_SUBDIVISIONS : (row >= SHADER_MID_START_ROW ? SHADER_MID_SUBDIVISIONS : 1);
+   }
+
+   private static int shaderQuadCount() {
+      int quads = 0;
+      for (int row = 0; row < ELEVATION_SEGMENTS; row++) {
+         quads += SHADER_AZIMUTH_SEGMENTS * shaderElevationSubdivisions(row);
+      }
+
+      return quads;
+   }
+
+   private static GpuBuffer buildDome(boolean night, int layer, boolean shaderMesh) {
+      int vertexCount = shaderMesh ? SHADER_VERTEX_COUNT : VERTEX_COUNT;
+      int byteCount = vertexCount * DefaultVertexFormat.POSITION_COLOR.getVertexSize();
       ByteBufferBuilder bytes = ByteBufferBuilder.exactlySized(byteCount);
 
       GpuBuffer var16;
       try {
          BufferBuilder builder = new BufferBuilder(bytes, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-         for (int y = 0; y < 112; y++) {
-            float v0 = y / 112.0F;
-            float v1 = (y + 1) / 112.0F;
+         for (int y = 0; y < ELEVATION_SEGMENTS; y++) {
+            int azimuth = shaderMesh ? SHADER_AZIMUTH_SEGMENTS : AZIMUTH_SEGMENTS;
+            int subdivisions = shaderMesh ? shaderElevationSubdivisions(y) : 1;
 
-            for (int x = 0; x < 192; x++) {
-               float u0 = x / 192.0F;
-               float u1 = (x + 1) / 192.0F;
-               addVertex(builder, u0, v0, night, layer);
-               addVertex(builder, u1, v0, night, layer);
-               addVertex(builder, u1, v1, night, layer);
-               addVertex(builder, u0, v1, night, layer);
+            for (int sub = 0; sub < subdivisions; sub++) {
+               float v0 = (y + sub / (float)subdivisions) / ELEVATION_SEGMENTS;
+               float v1 = (y + (sub + 1) / (float)subdivisions) / ELEVATION_SEGMENTS;
+
+               for (int x = 0; x < azimuth; x++) {
+                  float u0 = x / (float)azimuth;
+                  float u1 = (x + 1) / (float)azimuth;
+                  addVertex(builder, u0, v0, night, layer, shaderMesh);
+                  addVertex(builder, u1, v0, night, layer, shaderMesh);
+                  addVertex(builder, u1, v1, night, layer, shaderMesh);
+                  addVertex(builder, u0, v1, night, layer, shaderMesh);
+               }
             }
          }
 
@@ -169,7 +214,7 @@ public final class SiftProceduralSkyRenderer {
       return var16;
    }
 
-   private static void addVertex(BufferBuilder builder, float u, float v, boolean night, int layer) {
+   private static void addVertex(BufferBuilder builder, float u, float v, boolean night, int layer, boolean shaderMesh) {
       float azimuth = u * (float) (Math.PI * 2);
       float elevationDegrees = -90.0F + v * 180.0F;
       float elevation = (float)Math.toRadians(elevationDegrees);
@@ -180,8 +225,22 @@ public final class SiftProceduralSkyRenderer {
       float artV = clamp((elevationDegrees - -14.0F) / 104.0F);
       float lowerConvergence = smooth(clamp((-14.0F - elevationDegrees) / 68.0F));
       float ribbonFade = 1.0F - smooth(clamp((-14.0F - elevationDegrees) / 16.0F));
-      float[] rgba = layer == 0 ? baseColor(u, artV, night, lowerConvergence) : ribbonColor(u, artV, night, layer - 1, ribbonFade);
+      // The original concentric zenith gradient looked like a perfect
+      // bullseye once Iris BASIC rendered each primitive flat. Perturb only
+      // the shader mesh's upper-sky artistic coordinate with smooth periodic
+      // waves. This is zero at the horizon and at the pole (seam-safe).
+      float artSampleV = shaderMesh ? warpZenithGradient(u, artV) : artV;
+      float[] rgba = layer == 0
+         ? baseColor(u, artSampleV, night, lowerConvergence)
+         : ribbonColor(u, artSampleV, night, layer - 1, ribbonFade);
       builder.addVertex(px, py, pz).setColor(channel(rgba[0]), channel(rgba[1]), channel(rgba[2]), channel(rgba[3]));
+   }
+
+   private static float warpZenithGradient(float u, float v) {
+      float envelope = smooth((v - 0.5F) / 0.15F) * (1.0F - smooth((v - 0.84F) / 0.13F));
+      float wave = 0.045F * (float)Math.sin(TAU * (u + 0.11F))
+         + 0.018F * (float)Math.sin(TAU * (3.0F * u - 0.27F));
+      return clamp(v + envelope * wave);
    }
 
    private static float[] baseColor(float u, float v, boolean night, float lowerConvergence) {

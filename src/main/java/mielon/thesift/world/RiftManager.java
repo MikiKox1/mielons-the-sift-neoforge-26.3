@@ -91,7 +91,11 @@ public final class RiftManager {
             for (Entity candidate : List.copyOf(rift.level().getEntities(rift, rift.getPortalBounds().inflate(8.0), RiftManager::traveler))) {
                Entity entity = candidate.getRootVehicle();
                UUID id = entity.getUUID();
-               if (visited.add(id) && !entity.isRemoved() && !isRiftExitBlocked(entity) && !PortalTransitGuard.isBlocked(entity)) {
+               if (visited.add(id)
+                  && !entity.isRemoved()
+                  && !isRiftExitBlocked(entity)
+                  && !PortalTransitGuard.isBlocked(entity)
+                  && !SiftTeleportManager.isPortalExitBlocked(server, entity)) {
                   if (!touches(entity, rift)) {
                      visited.remove(id);
                   } else {
@@ -209,13 +213,31 @@ public final class RiftManager {
                return;
             }
 
-            if (intoSift) {
-               entity.getSelfAndPassengers().forEach(SiftWorldStorage::markRiftEntry);
-            }
-
+            ResourceKey<Level> sourceDimension = entity.level().dimension();
+            Vec3 sourcePos = entity.position();
+            String routeSource = origin == null ? "synthetic_portal_fallback" : intoSift ? "rift_to_sift" : "rift_to_overworld";
             Vec3 motion = entity instanceof ServerPlayer ? Vec3.ZERO : entity.getDeltaMovement();
             Entity moved = moveToDestination(entity, destination, motion, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET));
+            if (!players.isEmpty()) {
+               TheSiftMod.LOGGER.info(
+                  "Sift Rift transfer entity={} route={} origin={} from={} pos={} to={} destination={} success={}",
+                  entity.getUUID(),
+                  routeSource,
+                  origin == null ? "none" : origin.getUUID(),
+                  sourceDimension,
+                  sourcePos,
+                  destination.level.dimension(),
+                  destination.pos,
+                  moved != null
+               );
+            }
+
             if (moved != null) {
+               moved.getSelfAndPassengers().forEach(SiftWorldStorage::markRiftEntry);
+               if (!moved.getUUID().equals(entity.getUUID())) {
+                  SiftWorldStorage.clearReturnPoint(server, entity.getUUID());
+               }
+
                if (request.riftScreen) {
                   for (ServerPlayer player : players) {
                      ModAdvancements.award(player, "the_sift/rifter");
@@ -225,13 +247,6 @@ public final class RiftManager {
                PortalTransitGuard.block(moved);
                SiftTeleportManager.suppressUntilExit(moved);
                latchRiftExit(server, moved);
-               if (!intoSift) {
-                  SiftWorldStorage.clearReturnPoint(server, entity.getUUID());
-                  if (!moved.getUUID().equals(entity.getUUID())) {
-                     SiftWorldStorage.clearReturnPoint(server, moved.getUUID());
-                  }
-               }
-
                for (ServerPlayer player : players) {
                   if (destination.fallback) {
                      player.sendSystemMessage(Component.translatable("message.the_sift.rift_no_exit").withStyle(ChatFormatting.RED));
@@ -251,6 +266,11 @@ public final class RiftManager {
             RiftManager.Destination fallback = fallback(server, entity);
             Entity moved = moveToDestination(entity, fallback, Vec3.ZERO, TeleportTransition.PLACE_PORTAL_TICKET);
             if (moved != null) {
+               moved.getSelfAndPassengers().forEach(SiftWorldStorage::markRiftEntry);
+               if (!moved.getUUID().equals(entity.getUUID())) {
+                  SiftWorldStorage.clearReturnPoint(server, entity.getUUID());
+               }
+
                PortalTransitGuard.block(moved);
                latchRiftExit(server, moved);
             }

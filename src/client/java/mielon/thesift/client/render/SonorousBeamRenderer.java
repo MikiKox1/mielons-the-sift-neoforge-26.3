@@ -3,14 +3,17 @@ package mielon.thesift.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mielon.thesift.block.entity.SonorousDeepslateBlockEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider.Context;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -25,6 +28,32 @@ public class SonorousBeamRenderer implements BlockEntityRenderer<SonorousDeepsla
    private static final int FULL_BRIGHT = 15728880;
 
    public SonorousBeamRenderer(Context context) {
+   }
+
+   @Override
+   public boolean shouldRenderOffScreen() {
+      // The beam extends well above its one-block tile; vanilla block-entity
+      // frustum culling otherwise drops it when the camera looks upward.
+      return true;
+   }
+
+   @Override
+   public int getViewDistance() {
+      return Minecraft.getInstance().options.getEffectiveRenderDistance() * 16;
+   }
+
+   @Override
+   public boolean shouldRender(SonorousDeepslateBlockEntity blockEntity, Vec3 cameraPosition) {
+      Vec3 anchor = Vec3.atCenterOf(blockEntity.getBlockPos());
+      return anchor.multiply(1.0, 0.0, 1.0).closerThan(cameraPosition.multiply(1.0, 0.0, 1.0), this.getViewDistance());
+   }
+
+   @Override
+   public AABB getRenderBoundingBox(SonorousDeepslateBlockEntity blockEntity) {
+      BlockPos pos = blockEntity.getBlockPos();
+      return new AABB(
+         pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0, pos.getY() + 1.0 + MAX_BEAM_HEIGHT, pos.getZ() + 1.0
+      );
    }
 
    public SonorousBeamRenderer.State createRenderState() {

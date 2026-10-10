@@ -22,6 +22,7 @@
     "PitcherCropBlockMixin",
     "EnchantmentMenuMixin",
     "EnchantmentFuelSlotMixin",
+    "compat.EasyMagicEnchantmentMenuMixin",
     "AnvilMenuMixin",
     "ServerClockManagerMixin",
     "ServerLevelWeatherMixin",

@@ -3,6 +3,7 @@ package mielon.thesift.mixin;
 import java.util.ArrayList;
 import java.util.List;
 import mielon.thesift.advancement.ModAdvancements;
+import mielon.thesift.compat.easymagic.CharoiteEnchantmentMenuBridge;
 import mielon.thesift.item.CharoiteEnchanting;
 import mielon.thesift.item.ModItems;
 import net.minecraft.core.Registry;
@@ -29,7 +30,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EnchantmentMenu.class)
-public abstract class EnchantmentMenuMixin {
+public abstract class EnchantmentMenuMixin implements CharoiteEnchantmentMenuBridge {
    @Shadow
    @Final
    private Container enchantSlots;
@@ -52,13 +53,13 @@ public abstract class EnchantmentMenuMixin {
 
    @Inject(method = "clickMenuButton", at = @At("HEAD"))
    private void theSift$rememberCharoiteUse(Player player, int button, CallbackInfoReturnable<Boolean> cir) {
-      this.theSift$usingCharoiteForClick = this.enchantSlots.getItem(1).is(ModItems.CHAROITE);
+      this.theSift$usingCharoiteForClick = this.theSift$hasCharoiteCatalyst();
    }
 
    @Inject(method = "clickMenuButton", at = @At("RETURN"))
    private void theSift$markCharoiteEnchantment(Player player, int button, CallbackInfoReturnable<Boolean> cir) {
       if (this.theSift$usingCharoiteForClick && Boolean.TRUE.equals(cir.getReturnValue())) {
-         CharoiteEnchanting.markUsed(this.enchantSlots.getItem(0));
+         CharoiteEnchanting.markUsed(this.theSift$getEnchantItem());
          if (player instanceof ServerPlayer serverPlayer) {
             ModAdvancements.award(serverPlayer, "the_sift/better_enchanter");
          }
@@ -126,5 +127,20 @@ public abstract class EnchantmentMenuMixin {
    @Redirect(method = "quickMoveStack", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Ljava/lang/Object;)Z"))
    private boolean theSift$quickMoveCharoite(ItemStack stack, Object expectedItem) {
       return stack.getItem() == expectedItem || expectedItem == Items.LAPIS_LAZULI && stack.is(ModItems.CHAROITE);
+   }
+
+   @Override
+   public void theSift$setCharoiteCostsActive(boolean active) {
+      this.theSift$charoiteCosts = active;
+   }
+
+   @Unique
+   private ItemStack theSift$getEnchantItem() {
+      return ((EnchantmentMenu)(Object)this).getSlot(0).getItem();
+   }
+
+   @Unique
+   private boolean theSift$hasCharoiteCatalyst() {
+      return ((EnchantmentMenu)(Object)this).getSlot(1).getItem().is(ModItems.CHAROITE);
    }
 }

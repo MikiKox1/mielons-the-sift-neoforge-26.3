@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import mielon.thesift.TheSiftMod;
 import mielon.thesift.block.ModBlocks;
 import mielon.thesift.network.RiftLoadingPayload;
 import mielon.thesift.sound.ModSounds;
@@ -95,10 +96,39 @@ public final class SiftTeleportManager {
    }
 
    public static void suppressUntilExit(Entity entity) {
-      WAITING_FOR_EXIT.add(entity.getUUID());
-      PORTAL_GUARD_CHECKED.add(entity.getUUID());
-      SiftWorldStorage.markPortalExitRequired(entity);
+      entity.getSelfAndPassengers().forEach(passenger -> {
+         WAITING_FOR_EXIT.add(passenger.getUUID());
+         PORTAL_GUARD_CHECKED.add(passenger.getUUID());
+         SiftWorldStorage.markPortalExitRequired(passenger);
+      });
       PortalTransitGuard.block(entity);
+   }
+
+   public static boolean isPortalExitBlocked(MinecraftServer server, Entity entity) {
+      boolean blocked = false;
+      for (Entity passenger : entity.getSelfAndPassengers().toList()) {
+         blocked |= isPortalExitBlocked(server, passenger.getUUID(), passenger);
+      }
+
+      return blocked;
+   }
+
+   private static boolean isPortalExitBlocked(MinecraftServer server, UUID id, Entity entity) {
+      if (PORTAL_GUARD_CHECKED.add(id) && SiftWorldStorage.requiresPortalExit(server, id)) {
+         WAITING_FOR_EXIT.add(id);
+      }
+
+      if (!WAITING_FOR_EXIT.contains(id)) {
+         return false;
+      }
+
+      if (!isTouchingPortal(entity) && !RiftManager.isTouchingRift(entity)) {
+         WAITING_FOR_EXIT.remove(id);
+         SiftWorldStorage.clearPortalExitRequired(server, id);
+         return false;
+      }
+
+      return true;
    }
 
    private static void processPlayer(MinecraftServer server, ServerPlayer player) {
@@ -157,18 +187,12 @@ public final class SiftTeleportManager {
    }
 
    private static void processTouchState(MinecraftServer server, Entity entity, boolean touchingPortal) {
-      UUID id = entity.getUUID();
-      if (PORTAL_GUARD_CHECKED.add(id) && SiftWorldStorage.requiresPortalExit(server, id)) {
-         WAITING_FOR_EXIT.add(id);
-      }
-
       if (!PortalTransitGuard.isBlocked(entity)) {
-         if (WAITING_FOR_EXIT.contains(id)) {
-            if (!touchingPortal) {
-               WAITING_FOR_EXIT.remove(id);
-               SiftWorldStorage.clearPortalExitRequired(server, id);
-            }
-         } else if (touchingPortal) {
+         if (isPortalExitBlocked(server, entity)) {
+            return;
+         }
+
+         if (touchingPortal) {
             SiftTeleportManager.ResourceKeyMatch dimension = classifyDimension(entity.level());
             if (dimension == SiftTeleportManager.ResourceKeyMatch.OVERWORLD || dimension == SiftTeleportManager.ResourceKeyMatch.THE_SIFT) {
                ServerPlayer player = entity instanceof ServerPlayer serverPlayer ? serverPlayer : null;
@@ -220,29 +244,77 @@ public final class SiftTeleportManager {
          return false;
       }
 
-      Optional<SiftWorldStorage.ReturnPoint> stored = SiftWorldStorage.getReturnPoint(server, entity.getUUID());
+      // Prefer the active one-shot return ticket. If Rift entry cleared it,
+      // use the last real main-portal entrance, not a nearby temporary Rift.
+      UUID entityId = entity.getUUID();
+      Optional<SiftWorldStorage.ReturnPoint> oneShot = SiftWorldStorage.getReturnPoint(server, entityId);
+      Optional<SiftWorldStorage.ReturnPoint> durable = oneShot.isPresent()
+         ? Optional.empty()
+         : SiftWorldStorage.getMainPortalEntrance(server, entityId);
+      Optional<SiftWorldStorage.ReturnPoint> stored = oneShot.isPresent() ? oneShot : durable;
+      String routeSource = oneShot.isPresent() ? "one_shot" : durable.isPresent() ? "durable" : "no_data";
       if (stored.isPresent()) {
-         BlockPos entrance = stored.get().portalBlock();
+         SiftWorldStorage.ReturnPoint point = stored.get();
+         BlockPos entrance = point.portalBlock();
          overworld.getChunk(entrance);
-         if (!overworld.getBlockState(entrance).is(ModBlocks.SIFT_PORTAL)) {
-            RiftManager.returnFromPortal(entity, true);
-            return true;
+         boolean portalStillOpen = overworld.getBlockState(entrance).is(ModBlocks.SIFT_PORTAL);
+         TheSiftMod.LOGGER.info(
+            "Sift MAIN exit entity={} source={} targetPortal={} active={}", entityId, routeSource, entrance, portalStillOpen
+         );
+         Vec3 destination;
+         if (portalStillOpen) {
+            destination = new Vec3(point.x(), point.y(), point.z());
+         } else {
+            // The main portal may have been deliberately closed while the traveler
+            // was in The Sift. Its remembered Ancient City position is still the
+            // authoritative route target; only adjust the exact landing block for
+            // collision/safety instead of silently converting a MAIN exit to a Rift.
+            BlockPos safe = entity.adjustSpawnLocation(overworld, entrance);
+            destination = new Vec3(safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5);
          }
 
-         SiftWorldStorage.ReturnPoint point = stored.get();
-         Vec3 destination = new Vec3(point.x(), point.y(), point.z());
          float yaw = point.yaw();
          float pitch = point.pitch();
          Entity teleported = teleport(entity, overworld, destination, yaw, pitch);
+         TheSiftMod.LOGGER.info(
+            "Sift MAIN exit result entity={} source={} success={} destination={}", entityId, routeSource, teleported != null, destination
+         );
          if (teleported != null) {
-            suppressUntilExit(teleported);
+            if (portalStillOpen) {
+               suppressUntilExit(teleported);
+            } else {
+               PortalTransitGuard.block(teleported);
+            }
+
             SiftWorldStorage.clearReturnPoint(server, entity.getUUID());
          }
 
          return teleported != null;
       } else {
-         RiftManager.returnFromPortal(entity, false);
-         return true;
+         // A MAIN portal must never change route families merely because an old
+         // world has already lost its historical return ticket. Once those
+         // coordinates are gone they cannot be reconstructed exactly; return to
+         // a safe Overworld spawn instead of manufacturing an unrelated Rift.
+         BlockPos anchor = RiftManager.overworldAnchor(server, entity);
+         overworld.getChunk(anchor);
+         BlockPos safe = entity.adjustSpawnLocation(overworld, anchor);
+         TheSiftMod.LOGGER.warn(
+            "Sift MAIN exit entity={} source=no_data; using direct Overworld spawn fallback at {}", entityId, safe
+         );
+         Entity teleported = teleport(
+            entity, overworld, new Vec3(safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5), entity.getYRot(), entity.getXRot()
+         );
+         TheSiftMod.LOGGER.info(
+            "Sift MAIN exit result entity={} source=no_data success={} destination={}",
+            entityId,
+            teleported != null,
+            new Vec3(safe.getX() + 0.5, safe.getY(), safe.getZ() + 0.5)
+         );
+         if (teleported != null) {
+            PortalTransitGuard.block(teleported);
+         }
+
+         return teleported != null;
       }
    }
 
