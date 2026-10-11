@@ -36,6 +36,9 @@ jobs:
       - name: Verify visible Singer registers dynamic lighting
         run: python3 tools/tests/singer_light_registration_test.py -v
 
+      - name: Verify minimum NeoForge loader range
+        run: python3 tools/tests/neoforge_loader_range_test.py -v
+
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
         with:
