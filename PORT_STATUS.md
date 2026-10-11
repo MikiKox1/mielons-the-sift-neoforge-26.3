@@ -1,5 +1,13 @@
 # NeoForge 26.3 community port: scope and validation
 
+## NeoForge loader compatibility fix (`1.1.1-neoforge.2-community.3-fix.1`)
+
+**Fixed:** The published `community.3` loader metadata specified `neoforge@[26.3.0.64-beta]`, which matches only the exact .64-beta build. In an isolated NeoPack upgrade to NeoForge `26.3.0.69-beta`, this caused an actual FML dependency rejection before mod initialization. The published loader declaration now uses `neoforge@[26.3.0.64-beta,)`, with an inclusive minimum and no upper loader bound. The required Minecraft version remains restricted to exactly `26.3`.
+
+**Compatibility evidence:** The original mod was gameplay-tested on `26.3.0.64-beta`. A separate `.69-beta` descriptor variant passed the FML dependency gate in isolated NeoPack boot tests, and successful operation on the newer NeoForge version was subsequently reported by the user during pack updating. The compilation toolchain remains pinned to NeoForge .64-beta to preserve the lower bound. This metadata permission is not a blanket gameplay guarantee for untested future loader builds.
+
+**Release scope:** Loader minimum, mod version, documentation and a CI regression test only; no intentional changes to compiled gameplay classes, registry data, assets or optional Easy Magic/LambDynamicLights behavior. The previous stable GitHub release remains available for rollback.
+
 ## Stable release — Singer dynamic lighting (`1.1.1-neoforge.2-community.3`)
 
 **Preview 2 regression:** Singer's dynamic light disappeared during gameplay. In that release, `SingerRenderer.shouldRender` only registered the light when the entity was culled, leaving the visible case entirely dependent on the `head_light` GeckoLib locator callback. In GeckoLib 5.5.7, locator callbacks run during deferred geometry rendering and may not be delivered when the locator is unavailable. They cannot serve as a guaranteed source-registration point. A regression test against the compiled preview-2 JAR reproduced a visible return path without calling the light bridge.
@@ -24,7 +32,7 @@ An AMD Radeon ReLive recording from 2026-10-10 exposed visible light flicker aro
 
 ## Target
 
-Minecraft 26.3, NeoForge 26.3.0.64-beta, Java 25, GeckoLib 5.5.7. This fork continues Mielon's The Sift 1.1.1 behavior with the original `the_sift` mod ID. The previous loader port was developed and initially compiled against NeoForge 26.3.0.43-beta. The branch targets .64-beta for public reproducible builds.
+Minecraft 26.3, NeoForge 26.3.0.64-beta minimum, Java 25, GeckoLib 5.5.7. This fork continues Mielon's The Sift 1.1.1 behavior with the original `the_sift` mod ID. The previous loader port was developed and initially compiled against NeoForge 26.3.0.43-beta. The build still targets .64-beta while the required loader range permits newer NeoForge builds for the same Minecraft version.
 
 ## Changes from the upstream source
 

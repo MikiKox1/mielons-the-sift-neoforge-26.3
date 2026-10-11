@@ -6,8 +6,8 @@
 
 ## NeoForge port
 
-- **Latest release:** `1.1.1-neoforge.2-community.3` — [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest).
-- **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta; **Java:** 25.
+- **Latest release:** `1.1.1-neoforge.2-community.3-fix.1` — [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest).
+- **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta or newer; **Java:** 25. Compiled against .64-beta and reported working with .69-beta. Compatibility with future loader builds is not guaranteed without further testing.
 - **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
 - **Optional visuals:** LambDynamicLights and Iris/Sodium integrations. For Complementary Unbound 5.9.3, see the known shader limitation in [PORT_STATUS.md](PORT_STATUS.md).
@@ -225,7 +225,7 @@ Added **20 advancements**, including a story path beginning in the Overworld and
 ## Requirements
 
 * **Minecraft 26.3**
-* **NeoForge 26.3.0.64-beta**
+* **NeoForge 26.3.0.64-beta or newer** (Minecraft 26.3)
 * **GeckoLib 5.5.7+**, compatible 5.x
 * **Java 25+**
 * Client and dedicated server compatible
