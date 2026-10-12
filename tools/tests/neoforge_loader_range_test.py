@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 import tomllib
 import unittest
 import zipfile
@@ -25,7 +26,7 @@ def production_jar() -> Path:
 
     candidates = sorted(
         jar
-        for jar in (ROOT / "build" / "libs").glob("the_sift-*.jar")
+        for jar in (ROOT / "build" / "libs").glob("the-sift-neoforge-port-*.jar")
         if not jar.name.endswith("-sources.jar")
     )
     if not candidates:
@@ -64,6 +65,11 @@ class LoaderRangeContract(unittest.TestCase):
         dependencies = self.dependencies()
         self.assertEqual(dependencies["lambdynlights"]["type"], "optional")
         self.assertNotIn("easymagic", dependencies)
+
+    def test_independent_port_uses_simple_semantic_version(self) -> None:
+        version = self.metadata["mods"][0]["version"]
+        self.assertIsNotNone(re.fullmatch(r"\d+\.\d+\.\d+", version), version)
+        self.assertEqual(self.metadata["mods"][0]["modId"], "the_sift")
 
 
 if __name__ == "__main__":

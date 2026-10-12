@@ -43,4 +43,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: the-sift-neoforge-26.3
-          path: build/libs/the_sift-*.jar
+          path: build/libs/the-sift-neoforge-port-*.jar
