@@ -6,7 +6,7 @@
 
 ## NeoForge port
 
-- **Latest release:** `1.1.1-neoforge.2-community.3-fix.1` — [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest).
+- **Current port version:** `1.0.0` — [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest). Download: `the-sift-neoforge-port-1.0.0.jar`. The port uses its own version sequence, independent of the original mod.
 - **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta or newer; **Java:** 25. Compiled against .64-beta and reported working with .69-beta. Compatibility with future loader builds is not guaranteed without further testing.
 - **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
@@ -15,7 +15,7 @@
 
 The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are adapted from the original project.
 
-To build from source, use JDK 25 and run `./gradlew build` (or `gradlew.bat build` on Windows). No Easy Magic dependency is needed for compilation. This branch's version number identifies the community port; it is not an upstream release.
+To build from source, use JDK 25 and run `./gradlew build` (or `gradlew.bat build` on Windows). No Easy Magic dependency is needed for compilation. Public port changes are recorded in [CHANGELOG.md](CHANGELOG.md); the port is not an upstream release.
 
 ## How to open the Ancient City Portal?
 

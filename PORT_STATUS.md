@@ -1,5 +1,7 @@
 # NeoForge 26.3 community port: scope and validation
 
+**Current public port release:** `1.0.0` (independent versioning). This document preserves historical engineering records and superseded preview identifiers. For concise public release notes, see [CHANGELOG.md](CHANGELOG.md). The production `1.0.0` build preserves the gameplay code of the earlier `1.1.1-neoforge.2-community.3-fix.1` build; its visible mod version and descriptive metadata have been renamed.
+
 ## NeoForge loader compatibility fix (`1.1.1-neoforge.2-community.3-fix.1`)
 
 **Fixed:** The published `community.3` loader metadata specified `neoforge@[26.3.0.64-beta]`, which matches only the exact .64-beta build. In an isolated NeoPack upgrade to NeoForge `26.3.0.69-beta`, this caused an actual FML dependency rejection before mod initialization. The published loader declaration now uses `neoforge@[26.3.0.64-beta,)`, with an inclusive minimum and no upper loader bound. The required Minecraft version remains restricted to exactly `26.3`.
