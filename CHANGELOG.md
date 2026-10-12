@@ -1,4 +1,4 @@
-# The Sift — NeoForge Port 1.0.0
+# The Sift — NeoForge Port 1.1.1
 
 **Release type:** Release
 
@@ -6,30 +6,28 @@
 
 **Loader:** NeoForge 26.3.0.64-beta or newer
 
-**Version:** 1.0.0
+**Current release:** Port 1.1.1 fix1
 
-**File:** `the-sift-neoforge-port-1.0.0.jar`
+## Ported
 
-### Ported
-
-- Adapted Mielon's The Sift from Fabric to NeoForge 26.3, including mod registration, networking, world generation, dimension and entity logic, and client rendering.
+- Adapted Mielon's The Sift from Fabric to NeoForge 26.3, including registrations, networking, world generation, dimension logic, entities, and client rendering.
 - Preserved the original `the_sift` mod ID, dimension content, mobs, items, and progression.
 
-### Fixed
+## Fixed
 
-- Adapted Ichor fluid interactions, bucket behavior, and waterlogging for NeoForge.
+- Corrected Ichor fluid behavior, bucket interactions, and waterlogging.
 - Corrected Ancient City portal activation and Rift return routing.
 - Stabilized Singer dynamic lighting and Sonorous beam rendering.
 - Corrected water-sensitive Sift plants, Echo Golem audio, and sky rendering compatibility.
 
-### Added
+## Added
 
-- Optional Easy Magic 26.3.0 integration for Charoite enchanting, with vanilla enchanting remaining available.
+- Optional Easy Magic 26.3.0 integration for Charoite enchanting, while keeping vanilla enchanting available without Easy Magic.
 - Optional compatibility with LambDynamicLights and supported client rendering integrations.
 
-### Requirements
+## Requirements
 
-- Minecraft 26.3, NeoForge 26.3.0.64-beta or newer, Java 25.
+- Minecraft 26.3, NeoForge 26.3.0.64-beta or newer, and Java 25.
 - GeckoLib 5.5.7 or a compatible 5.x version is required.
 - Easy Magic and LambDynamicLights are optional.
 
@@ -37,4 +35,4 @@
 
 ---
 
-Future versions of this port use independent semantic versioning (`1.0.1`, `1.1.0`, and so on). Each future changelog records changes since the preceding public port release, not changes to the original Fabric mod.
+Future port versions follow the display-name pattern `Port 1.1.1-1.1`, `Port 1.1.1-1.2`, etc. Their changelogs describe only changes made since the preceding public port release.

@@ -1,6 +1,6 @@
 # NeoForge 26.3 community port: scope and validation
 
-**Current public port release:** `1.0.0` (independent versioning). This document preserves historical engineering records and superseded preview identifiers. For concise public release notes, see [CHANGELOG.md](CHANGELOG.md). The production `1.0.0` build preserves the gameplay code of the earlier `1.1.1-neoforge.2-community.3-fix.1` build; its visible mod version and descriptive metadata have been renamed.
+**Public release baseline:** `Port 1.1.1 fix1` (`v1.1.1-neoforge.2-community.3-fix.1`). Its consolidated public changes relative to the original Fabric release are listed in [CHANGELOG.md](CHANGELOG.md). The historical development details and superseded preview identifiers below are retained as technical provenance, not as separate public update announcements.
 
 ## NeoForge loader compatibility fix (`1.1.1-neoforge.2-community.3-fix.1`)
 

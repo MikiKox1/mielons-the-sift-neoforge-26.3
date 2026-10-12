@@ -15,7 +15,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-JARS = sorted((ROOT / "build" / "libs").glob("the-sift-neoforge-port-*.jar"))
+JARS = sorted((ROOT / "build" / "libs").glob("the_sift-*.jar"))
 DEFAULT_JAR = next((jar for jar in reversed(JARS) if "-sources" not in jar.name), None)
 MOD_JAR = Path(os.environ["THE_SIFT_JAR"]) if "THE_SIFT_JAR" in os.environ else DEFAULT_JAR
 
