@@ -1,8 +1,8 @@
 # Mielon's The Sift
 
-> **Unofficial NeoForge 26.3 community port (AI-assisted).** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. Community port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
+> **Unofficial NeoForge 26.3 port of Mielon's The Sift.** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. NeoForge port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
 >
-> The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). Source provenance is explained in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md), and the role of AI in porting, testing and troubleshooting in [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
+> The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). Additional project records: [source and credits](SOURCE_PROVENANCE.md) and [development disclosure](AI_DISCLOSURE.md).
 
 ## NeoForge port
 
