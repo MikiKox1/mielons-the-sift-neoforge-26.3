@@ -1,4 +1,4 @@
-# The Sift — NeoForge Port 1.1.1
+# Port 1.1.1
 
 **Release type:** Release
 
@@ -6,7 +6,7 @@
 
 **Loader:** NeoForge 26.3.0.64-beta or newer
 
-**Current release:** Port 1.1.1 fix1
+**Port version:** 1.1.1
 
 ## Ported
 
@@ -32,7 +32,3 @@
 - Easy Magic and LambDynamicLights are optional.
 
 **Original mod:** Mielon (MIT). **NeoForge port:** MikiKox1.
-
----
-
-Future port versions follow the display-name pattern `Port 1.1.1-1.1`, `Port 1.1.1-1.2`, etc. Their changelogs describe only changes made since the preceding public port release.
