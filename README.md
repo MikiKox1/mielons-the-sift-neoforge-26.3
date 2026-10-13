@@ -1,5 +1,7 @@
 # Mielon's The Sift
 
+> **MC26.3 — PORT 1.1.2 SHADER UPDATE:** This separate release candidate incorporates the user-accepted MC26.2 ALPHA4 sky renderer, reimplemented with RenderPearl GPU APIs. The exact JAR filename remains unchanged; mod version is now 1.1.2-neoforge.2. Java25/latest NeoForge26.3.0.76 clean build, server and shaderless-client tests PASS. The final MC26.3 Photon/Complementary visual test is reserved for the user. See RELEASE-SKYFIX-1.1.2.md for the complete QA and the unrelated public Sodium LevelExtractorMixin incompatibility.
+
 > **Unofficial NeoForge 26.3 port of Mielon's The Sift.** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. NeoForge port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
 >
 > The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). Additional project records: [source and credits](SOURCE_PROVENANCE.md) and [development disclosure](AI_DISCLOSURE.md).

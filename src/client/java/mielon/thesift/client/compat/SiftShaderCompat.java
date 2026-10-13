@@ -2,6 +2,7 @@ package mielon.thesift.client.compat;
 
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import java.lang.reflect.Method;
+import java.util.Locale;
 import mielon.thesift.TheSiftMod;
 import net.neoforged.fml.ModList;
 
@@ -12,6 +13,7 @@ public final class SiftShaderCompat {
    private static Method isShaderPackInUse;
    private static Method assignPipeline;
    private static Class<?> irisProgramClass;
+   private static Method currentPackName;
 
    private SiftShaderCompat() {
    }
@@ -34,12 +36,34 @@ public final class SiftShaderCompat {
                   irisProgramClass = null;
                }
 
+               // Iris API v0 has no public pack-name getter. The optional
+               // Iris internal method is probed defensively to select only
+               // Photon's known special post-final sky compositor. It is
+               // present in the exact Iris1.11.7 build for Minecraft 26.3.
+               try {
+                  currentPackName = Class.forName("net.irisshaders.iris.Iris").getMethod("getCurrentPackName");
+               } catch (ReflectiveOperationException | LinkageError ignored) {
+                  currentPackName = null;
+               }
+
                TheSiftMod.LOGGER.info("Iris detected; The Sift shader compatibility is enabled.");
+               if (currentPackName != null) {
+                  try {
+                     Object packName = currentPackName.invoke(null);
+                     TheSiftMod.LOGGER.info(
+                        "The Sift MC26.3 Iris pack '{}'; Photon-specific sky compositing: {}",
+                        packName, isPhotonShaderPackSelected()
+                     );
+                  } catch (ReflectiveOperationException ignored) {
+                     TheSiftMod.LOGGER.debug("Iris pack name not ready during initial client registration.");
+                  }
+               }
             } catch (ReflectiveOperationException | LinkageError exception) {
                irisApi = null;
                isShaderPackInUse = null;
                assignPipeline = null;
                irisProgramClass = null;
+               currentPackName = null;
                TheSiftMod.LOGGER.warn("Iris was detected, but its compatibility API could not be initialized.", exception);
             }
          }
@@ -60,6 +84,21 @@ public final class SiftShaderCompat {
             return false;
          }
       } else {
+         return false;
+      }
+   }
+
+   /** Isolates only Photon from the ALPHA2-tested Complementary/vanilla sky. */
+   public static boolean isPhotonShaderPackSelected() {
+      initialize();
+      if (currentPackName == null) {
+         return false;
+      }
+      try {
+         Object value = currentPackName.invoke(null);
+         return value instanceof String name
+            && name.toLowerCase(Locale.ROOT).startsWith("photon");
+      } catch (ReflectiveOperationException | RuntimeException exception) {
          return false;
       }
    }

@@ -16,6 +16,7 @@
     "SiftClientPortalTransitionMixin",
     "SiftScreenLifecycleMixin",
     "IrisWorldTimeUniformsMixin",
+    "IrisPhotonFinalSkyMixin",
     "SiftSkyRendererMixin",
     "SiftCloudRendererMixin",
     "SiftWeatherTextureMixin",
