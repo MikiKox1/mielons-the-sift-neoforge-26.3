@@ -1,34 +1,34 @@
 # Minecraft version support and branch policy
 
-This repository contains the unofficial NeoForge port of Mielon's The Sift, maintained by MikiKox1. **Only the Minecraft 26.3 build is released today.** Minecraft 26.2 and 26.1.2 are future targets, not claims of working or tested builds.
+This repository contains the unofficial NeoForge port of Mielon's The Sift, maintained by MikiKox1. **Separate Port 1.1.2 builds are available for Minecraft 26.3 and 26.2.** Minecraft 26.1.2 remains planned.
 
 ## Release matrix
 
-| Minecraft | Availability | Source | Binary |
+| Minecraft | Availability | Source branch | Verified release |
 | --- | --- | --- | --- |
-| **26.3** | **Released: Port 1.1.1 26.3** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.1 26.3 GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1) |
-| 26.2 | Planned; no public build | `minecraft/26.2` will be added after the actual port is available | None |
-| 26.1.2 | Planned; no public build | `minecraft/26.1.2` will be added after the actual port is available | None |
+| **26.3** | **Released: Port 1.1.2 26.3** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.2 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.2-mc26.3-neoforge) |
+| **26.2** | **Released: Port 1.1.2 26.2** | [`minecraft/26.2`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.2) | [Port 1.1.2 26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.2-mc26.2-neoforge) |
+| 26.1.2 | Planned — no public binary | `minecraft/26.1.2` (only after port development) | Not available |
 
-## What each branch means
+## Branch policy
 
-- **`main`**: current GitHub landing/default branch. It remains the verified Minecraft **26.3** source until an explicit future release-management decision changes it. Do not treat `main` as a source tree that simultaneously supports all Minecraft versions.
-- **`minecraft/26.3`**: dedicated branch for the released **26.3** port. Starts at the reviewed 26.3 publication baseline, with the same published code and documentation.
-- **`minecraft/26.2`**: reserved branch name for a **future actual 26.2 port**. It is **not created** while only the 26.3 source exists.
-- **`minecraft/26.1.2`**: reserved branch name for a **future actual 26.1.2 port**. It is **not created** while only the 26.3 source exists.
+- **`main`**: GitHub default/landing branch, following the maintained Minecraft **26.3** port and version-support documentation.
+- **`minecraft/26.3`**: source implementation for Minecraft **26.3**, NeoForge **26.3.0.64-beta** or newer, Java 25 and required GeckoLib 5.5.7-compatible 5.x.
+- **`minecraft/26.2`**: distinct source implementation for Minecraft **26.2**, NeoForge **26.2.0.90** or newer, Java 25 and required GeckoLib 5.5.6-compatible 5.x.
+- **`minecraft/26.1.2`**: reserved for a future actual 26.1.2 port, not yet implemented or published.
 
-Every future version branch must contain its **own correctly targeted** `gradle.properties`, NeoForge metadata, dependencies, source adjustments, compatibility tests, CI and changelog. Do not simply copy or rename the 26.3 JAR and present it as a different Minecraft version. Share changes across branches only after reviewing and adapting them to the destination version.
+The two supported Minecraft versions have **different source code, dependencies, version ranges, Git tags and release files**. No 26.3 JAR is advertised as compatible with 26.2 or vice versa. Changes should be reviewed and adapted rather than blindly copied between branches.
 
-## GitHub releases and tags
+## Public releases
 
-- The existing Minecraft 26.3 GitHub Release has public title **`Port 1.1.1 26.3`**, original tag **`v1.1.1-neoforge.2-community.3-fix.1`**, and unchanged uploaded JAR. CurseForge File ID **9124779** also remains unchanged.
-- GitHub's `/releases/latest` is repository-wide, **not specific to a Minecraft version**. Use the exact release/tag links in the table above when linking to a given Minecraft line.
-- When new versions are ready and explicitly approved for publication, each must have an unambiguous Minecraft target in its release description, tag and downloadable asset metadata/name. Never reuse or overwrite a published tag or binary from a different Minecraft line.
-- Release notes for later releases within a line should describe changes since that line's previous public release, rather than experimental build history.
-- CurseForge game-version metadata must match the actual tested binary. Publish on GitHub first, then CurseForge, only after the normal technical, user-gameplay, licensing and provenance checks pass.
+- **Port 1.1.2 26.3:** tag `v1.1.2-mc26.3-neoforge`; game binary and sources JAR explicitly include `mc26.3` in their names. Notes: [26.3 release changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/blob/minecraft/26.3/docs/releases/port-1.1.2-mc26.3.md).
+- **Port 1.1.2 26.2:** tag `v1.1.2-mc26.2-neoforge`; game binary and sources JAR explicitly include `mc26.2` in their names. Notes: [26.2 release changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/blob/minecraft/26.2/docs/releases/port-1.1.2-mc26.2.md).
+- **Previous 26.3 Port 1.1.1:** unchanged at [its existing tag](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1). Its historical GitHub release and CurseForge File ID 9124779 remain untouched.
 
-## Status and provenance
+GitHub `/releases/latest` is repository-wide, **not version-specific**. For a specific Minecraft version, follow its exact release link above. Each update should list changes relative to the previous public release **on that Minecraft version line**.
 
-This is an **unofficial** NeoForge port. Original mod: **Mielon** (MIT). Port maintainer: **MikiKox1**. Keep [LICENSE](LICENSE), [source and attribution](SOURCE_PROVENANCE.md) and [AI development disclosure](AI_DISCLOSURE.md). No claim is made that the planned 26.2 or 26.1.2 targets have been compiled, tested or released.
+## Status, testing and provenance
 
-The repository URL currently retains its historical `-26.3` suffix. **Branch name, release tag and per-version download are the version identifiers**; the repository name alone must not be used to infer compatibility.
+Minecraft 26.2 sky rendering was accepted by the user with ALPHA4 prior to final release labeling. Minecraft 26.3 received an additional RenderPass texture-preload correction; **in-world Photon/Complementary revalidation after that fix is still pending**. Shaderpack compatibility with every renderer combination is not guaranteed.
+
+This is an **unofficial** NeoForge port. **Mielon** created the original mod (MIT); the NeoForge port is maintained by **MikiKox1**. Keep [LICENSE](LICENSE), [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) and [AI_DISCLOSURE.md](AI_DISCLOSURE.md). All third-party assets retain their original attribution; do not claim new permissions that were not obtained.

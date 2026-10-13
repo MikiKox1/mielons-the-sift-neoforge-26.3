@@ -49,11 +49,16 @@ neoForge {
     runs {
         client {
             client()
+            // Standalone Prime 2 stage smoke; never the user's Modrinth profile.
+            // A new loader release must never reuse a previous test world's directory.
+            gameDirectory = project.file("run/client-${project.neo_version}-hotfix-pass-preload-112")
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
+            // Must remain separate from the client and all player saves.
+            gameDirectory = project.file("run/server-${project.neo_version}-hotfix-pass-preload-112")
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
@@ -81,6 +86,64 @@ dependencies {
     // Consume its published sidecar so ModDevGradle exposes the same interface at compile time.
     interfaceInjectionData "com.geckolib:geckolib-neoforge-26.3:${project.geckolib_version}"
     compileOnly "dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:${project.lambdynlights_version}+${project.minecraft_version}"
+}
+
+// Prime 2 invariant: build/test on the latest published NeoForge for this
+// Minecraft line, while keeping the independent, OPEN-ENDED mod dependency
+// range [neo_min_version,) (currently >=26.3.0.64-beta).
+// Keep the compile/test loader pinned for reproducibility and refuse tests
+// if that pin becomes stale. Do not conflate this pin with minimum support.
+// If the metadata endpoint is unreachable, fail closed rather than claim the
+// tested loader is current. This task does not install any application.
+def pinnedNeoForge = project.neo_version.toString()
+def pinnedNeoMinimum = project.neo_min_version.toString()
+tasks.register('verifyLatestNeoForge') {
+    group = 'verification'
+    description = 'Confirm the pinned MC 26.3 NeoForge version is still the latest official Maven release.'
+    inputs.property('neo_version', pinnedNeoForge)
+    inputs.property('neo_min_version', pinnedNeoMinimum)
+    doLast {
+        def metadataUrl = 'https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml'
+        def connection = new URI(metadataUrl).toURL().openConnection()
+        connection.setUseCaches(false)
+        connection.setConnectTimeout(15000)
+        connection.setReadTimeout(15000)
+        connection.setRequestProperty('Cache-Control', 'no-cache')
+        def metadata = connection.inputStream.withCloseable { it.getText('UTF-8') }
+        def matcher = metadata =~ /<version>(26\.3\.0\.(\d+)(?:-[^<]+)?)<\/version>/
+        def candidates = []
+        matcher.each { match ->
+            candidates << [version: match[1], build: Integer.parseInt(match[2])]
+        }
+        if (candidates.isEmpty()) {
+            throw new GradleException('Cannot verify latest NeoForge 26.3 in official Maven metadata; test blocked.')
+        }
+        def latest = candidates.max { a, b ->
+            (a.build <=> b.build) ?: ((a.version.contains('-') ? 0 : 1) <=> (b.version.contains('-') ? 0 : 1))
+        }.version
+        if (pinnedNeoForge != latest) {
+            throw new GradleException(
+                "NeoForge BUILD/TEST pin is outdated. Latest official MC 26.3: ${latest}; " +
+                "neo_version=${pinnedNeoForge}. Update only neo_version for testing. " +
+                'Keep independent neo_min_version and the open-ended [minimum,) dependency.'
+            )
+        }
+        if (pinnedNeoMinimum != '26.3.0.64-beta') {
+            throw new GradleException(
+                "The Sift 26.3 advertised loader minimum must remain 26.3.0.64-beta, " +
+                "found ${pinnedNeoMinimum}; change this minimum only after an explicit compatibility decision."
+            )
+        }
+        logger.lifecycle("Verified latest NeoForge for MC 26.3 build/tests: ${latest}; " +
+            "packaged minimum: ${pinnedNeoMinimum}, no upper bound")
+    }
+}
+
+tasks.matching {
+    it.name in ['build', 'check', 'test', 'compileJava', 'compileTestJava', 'runData', 'runServer', 'runClient'] ||
+        it.name.startsWith('runGameTest')
+}.configureEach {
+    dependsOn tasks.named('verifyLatestNeoForge')
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

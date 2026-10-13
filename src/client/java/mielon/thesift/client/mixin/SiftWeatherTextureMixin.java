@@ -1,5 +1,6 @@
 package mielon.thesift.client.mixin;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -7,7 +8,7 @@ import net.minecraft.client.renderer.WeatherEffectRenderer;
 import net.minecraft.client.renderer.state.level.WeatherRenderState;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome.Precipitation;
 import net.minecraft.world.phys.Vec3;
@@ -18,7 +19,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(WeatherEffectRenderer.class)
@@ -37,16 +37,10 @@ public abstract class SiftWeatherTextureMixin {
    @Unique
    private AbstractTexture theSift$ichorSnowTexture;
 
-   @Redirect(
-      method = "extractRenderState",
-      at = @At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/multiplayer/ClientLevel;getPrecipitationAt(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/biome/Biome$Precipitation;"
-      )
-   )
-   private Precipitation theSift$restrictSnowColumns(ClientLevel level, BlockPos pos) {
-      Precipitation original = level.getPrecipitationAt(pos);
-      if (!level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
+   @ModifyVariable(method = "extractRenderState", at = @At("STORE"), ordinal = 0)
+   private Precipitation theSift$restrictSnowColumns(Precipitation original, @Local MutableBlockPos pos) {
+      ClientLevel level = Minecraft.getInstance().level;
+      if (level == null || !level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
          return original;
       } else if (level.getBiome(pos).is(TheSiftDimension.ICHOR_SNOWY_PEAKS)) {
          return Precipitation.SNOW;

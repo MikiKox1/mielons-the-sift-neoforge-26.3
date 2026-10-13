@@ -8,11 +8,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -27,7 +24,6 @@ import net.minecraft.world.level.material.WaterFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 
 public abstract class IchorFluid extends WaterFluid {
-   private static final int REGENERATION_TICKS_AFTER_EXIT = 101;
 
    public Fluid getFlowing() {
       return ModFluids.FLOWING_ICHOR;
@@ -113,9 +109,6 @@ public abstract class IchorFluid extends WaterFluid {
    protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
       super.entityInside(level, pos, entity, effectApplier);
       entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.92, 0.94, 0.92));
-      if (!level.isClientSide() && entity instanceof LivingEntity living) {
-         living.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 101, 0, true, false, true));
-      }
    }
 
    public static final class Flowing extends IchorFluid {

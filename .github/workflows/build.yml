@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - minecraft/26.3
       - neoforge-26.3
       - public/neoforge-26.3
   pull_request:
