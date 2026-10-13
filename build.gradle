@@ -49,11 +49,15 @@ neoForge {
     runs {
         client {
             client()
+            // Standalone Prime 2 stage smoke; never the user's Modrinth profile.
+            gameDirectory = project.file('run/stage-client')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
+            // Must remain separate from the client and all player saves.
+            gameDirectory = project.file('run/stage-server')
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }

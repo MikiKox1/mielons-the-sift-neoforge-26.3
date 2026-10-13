@@ -2,6 +2,7 @@ package mielon.thesift.entity;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import mielon.thesift.mixin.SnifferStateAccess;
 import mielon.thesift.particle.ModParticles;
 import mielon.thesift.sound.ModSounds;
@@ -57,7 +58,7 @@ public final class DarkSnifferEntity extends Sniffer {
    private LivingEntity observedCombatTarget;
    private Vec3 sonicOrigin = Vec3.ZERO;
    private Vec3 sonicDirection = Vec3.ZERO;
-   private final Set<Integer> sonicPulledEntityIds = new HashSet<>();
+   private final Set<UUID> sonicPulledEntityUuids = new HashSet<>();
    private double homeX;
    private double homeY;
    private double homeZ;
@@ -323,7 +324,7 @@ public final class DarkSnifferEntity extends Sniffer {
       AABB searchBox = new AABB(previousWavePosition, wavePosition).inflate(0.8);
 
       for (LivingEntity mob : serverLevel.getEntitiesOfClass(
-         LivingEntity.class, searchBox, mobx -> mobx != this && mobx.isAlive() && !this.sonicPulledEntityIds.contains(mobx.getId())
+         LivingEntity.class, searchBox, mobx -> mobx != this && mobx.isAlive() && !this.sonicPulledEntityUuids.contains(mobx.getUUID())
       )) {
          if (mob.getBoundingBox().inflate(0.8).intersects(previousWavePosition, wavePosition)) {
             this.pullEntityOnce(mob);
@@ -332,9 +333,13 @@ public final class DarkSnifferEntity extends Sniffer {
    }
 
    private void pullEntityOnce(LivingEntity victim) {
-      if (victim != this && victim.isAlive() && this.sonicPulledEntityIds.add(victim.getId())) {
+      if (victim != this && victim.isAlive() && this.sonicPulledEntityUuids.add(victim.getUUID())) {
          Vec3 pull = new Vec3(this.getX() - victim.getX(), this.getY() - victim.getY(), this.getZ() - victim.getZ()).scale(0.3);
          victim.push(pull);
+         if (victim instanceof Player) {
+            ((SonicSniffMotionAccess)victim).theSift$markSonicSniffMotion();
+         }
+
          if (victim instanceof ServerPlayer player) {
             player.connection.send(new ClientboundSetEntityMotionPacket(victim));
          }
@@ -348,7 +353,7 @@ public final class DarkSnifferEntity extends Sniffer {
       this.sonicVictim = null;
       this.sonicOrigin = Vec3.ZERO;
       this.sonicDirection = Vec3.ZERO;
-      this.sonicPulledEntityIds.clear();
+      this.sonicPulledEntityUuids.clear();
       this.ticksWithoutMeleeContact = 0;
    }
 

@@ -44,7 +44,9 @@
     "SiftStemMixins$Attached",
     "SiftAfterBlockBreakMixin",
     "SiftAfterDeathMixin",
-    "SiftAfterPlayerDeathMixin"
+    "SiftAfterPlayerDeathMixin",
+    "IchorRegenerationMixin",
+    "SonicSniffMotionMixin"
   ],
   "injectors": {
     "defaultRequire": 1
