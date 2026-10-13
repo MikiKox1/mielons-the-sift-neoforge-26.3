@@ -1,5 +1,7 @@
 # The Sift 1.1.2 — F0/F1/F2 QA checkpoint, MC 26.2
 
+> **HISTORICAL EARLY PHASE QA.** Initial compiler FAIL results below have been superseded by the later **\`PHASE4-QA-20261013.md\`** full clean build, isolated server/client and optional Easy Magic bootstrap PASS. Keep this file as exact early-phase evidence rather than silently rewriting test history. In-world gameplay remains PENDING.
+
 **Date:** 2026-10-13. **Branch:** \`port/26.2-upstream-1.1.2-phase1\`.
 **Phase state:** static migration prepared, **NOT COMPILE PASS**, **NOT RUNTIME PASS**, **NOT A JAR**.
 

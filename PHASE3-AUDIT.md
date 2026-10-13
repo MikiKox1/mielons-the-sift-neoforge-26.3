@@ -1,5 +1,7 @@
 # The Sift 1.1.2 → MC26.2 — F3a independent core API audit
 
+> **HISTORICAL F3a EVIDENCE.** Earlier Java compile FAIL was later resolved as part of F4. For current clean-build, server and client gate results, see **\`PHASE4-QA-20261013.md\`**. Do not treat the old compiler log as current status.
+
 **Date:** 2026-10-13
 **Status:** SOURCE/STATIC PASS; full Java compile remains **FAIL**.
 
