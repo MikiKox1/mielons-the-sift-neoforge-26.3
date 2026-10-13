@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.147'
+    id 'net.neoforged.moddev' version '2.0.148'
     id 'idea'
 }
 
@@ -35,8 +35,7 @@ repositories {
         }
     }
 
-    // LambDynamicLights API is optional at runtime but used by the client
-    // integration at compile time. Its 4.13.0 API is loader-neutral on 26.3.
+    // LambDynamicLights API is optional at runtime; 26.2 requires own target ABI.
     maven {
         name = 'Gegy'
         url = uri('https://maven.gegy.dev')
@@ -81,27 +80,29 @@ configurations {
 }
 
 dependencies {
-    implementation "com.geckolib:geckolib-neoforge-26.3:${project.geckolib_version}"
+    implementation "com.geckolib:geckolib-neoforge-26.2:${project.geckolib_version}"
     // GeckoLib's runtime client mixins add GeoRenderState to vanilla render states.
     // Consume its published sidecar so ModDevGradle exposes the same interface at compile time.
-    interfaceInjectionData "com.geckolib:geckolib-neoforge-26.3:${project.geckolib_version}"
+    interfaceInjectionData "com.geckolib:geckolib-neoforge-26.2:${project.geckolib_version}"
     compileOnly "dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:${project.lambdynlights_version}+${project.minecraft_version}"
 }
 
 // Prime 2 invariant: build/test on the latest published NeoForge for this
 // Minecraft line, while keeping the independent, OPEN-ENDED mod dependency
-// range [neo_min_version,) (currently >=26.3.0.64-beta).
+// range [neo_min_version,) (provisionally >=26.2.0.90).
 // Keep the compile/test loader pinned for reproducibility and refuse tests
 // if that pin becomes stale. Do not conflate this pin with minimum support.
 // If the metadata endpoint is unreachable, fail closed rather than claim the
 // tested loader is current. This task does not install any application.
 def pinnedNeoForge = project.neo_version.toString()
 def pinnedNeoMinimum = project.neo_min_version.toString()
+def targetMcVersion = project.minecraft_version.toString()
 tasks.register('verifyLatestNeoForge') {
     group = 'verification'
-    description = 'Confirm the pinned MC 26.3 NeoForge version is still the latest official Maven release.'
+    description = 'Confirm the pinned MC 26.2 NeoForge version is still the latest official Maven release.'
     inputs.property('neo_version', pinnedNeoForge)
     inputs.property('neo_min_version', pinnedNeoMinimum)
+    inputs.property('minecraft_version', targetMcVersion)
     doLast {
         def metadataUrl = 'https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml'
         def connection = new URI(metadataUrl).toURL().openConnection()
@@ -110,31 +111,30 @@ tasks.register('verifyLatestNeoForge') {
         connection.setReadTimeout(15000)
         connection.setRequestProperty('Cache-Control', 'no-cache')
         def metadata = connection.inputStream.withCloseable { it.getText('UTF-8') }
-        def matcher = metadata =~ /<version>(26\.3\.0\.(\d+)(?:-[^<]+)?)<\/version>/
+        def matcher = metadata =~ /<version>(26\.2\.0\.(\d+)(?:-[^<]+)?)<\/version>/
         def candidates = []
         matcher.each { match ->
             candidates << [version: match[1], build: Integer.parseInt(match[2])]
         }
         if (candidates.isEmpty()) {
-            throw new GradleException('Cannot verify latest NeoForge 26.3 in official Maven metadata; test blocked.')
+            throw new GradleException('Cannot verify latest NeoForge 26.2 in official Maven metadata; test blocked.')
         }
         def latest = candidates.max { a, b ->
             (a.build <=> b.build) ?: ((a.version.contains('-') ? 0 : 1) <=> (b.version.contains('-') ? 0 : 1))
         }.version
         if (pinnedNeoForge != latest) {
             throw new GradleException(
-                "NeoForge BUILD/TEST pin is outdated. Latest official MC 26.3: ${latest}; " +
+                "NeoForge BUILD/TEST pin is outdated. Latest official MC 26.2: ${latest}; " +
                 "neo_version=${pinnedNeoForge}. Update only neo_version for testing. " +
                 'Keep independent neo_min_version and the open-ended [minimum,) dependency.'
             )
         }
-        if (pinnedNeoMinimum != '26.3.0.64-beta') {
+        if (!pinnedNeoMinimum.startsWith('26.2.0.')) {
             throw new GradleException(
-                "The Sift 26.3 advertised loader minimum must remain 26.3.0.64-beta, " +
-                "found ${pinnedNeoMinimum}; change this minimum only after an explicit compatibility decision."
+                "The Sift 26.2 provisional minimum must belong to the target MC series, found ${pinnedNeoMinimum}"
             )
         }
-        logger.lifecycle("Verified latest NeoForge for MC 26.3 build/tests: ${latest}; " +
+        logger.lifecycle("Verified latest NeoForge for MC ${targetMcVersion} build/tests: ${latest}; " +
             "packaged minimum: ${pinnedNeoMinimum}, no upper bound")
     }
 }
