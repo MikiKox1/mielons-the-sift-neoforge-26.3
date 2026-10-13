@@ -17,6 +17,8 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import mielon.thesift.TheSiftMod;
@@ -74,6 +76,11 @@ public final class SiftProceduralSkyRenderer {
       texture("ribbons_far_day"), texture("ribbons_far_night"),
       texture("ribbons_near_day"), texture("ribbons_near_night")
    };
+   // Refreshed by SkyRenderer.render HEAD, before any RenderPass is opened.
+   // Resource reloads replace views, so never store these permanently without
+   // re-acquiring them before the following draw.
+   private static final GpuTextureView[] PREPARED_SKY_TEXTURE_VIEWS = new GpuTextureView[6];
+   private static GpuSampler PREPARED_SKY_SAMPLER;
    private static final RenderPipeline TEXTURED_SKY_PIPELINE = RenderPipelines.register(
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
          .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky_textured"))
@@ -116,6 +123,44 @@ public final class SiftProceduralSkyRenderer {
       // textures via interpolated UVs, not flat per-triangle RGB.
       SiftShaderCompat.assignPipeline(TEXTURED_SKY_PIPELINE, "TEXTURED");
       // Photon's native post-final compositor is deliberately NOT Iris-mapped.
+   }
+
+   /**
+    * The only place allowed to lazily upload sky textures and allocate GPU
+    * sky resources. It is called on the render thread at SkyRenderer.render
+    * HEAD, which is BEFORE vanilla's RenderPearl createRenderPass call.
+    *
+    * Crucially, this runs once per sky render, also after shaderpack toggle,
+    * texture/resource reload and dimension changes. Both Iris TEXTURED and
+    * Photon post-final then use already-prepared texture views and sampler.
+    * Never call TextureManager.getTexture from renderActual().
+    */
+   public static void prepareSkyResourcesBeforePass(
+      ClientLevel level, AutoStorageIndexBuffer quadIndices
+   ) {
+      boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
+      ensureBuffers(shadersActive);
+      int indexCount = PrimitiveTopology.QUADS.indexCount(
+         shadersActive ? SHADER_VERTEX_COUNT : VERTEX_COUNT
+      );
+      // This can grow and upload a new GPU index buffer on first use; it is
+      // therefore unsafe to perform for the first time during RenderPass.
+      quadIndices.getBuffer(indexCount);
+      if (shadersActive) {
+         var textureManager = Minecraft.getInstance().getTextureManager();
+         for (int i = 0; i < SKY_TEXTURES.length; i++) {
+            // TextureManager.getTexture may call registerAndLoad and upload
+            // pixels through FrontendCommandEncoder.writeToTexture. The
+            // original MC26.3 crash was exactly this operation inside the
+            // already-open Photon final RenderPass.
+            AbstractTexture texture = textureManager.getTexture(SKY_TEXTURES[i]);
+            PREPARED_SKY_TEXTURE_VIEWS[i] = texture.getTextureView();
+         }
+         PREPARED_SKY_SAMPLER = RenderSystem.getSamplerCache().getSampler(
+            AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
+            FilterMode.LINEAR, FilterMode.LINEAR, false
+         );
+      }
    }
 
    public static void render(PoseStack poseStack, ClientLevel level, RenderPass pass, AutoStorageIndexBuffer quadIndices) {
@@ -176,7 +221,15 @@ public final class SiftProceduralSkyRenderer {
       AutoStorageIndexBuffer quadIndices, boolean photonPostFinal
    ) {
       boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
-      ensureBuffers(shadersActive);
+      // SkyRenderer.render HEAD already prepared vertex/index buffers,
+      // texture views and sampler while NO RenderPass was active. Do not
+      // allocate or upload anything here (or in Photon final-pass callback).
+      if (shadersActive
+         && (TEXTURED_DOME_BUFFER == null || PREPARED_SKY_SAMPLER == null
+            || PREPARED_SKY_TEXTURE_VIEWS[0] == null)) {
+         TheSiftMod.LOGGER.error("The Sift sky resources not prepared before RenderPass; skipping this frame.");
+         return;
+      }
       long ticks = level.getDefaultClockTime();
       float night = SiftDayNightCycle.nightBlend(ticks);
       float day = 1.0F - night;
@@ -214,16 +267,10 @@ public final class SiftProceduralSkyRenderer {
          if (!(alpha <= 0.001F)) {
             pass.setUniform("DynamicTransforms", transforms[layer]);
             if (shadersActive) {
-               // TextureManager handles texture load/reload; the sampler is
-               // shared by the GPU cache. No per-frame image allocations.
-               AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(SKY_TEXTURES[layer]);
-               pass.setUniform(
-                  "Sampler0", texture.getTextureView(),
-                  RenderSystem.getSamplerCache().getSampler(
-                     AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
-                     FilterMode.LINEAR, FilterMode.LINEAR, false
-                  )
-               );
+               // Pure bind of a preloaded GPU view; TextureManager.getTexture
+               // is forbidden here, as it can upload via CommandEncoder
+               // while RenderPass is open (MC26.3 user crash 00:24:34).
+               pass.setUniform("Sampler0", PREPARED_SKY_TEXTURE_VIEWS[layer], PREPARED_SKY_SAMPLER);
                pass.setVertexBuffer(0, TEXTURED_DOME_BUFFER.slice());
             } else {
                pass.setVertexBuffer(0, BUFFERS[layer].slice());
@@ -237,6 +284,10 @@ public final class SiftProceduralSkyRenderer {
       photonSkyQueued = false;
       photonSkyLevel = null;
       photonSkyQuadIndices = null;
+      for (int i = 0; i < PREPARED_SKY_TEXTURE_VIEWS.length; i++) {
+         PREPARED_SKY_TEXTURE_VIEWS[i] = null;
+      }
+      PREPARED_SKY_SAMPLER = null;
       closeBuffers(BUFFERS);
       if (TEXTURED_DOME_BUFFER != null) {
          TEXTURED_DOME_BUFFER.close();
