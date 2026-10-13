@@ -5,37 +5,26 @@ import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
-import net.minecraft.client.renderer.state.level.WeatherRenderState;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome.Precipitation;
-import net.minecraft.world.phys.Vec3;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Minecraft 26.2 resolves rain/snow textures locally inside render, rather
+ * than storing rainTexture and snowTexture as fields as in Minecraft 26.3.
+ * Follow the exact original Fabric 1.1.2/26.2 injection point and keep
+ * the existing dimension/biome checks.
+ */
 @Mixin(WeatherEffectRenderer.class)
 public abstract class SiftWeatherTextureMixin {
+   private static final Identifier VANILLA_RAIN = Identifier.withDefaultNamespace("textures/environment/rain.png");
    private static final Identifier ICHOR_RAIN = Identifier.fromNamespaceAndPath("the_sift", "textures/environment/ichor_rain.png");
+   private static final Identifier VANILLA_SNOW = Identifier.withDefaultNamespace("textures/environment/snow.png");
    private static final Identifier ICHOR_SNOW = Identifier.fromNamespaceAndPath("the_sift", "textures/environment/ichor_snow.png");
-   @Shadow
-   private AbstractTexture rainTexture;
-   @Shadow
-   private AbstractTexture snowTexture;
-   @Shadow
-   @Final
-   private TextureManager textureManager;
-   @Unique
-   private AbstractTexture theSift$ichorRainTexture;
-   @Unique
-   private AbstractTexture theSift$ichorSnowTexture;
 
    @ModifyVariable(method = "extractRenderState", at = @At("STORE"), ordinal = 0)
    private Precipitation theSift$restrictSnowColumns(Precipitation original, @Local MutableBlockPos pos) {
@@ -49,29 +38,27 @@ public abstract class SiftWeatherTextureMixin {
       }
    }
 
-   @Inject(method = "prepare", at = @At("HEAD"))
-   private void theSift$prepareIchorWeatherTextures(Vec3 cameraPos, WeatherRenderState renderState, CallbackInfo ci) {
+   @ModifyArg(
+      // NeoForge 26.2 adds a two-argument compatibility overload which only
+      // forwards to the three-argument renderer. Target the precise overload
+      // that actually calls TextureManager.getTexture twice.
+      method = "render(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/state/level/WeatherRenderState;Lnet/minecraft/client/renderer/state/level/LevelRenderState;)V",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/client/renderer/texture/TextureManager;getTexture(Lnet/minecraft/resources/Identifier;)Lnet/minecraft/client/renderer/texture/AbstractTexture;"
+      ),
+      index = 0
+   )
+   private Identifier theSift$useIchorWeatherTexture(Identifier original) {
       ClientLevel level = Minecraft.getInstance().level;
       if (level != null && level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
-         if (this.theSift$ichorRainTexture == null) {
-            this.theSift$ichorRainTexture = this.textureManager.getTexture(ICHOR_RAIN);
+         if (original.equals(VANILLA_RAIN)) {
+            return ICHOR_RAIN;
          }
-
-         if (this.theSift$ichorSnowTexture == null) {
-            this.theSift$ichorSnowTexture = this.textureManager.getTexture(ICHOR_SNOW);
+         if (original.equals(VANILLA_SNOW)) {
+            return ICHOR_SNOW;
          }
       }
-   }
-
-   @ModifyVariable(method = "renderWeather", at = @At("HEAD"), argsOnly = true, ordinal = 0)
-   private AbstractTexture theSift$useIchorWeatherTexture(AbstractTexture original) {
-      ClientLevel level = Minecraft.getInstance().level;
-      if (level == null || !level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
-         return original;
-      } else if (original == this.rainTexture && this.theSift$ichorRainTexture != null) {
-         return this.theSift$ichorRainTexture;
-      } else {
-         return original == this.snowTexture && this.theSift$ichorSnowTexture != null ? this.theSift$ichorSnowTexture : original;
-      }
+      return original;
    }
 }

@@ -51,7 +51,7 @@ public final class AbandonedMainPortalFeature extends Feature<NoneFeatureConfigu
       BlockPos center = new BlockPos(centerX, surfaceY, centerZ);
       if (surfaceY > level.getMinY() + 4 && !SiftFeaturePlacementGuard.intersectsPortal(center, 28)) {
          Identifier templateId = chooseTemplate(level, center, random);
-         Optional<StructureTemplate> optional = level.getLevel().getStructureTemplateManager().get(templateId);
+      Optional<StructureTemplate> optional = level.getLevel().getStructureManager().get(templateId);
          if (optional.isEmpty()) {
             return false;
          }

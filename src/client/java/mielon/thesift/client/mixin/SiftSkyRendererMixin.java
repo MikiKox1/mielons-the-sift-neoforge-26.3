@@ -1,8 +1,8 @@
 package mielon.thesift.client.mixin;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem.AutoStorageIndexBuffer;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.renderpearl.api.commands.RenderPass;
 import mielon.thesift.client.render.SiftProceduralSkyRenderer;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.client.Minecraft;
@@ -20,23 +20,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SiftSkyRendererMixin {
    @Shadow
    @Final
+   private RenderTarget renderTarget;
+   @Shadow
+   @Final
    private AutoStorageIndexBuffer quadIndices;
 
    @Inject(method = "renderSunMoonAndStars", at = @At("HEAD"), cancellable = true)
    private void theSift$renderProceduralSky(
-      RenderPass renderPass,
-      PoseStack poseStack,
-      float sunAngle,
-      float moonAngle,
-      float starAngle,
-      MoonPhase moonPhase,
-      float rainBrightness,
-      float starBrightness,
-      CallbackInfo ci
+      PoseStack poseStack, float sunAngle, float moonAngle, float starAngle, MoonPhase moonPhase, float rainBrightness, float starBrightness, CallbackInfo ci
    ) {
       ClientLevel level = Minecraft.getInstance().level;
       if (level != null && level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
-         SiftProceduralSkyRenderer.render(poseStack, level, renderPass, this.quadIndices);
+         SiftProceduralSkyRenderer.render(poseStack, level, this.renderTarget, this.quadIndices);
          ci.cancel();
       }
    }

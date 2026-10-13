@@ -1,6 +1,6 @@
 package mielon.thesift.client.compat;
 
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import java.lang.reflect.Method;
 import mielon.thesift.TheSiftMod;
 import net.neoforged.fml.ModList;

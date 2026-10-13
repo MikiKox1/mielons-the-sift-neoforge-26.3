@@ -10,10 +10,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider.Con
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -46,14 +44,6 @@ public class SonorousBeamRenderer implements BlockEntityRenderer<SonorousDeepsla
    public boolean shouldRender(SonorousDeepslateBlockEntity blockEntity, Vec3 cameraPosition) {
       Vec3 anchor = Vec3.atCenterOf(blockEntity.getBlockPos());
       return anchor.multiply(1.0, 0.0, 1.0).closerThan(cameraPosition.multiply(1.0, 0.0, 1.0), this.getViewDistance());
-   }
-
-   @Override
-   public AABB getRenderBoundingBox(SonorousDeepslateBlockEntity blockEntity) {
-      BlockPos pos = blockEntity.getBlockPos();
-      return new AABB(
-         pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0, pos.getY() + 1.0 + MAX_BEAM_HEIGHT, pos.getZ() + 1.0
-      );
    }
 
    public SonorousBeamRenderer.State createRenderState() {

@@ -360,7 +360,7 @@ public final class SiftPortalStructure {
          SiftFeaturePlacementGuard.reservePortal(storedOrigin, 9, 40);
          return stored;
       } else {
-         Optional<StructureTemplate> templateOptional = server.getStructureTemplateManager().get(TEMPLATE_ID);
+      Optional<StructureTemplate> templateOptional = server.getStructureManager().get(TEMPLATE_ID);
          if (templateOptional.isEmpty()) {
             TheSiftMod.LOGGER.error("Missing portal structure template: {}", TEMPLATE_ID);
             return Optional.empty();

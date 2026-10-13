@@ -1,18 +1,24 @@
 package mielon.thesift.client.loading;
 
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Builder;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Builder;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
 public final class SiftLoadingBackgroundRenderer {
    private static final RenderPipeline PORTAL_PIPELINE = createPipeline(false);
    private static final RenderPipeline RIFT_PIPELINE = createPipeline(true);
 
    private SiftLoadingBackgroundRenderer() {
+   }
+
+   public static void registerPipelines(RegisterRenderPipelinesEvent event) {
+      event.registerPipeline(PORTAL_PIPELINE);
+      event.registerPipeline(RIFT_PIPELINE);
    }
 
    public static void draw(GuiGraphicsExtractor graphics, int width, int height) {

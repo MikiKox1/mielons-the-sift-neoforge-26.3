@@ -11,6 +11,7 @@ import mielon.thesift.client.entity.RiftRenderer;
 import mielon.thesift.client.entity.SifterRenderer;
 import mielon.thesift.client.entity.SingerRenderer;
 import mielon.thesift.client.loading.SiftClientPortalTransition;
+import mielon.thesift.client.loading.SiftLoadingBackgroundRenderer;
 import mielon.thesift.client.particle.IchorFluidParticle;
 import mielon.thesift.client.particle.IchorSurfaceParticle;
 import mielon.thesift.client.particle.SiftNoteParticle;
@@ -19,8 +20,10 @@ import mielon.thesift.client.particle.SingerSoundWaveParticle;
 import mielon.thesift.client.particle.SoulParticle;
 import mielon.thesift.client.particle.SoundWaveParticle;
 import mielon.thesift.client.render.IchorFluidRendering;
+import mielon.thesift.client.render.RiftRenderTypes;
 import mielon.thesift.client.render.SiftCloudRenderPipelines;
 import mielon.thesift.client.render.SiftPortalRenderer;
+import mielon.thesift.client.render.SiftPortalRenderTypes;
 import mielon.thesift.client.render.SiftProceduralSkyRenderer;
 import mielon.thesift.client.render.SonorousBeamRenderTypes;
 import mielon.thesift.client.render.SonorousBeamRenderer;
@@ -41,6 +44,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
 @EventBusSubscriber(modid = TheSiftMod.MOD_ID, value = Dist.CLIENT)
@@ -53,6 +57,19 @@ public final class ClientModEvents {
    );
 
    private ClientModEvents() {
+   }
+
+   // NeoForge 26.2 keeps RenderPipelines.register private. Register every
+   // mod-specific Blaze3D pipeline through the official client mod event,
+   // including the source's own pipelines which Fabric could register directly.
+   @SubscribeEvent
+   private static void registerCustomPipelines(RegisterRenderPipelinesEvent event) {
+      RiftRenderTypes.registerPipelines(event);
+      SiftPortalRenderTypes.registerPipelines(event);
+      SonorousBeamRenderTypes.registerPipelines(event);
+      SiftCloudRenderPipelines.registerPipelines(event);
+      SiftProceduralSkyRenderer.registerPipelines(event);
+      SiftLoadingBackgroundRenderer.registerPipelines(event);
    }
 
    @SubscribeEvent

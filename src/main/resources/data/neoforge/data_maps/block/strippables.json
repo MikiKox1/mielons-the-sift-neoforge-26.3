@@ -1,0 +1,10 @@
+{
+  "values": {
+    "the_sift:overgrown_willow_log": {
+      "stripped_block": "the_sift:stripped_overgrown_willow_log"
+    },
+    "the_sift:overgrown_willow_wood": {
+      "stripped_block": "the_sift:stripped_overgrown_willow_wood"
+    }
+  }
+}

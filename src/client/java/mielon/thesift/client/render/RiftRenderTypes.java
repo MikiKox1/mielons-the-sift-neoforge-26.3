@@ -1,17 +1,18 @@
 package mielon.thesift.client.render;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Builder;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.renderpearl.api.pipeline.BlendFunction;
-import com.mojang.renderpearl.api.pipeline.ColorTargetState;
-import com.mojang.renderpearl.api.pipeline.DepthStencilState;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Builder;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
 public final class RiftRenderTypes {
    private static final RenderPipeline SURFACE_PIPELINE = createPipeline(false);
@@ -23,20 +24,27 @@ public final class RiftRenderTypes {
    private RiftRenderTypes() {
    }
 
+   public static void registerPipelines(RegisterRenderPipelinesEvent event) {
+      event.registerPipeline(SURFACE_PIPELINE);
+      event.registerPipeline(GLOW_PIPELINE);
+   }
+
    private static RenderPipeline createPipeline(boolean glow) {
       Builder builder = RenderPipeline.builder(new Snippet[0])
          .withLocation(id(glow ? "pipeline/rift_glow" : "pipeline/rift_surface"))
          .withVertexShader(id("core/rift"))
          .withFragmentShader(id("core/rift"))
          .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-         .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-         .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+         .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
          .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
          .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
          .withPrimitiveTopology(PrimitiveTopology.QUADS)
          .withDepthStencilState(new DepthStencilState(DepthStencilState.DEFAULT.depthTest(), !glow))
-         .withColorTargetState(glow ? new ColorTargetState(BlendFunction.TRANSLUCENT) : ColorTargetState.DEFAULT)
          .withCull(true);
+      if (glow) {
+         builder.withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT));
+      }
+
       return builder.build();
    }
 

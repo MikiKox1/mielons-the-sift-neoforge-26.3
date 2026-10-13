@@ -40,6 +40,8 @@ import mielon.thesift.worldgen.SiftFeaturePlacementGuard;
 import mielon.thesift.worldgen.SiftLandmarkTracker;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -89,7 +91,7 @@ public final class TheSiftMod {
       } else if (event.getRegistryKey().equals(BuiltInRegistries.ITEM.key())) {
          ModItems.bootstrap();
          BlubItems.initialize();
-      } else if (event.getRegistryKey().equals(BuiltInRegistries.FEATURE_TYPE.key())) {
+      } else if (event.getRegistryKey().equals(BuiltInRegistries.FEATURE.key())) {
          ModWorldgen.initialize();
       } else if (event.getRegistryKey().equals(NeoForgeRegistries.Keys.ATTACHMENT_TYPES)) {
          ModAttachments.initialize();
@@ -129,6 +131,15 @@ public final class TheSiftMod {
    }
 
    private static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+      // Original Fabric 1.1.2 adds natural minecraft:sniffer entries to The
+      // Sift's biomes. Vanilla does not register a spawn placement for it.
+      // NeoForge 26.2 correctly reports an ERROR for that missing predicate.
+      // Restrict to solid ground and collision-safe mob spawn rules; avoid
+      // NO_RESTRICTIONS, which would allow spawning midair or inside blocks.
+      event.register(
+         EntityTypes.SNIFFER, SpawnPlacementTypes.ON_GROUND,
+         Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules, Operation.REPLACE
+      );
       event.register(
          ModEntities.ECHO_GOLEM,
          SpawnPlacementTypes.ON_GROUND,

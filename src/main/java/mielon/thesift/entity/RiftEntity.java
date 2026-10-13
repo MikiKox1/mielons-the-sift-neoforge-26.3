@@ -48,7 +48,7 @@ public final class RiftEntity extends Entity {
       super(type, level);
       this.noPhysics = true;
       this.setNoGravity(true);
-      this.setPermanentlyInvulnerable(true);
+      this.setInvulnerable(true);
    }
 
    protected void defineSynchedData(Builder builder) {

@@ -4,6 +4,7 @@ import com.geckolib.renderer.GeoEntityRenderer;
 import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
 import mielon.thesift.client.light.SingerHeadLightBridge;
 import mielon.thesift.entity.SingerEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -22,8 +23,9 @@ public class SingerRenderer extends GeoEntityRenderer<SingerEntity, EntityRender
    }
 
    @Override
-   public boolean shouldRender(SingerEntity singer, Frustum frustum, double cameraX, double cameraY, double cameraZ, float partialTick) {
+   public boolean shouldRender(SingerEntity singer, Frustum frustum, double cameraX, double cameraY, double cameraZ) {
+      float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
       SingerHeadLightBridge.update(singer, singer.getPosition(partialTick).add(0.0, LIGHT_HEIGHT, 0.0));
-      return super.shouldRender(singer, frustum, cameraX, cameraY, cameraZ, partialTick);
+      return super.shouldRender(singer, frustum, cameraX, cameraY, cameraZ);
    }
 }

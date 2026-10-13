@@ -1,5 +1,6 @@
 package mielon.thesift.block;
 
+import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.entity.SiftPortalBlockEntity;
 import mielon.thesift.particle.ModParticles;
 import mielon.thesift.world.SiftTeleportManager;
@@ -27,7 +28,13 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class SiftPortalBlock extends BaseEntityBlock {
+   public static final MapCodec<SiftPortalBlock> CODEC = simpleCodec(SiftPortalBlock::new);
    public static final EnumProperty<Axis> AXIS = BlockStateProperties.HORIZONTAL_AXIS;
+
+   @Override
+   protected MapCodec<? extends BaseEntityBlock> codec() {
+      return CODEC;
+   }
 
    public SiftPortalBlock(Properties properties) {
       super(properties);

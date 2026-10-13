@@ -1,15 +1,15 @@
 package mielon.thesift.client.render;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.renderpearl.api.pipeline.ColorTargetState;
-import com.mojang.renderpearl.api.pipeline.DepthStencilState;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
 public final class SiftPortalRenderTypes {
    private static final Identifier PIPELINE_ID = Identifier.fromNamespaceAndPath("the_sift", "pipeline/sift_portal");
@@ -20,14 +20,12 @@ public final class SiftPortalRenderTypes {
       .withVertexShader(SHADER_ID)
       .withFragmentShader(SHADER_ID)
       .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-      .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-      .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+      .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
       .withBindGroupLayout(BindGroupLayouts.FOG)
       .withBindGroupLayout(BindGroupLayouts.SAMPLER0_SAMPLER1)
       .withVertexBinding(0, DefaultVertexFormat.POSITION)
       .withPrimitiveTopology(PrimitiveTopology.QUADS)
       .withDepthStencilState(DepthStencilState.DEFAULT)
-      .withColorTargetState(ColorTargetState.DEFAULT)
       .withCull(true)
       .withShaderDefine("PORTAL_LAYERS", 15)
       .build();
@@ -37,5 +35,9 @@ public final class SiftPortalRenderTypes {
    );
 
    private SiftPortalRenderTypes() {
+   }
+
+   public static void registerPipelines(RegisterRenderPipelinesEvent event) {
+      event.registerPipeline(SIFT_PORTAL_PIPELINE);
    }
 }

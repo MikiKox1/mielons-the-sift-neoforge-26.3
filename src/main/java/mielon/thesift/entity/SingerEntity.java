@@ -116,7 +116,7 @@ public class SingerEntity extends PathfinderMob implements GeoEntity {
       this.noPhysics = true;
       this.setNoGravity(true);
       this.setNoAi(true);
-      this.setPermanentlyInvulnerable(true);
+      this.setInvulnerable(true);
       this.timings = SingerAnimationTimings.load();
    }
 
@@ -175,7 +175,7 @@ public class SingerEntity extends PathfinderMob implements GeoEntity {
       this.noPhysics = true;
       this.setNoGravity(true);
       this.setNoAi(true);
-      this.setPermanentlyInvulnerable(false);
+      this.setInvulnerable(false);
       this.setHealth(this.getMaxHealth());
    }
 
@@ -282,7 +282,7 @@ public class SingerEntity extends PathfinderMob implements GeoEntity {
       this.noPhysics = false;
       this.setNoGravity(false);
       this.setNoAi(false);
-      this.setPermanentlyInvulnerable(false);
+      this.setInvulnerable(false);
    }
 
    public void offerSoulGolem(EchoGolemEntity golem) {
@@ -907,7 +907,7 @@ public class SingerEntity extends PathfinderMob implements GeoEntity {
          this.noPhysics = immaterial;
          this.setNoGravity(immaterial);
          this.setNoAi(immaterial);
-         this.setPermanentlyInvulnerable(false);
+      this.setInvulnerable(false);
       }
 
       int hornTargetsVersion = input.getIntOr("horn_targets_version", 0);

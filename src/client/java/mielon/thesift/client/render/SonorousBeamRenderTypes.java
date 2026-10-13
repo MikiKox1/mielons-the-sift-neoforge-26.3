@@ -1,18 +1,19 @@
 package mielon.thesift.client.render;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.renderpearl.api.pipeline.BlendFunction;
-import com.mojang.renderpearl.api.pipeline.ColorTargetState;
-import com.mojang.renderpearl.api.pipeline.CompareOp;
-import com.mojang.renderpearl.api.pipeline.DepthStencilState;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import mielon.thesift.client.compat.SiftShaderCompat;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
 public final class SonorousBeamRenderTypes {
    private static final Identifier BEAM_TEXTURE = id("textures/block/sonorous_deepslate_beam.png");
@@ -21,8 +22,7 @@ public final class SonorousBeamRenderTypes {
       .withVertexShader(id("core/sonorous_beam"))
       .withFragmentShader(id("core/sonorous_beam"))
       .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-      .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-      .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+      .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
       .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
       .withVertexBinding(0, DefaultVertexFormat.BLOCK)
       .withPrimitiveTopology(PrimitiveTopology.QUADS)
@@ -35,8 +35,7 @@ public final class SonorousBeamRenderTypes {
       .withVertexShader(id("core/sonorous_beam"))
       .withFragmentShader(id("core/sonorous_beam"))
       .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-      .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-      .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+      .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
       .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
       .withVertexBinding(0, DefaultVertexFormat.BLOCK)
       .withPrimitiveTopology(PrimitiveTopology.QUADS)
@@ -52,6 +51,11 @@ public final class SonorousBeamRenderTypes {
    );
 
    private SonorousBeamRenderTypes() {
+   }
+
+   public static void registerPipelines(RegisterRenderPipelinesEvent event) {
+      event.registerPipeline(BEAM_PIPELINE);
+      event.registerPipeline(WATER_OVERLAY_PIPELINE);
    }
 
    public static void initialize() {

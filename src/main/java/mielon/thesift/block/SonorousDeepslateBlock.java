@@ -1,5 +1,6 @@
 package mielon.thesift.block;
 
+import com.mojang.serialization.MapCodec;
 import java.util.Map;
 import mielon.thesift.block.entity.SonorousDeepslateBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -21,6 +22,12 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 
 public class SonorousDeepslateBlock extends BaseEntityBlock {
+   public static final MapCodec<SonorousDeepslateBlock> CODEC = simpleCodec(SonorousDeepslateBlock::new);
+
+   @Override
+   protected MapCodec<? extends BaseEntityBlock> codec() {
+      return CODEC;
+   }
    public static final EnumProperty<SonorousDeepslateBlock.Mode> MODE = EnumProperty.create("mode", SonorousDeepslateBlock.Mode.class);
 
    public SonorousDeepslateBlock(Properties properties) {

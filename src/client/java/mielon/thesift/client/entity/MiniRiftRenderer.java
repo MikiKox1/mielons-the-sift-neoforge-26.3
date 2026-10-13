@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.AABB;
 
 public final class MiniRiftRenderer extends EntityRenderer<MiniRiftEntity, MiniRiftRenderer.State> {
    private static final RiftMesh CUBE = new RiftMesh(List.of(new RiftAssetModel.Box(-0.4F, -0.4F, -0.4F, 0.4F, 0.4F, 0.4F)));
@@ -36,6 +37,11 @@ public final class MiniRiftRenderer extends EntityRenderer<MiniRiftEntity, MiniR
 
    protected int getBlockLightLevel(MiniRiftEntity entity, BlockPos pos) {
       return 15;
+   }
+
+   @Override
+   protected AABB getBoundingBoxForCulling(MiniRiftEntity entity) {
+      return entity.getBoundingBox().inflate(1.0);
    }
 
    public void submit(MiniRiftRenderer.State state, PoseStack poses, SubmitNodeCollector collector, CameraRenderState camera) {

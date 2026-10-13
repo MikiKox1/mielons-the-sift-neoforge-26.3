@@ -79,7 +79,7 @@ public final class OvergrownWillowTreeFeature extends Feature<NoneFeatureConfigu
    private static boolean placeAt(
       WorldGenLevel level, RandomSource random, BlockPos root, SiftWorldgenBounds bounds, OvergrownWillowTreeFeature.TemplateChoice choice
    ) {
-      Optional<StructureTemplate> optional = level.getLevel().getStructureTemplateManager().get(choice.id());
+      Optional<StructureTemplate> optional = level.getLevel().getStructureManager().get(choice.id());
       if (optional.isEmpty()) {
          return false;
       }

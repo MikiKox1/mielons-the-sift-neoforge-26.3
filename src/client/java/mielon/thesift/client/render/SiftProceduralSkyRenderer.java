@@ -1,5 +1,12 @@
 package mielon.thesift.client.render;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.RenderSystem.AutoStorageIndexBuffer;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -7,17 +14,14 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.renderpearl.api.buffers.GpuBuffer;
-import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
-import com.mojang.renderpearl.api.commands.RenderPass;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import mielon.thesift.client.compat.SiftShaderCompat;
 import mielon.thesift.world.SiftDayNightCycle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
@@ -51,12 +55,11 @@ public final class SiftProceduralSkyRenderer {
    private static final int NEAR_NIGHT = 5;
    private static final GpuBuffer[] BUFFERS = new GpuBuffer[6];
    private static final GpuBuffer[] SHADER_BUFFERS = new GpuBuffer[6];
-   private static final RenderPipeline SKY_PIPELINE = RenderPipelines.register(
+   private static final RenderPipeline SKY_PIPELINE =
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
          .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky"))
          .withCull(false)
-         .build()
-   );
+         .build();
    private static final float[][] DAY_PALETTE = new float[][]{
       {1.0F, 0.61F, 0.76F}, {0.3F, 0.94F, 0.97F}, {0.52F, 1.0F, 0.8F}, {0.91F, 0.73F, 1.0F}, {1.0F, 0.82F, 0.64F}
    };
@@ -76,7 +79,14 @@ public final class SiftProceduralSkyRenderer {
       SiftShaderCompat.assignPipeline(SKY_PIPELINE, "BASIC");
    }
 
-   public static void render(PoseStack poseStack, ClientLevel level, RenderPass pass, AutoStorageIndexBuffer quadIndices) {
+   public static void registerPipelines(RegisterRenderPipelinesEvent event) {
+      event.registerPipeline(SKY_PIPELINE);
+   }
+
+   // MC26.2 SkyRenderer owns its RenderTarget and creates an independent
+   // Blaze3D RenderPass. MC26.3 passed a RenderPearl pass from the caller.
+   // Preserve the Port 1.1.2 dual-density shader mesh and color corrections.
+   public static void render(PoseStack poseStack, ClientLevel level, RenderTarget renderTarget, AutoStorageIndexBuffer quadIndices) {
       boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
       ensureBuffers(shadersActive);
       GpuBuffer[] buffers = shadersActive ? SHADER_BUFFERS : BUFFERS;
@@ -95,16 +105,24 @@ public final class SiftProceduralSkyRenderer {
       };
       int indexCount = PrimitiveTopology.QUADS.indexCount(shadersActive ? SHADER_VERTEX_COUNT : VERTEX_COUNT);
       GpuBuffer indexBuffer = quadIndices.getBuffer(indexCount);
-      pass.setPipeline(RenderSystem.getCompiledPipeline(shadersActive ? SKY_PIPELINE : RenderPipelines.DEBUG_QUADS));
-      RenderSystem.bindDefaultUniforms(pass);
-      pass.setIndexBuffer(indexBuffer, quadIndices.type());
+      try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+         () -> "The Sift procedural sky",
+         renderTarget.getColorTextureView(),
+         Optional.empty(),
+         renderTarget.getDepthTextureView(),
+         OptionalDouble.empty()
+      )) {
+         pass.setPipeline(shadersActive ? SKY_PIPELINE : RenderPipelines.DEBUG_QUADS);
+         RenderSystem.bindDefaultUniforms(pass);
+         pass.setIndexBuffer(indexBuffer, quadIndices.type());
 
-      for (int layer = 0; layer < buffers.length; layer++) {
-         float alpha = layer == 0 ? 1.0F : (layer == 1 ? night : (layer % 2 == 0 ? day : night));
-         if (!(alpha <= 0.001F)) {
-            pass.setUniform("DynamicTransforms", transforms[layer]);
-            pass.setVertexBuffer(0, buffers[layer].slice());
-            pass.drawIndexed(indexCount, 1, 0, 0, 0);
+         for (int layer = 0; layer < buffers.length; layer++) {
+            float alpha = layer == 0 ? 1.0F : (layer == 1 ? night : (layer % 2 == 0 ? day : night));
+            if (!(alpha <= 0.001F)) {
+               pass.setUniform("DynamicTransforms", transforms[layer]);
+               pass.setVertexBuffer(0, buffers[layer].slice());
+               pass.drawIndexed(indexCount, 1, 0, 0, 0);
+            }
          }
       }
    }
