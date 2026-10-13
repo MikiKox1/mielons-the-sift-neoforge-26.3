@@ -7,7 +7,6 @@ import java.util.function.Function;
 import mielon.thesift.block.entity.SiftPortalBlockEntity;
 import mielon.thesift.block.entity.SonorousDeepslateBlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -17,7 +16,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.HangingSignItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
-import net.minecraft.world.item.component.Compostable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ButtonBlock;
@@ -48,7 +46,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Constant;
 import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
 import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 
@@ -484,25 +481,10 @@ public class ModBlocks {
       return properties.overrideLootTable(Optional.of(lootTable));
    }
 
-   private static Compostable compostable(int chancePercent) {
-      return new Compostable(new Constant(chancePercent));
-   }
-
    public static void modifyDefaultComponents(ModifyDefaultComponentsEvent event) {
-      event.modify(OVERGROWN_CHARD_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_STALKS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_FRONDS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_LOTUS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(65)));
-      event.modify(SUNBURST_PLANT_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(65)));
-      event.modify(WHISPERBLOOM_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(65)));
-      event.modify(SIFTSLATE_STALKS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(HEALTHY_SCULK_SPROUTS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(DRY_HEALTHY_SCULK_SPROUTS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(SIFTSLATE_HANGING_ROOTS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_HANGING_ROOTS_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_WILLOW_FOLIAGE_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_WILLOW_SAPLING_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(30)));
-      event.modify(OVERGROWN_WILLOW_VINES_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, compostable(50)));
+      // Minecraft 26.2/NeoForge uses neoforge:compostables item data maps.
+      // See data/neoforge/data_maps/item/compostables.json: preserve every
+      // original 30/50/65 percent probability, without newer 26.3 components.
    }
 
    public static void addVanillaBlockEntityBlocks(BlockEntityTypeAddBlocksEvent event) {

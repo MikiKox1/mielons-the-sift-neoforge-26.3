@@ -8,7 +8,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,15 +36,15 @@ public final class OvergrownWillowSaplingBlock extends BushBlock implements Bone
       }
    }
 
-   public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state, BonemealSource source) {
+   public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state) {
       return true;
    }
 
-   public boolean isBonemealSuccess(Level level, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
+   public boolean isBonemealSuccess(Level level, RandomSource random, BlockPos pos, BlockState state) {
       return random.nextFloat() < 0.45F;
    }
 
-   public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
+   public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
       this.growTree(level, pos, state, random);
    }
 

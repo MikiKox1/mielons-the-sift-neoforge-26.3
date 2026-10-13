@@ -6,7 +6,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.clock.ClockTimeMarker;
 import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.clock.WorldClock;
-import net.minecraft.world.clock.ServerClockManager.MoveResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,7 +29,7 @@ public abstract class ServerClockManagerMixin {
       if (!this.theSift$internalClockWrite && theSift$isSiftClock(clock)) {
          if (!clock.equals(this.theSift$markerClock)) {
             ServerClockManager self = (ServerClockManager)(Object)this;
-            long currentTicks = self.getInstance(clock).totalTicks();
+            long currentTicks = self.getTotalTicks(clock);
             if (this.theSift$beginTransition(clock, currentTicks, targetTicks)) {
                ci.cancel();
             }
@@ -39,20 +38,20 @@ public abstract class ServerClockManagerMixin {
    }
 
    @Inject(method = "moveToTimeMarker", at = @At("HEAD"))
-   private void theSift$rememberTimeBeforeMarker(Holder<WorldClock> clock, ResourceKey<ClockTimeMarker> marker, CallbackInfoReturnable<MoveResult> cir) {
+   private void theSift$rememberTimeBeforeMarker(Holder<WorldClock> clock, ResourceKey<ClockTimeMarker> marker, CallbackInfoReturnable<Boolean> cir) {
       if (!this.theSift$internalClockWrite && theSift$isSiftClock(clock)) {
          this.theSift$markerClock = clock;
-         this.theSift$beforeMarker = ((ServerClockManager)(Object)this).getInstance(clock).totalTicks();
+         this.theSift$beforeMarker = ((ServerClockManager)(Object)this).getTotalTicks(clock);
       } else {
          this.theSift$markerClock = null;
       }
    }
 
    @Inject(method = "moveToTimeMarker", at = @At("RETURN"))
-   private void theSift$smoothTimeMarker(Holder<WorldClock> clock, ResourceKey<ClockTimeMarker> marker, CallbackInfoReturnable<MoveResult> cir) {
-      if (cir.getReturnValue() == MoveResult.MOVED && clock.equals(this.theSift$markerClock)) {
+   private void theSift$smoothTimeMarker(Holder<WorldClock> clock, ResourceKey<ClockTimeMarker> marker, CallbackInfoReturnable<Boolean> cir) {
+      if (cir.getReturnValueZ() && clock.equals(this.theSift$markerClock)) {
          ServerClockManager self = (ServerClockManager)(Object)this;
-         long targetTicks = self.getInstance(clock).totalTicks();
+         long targetTicks = self.getTotalTicks(clock);
          this.theSift$beginTransition(clock, this.theSift$beforeMarker, targetTicks);
          this.theSift$markerClock = null;
       } else {

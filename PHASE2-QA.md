@@ -19,3 +19,12 @@
 **Important:** one scenario differs in balance between our 26.3 resources and original 26.2: \`data/the_sift/recipe/sifter_meat_smoking.json\` was 200 ticks in 26.3 and is 100 ticks in original Fabric 1.1.2 for 26.2. Restored original target-specific behavior intentionally; requires manual conservation/balance review later.
 
 **Independence:** all changes confined to \`TheSift/work/neo-26.2-upstream-1.1.2\` and project \`backports/26.2-1.1.2-prep\`, no publication, user saves or mods profile touched.
+
+## F3a checkpoint — Core API, source-only PASS
+
+- Relevant classes matched to original **Fabric 1.1.2 MC26.2** and patched target Minecraft/NeoForge sources (no untested version assumptions).
+- Bonemeal/Willow, Echo Golem soul drop, Siftite return interpolation and ServerClock mixin adapted without changing intended gameplay.
+- Official 26.2 NeoForge compostable data map carries **16 items** and original probabilities.
+- Static QA \`tools/tests/verify_phase3_core_api_262.py\`: **PASS**, no source warnings.
+- \`compileJava\` in \`logs/phase3-core-api-262-compile-01.log\`: **FAIL**, primary blockers in client renderer \`com.mojang.renderpearl.api.*\`, absent in MC26.2. Unknown errors may remain past javac cap.
+- **No executable JAR, server/client/bootstrap or gameplay PASS.** Further rendering migration required.

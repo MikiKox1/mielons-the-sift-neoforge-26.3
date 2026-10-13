@@ -30,7 +30,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Prediction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -803,7 +802,7 @@ public final class EchoGolemEntity extends AbstractGolem implements GeoEntity {
          this.entityData.set(DATA_HAS_SOUL, false);
          ItemStack soul = new ItemStack(ModBlocks.SOUL_BLOCK_ITEM);
          if (!player.addItem(soul)) {
-            player.drop(soul, false, Prediction.SERVER_ONLY);
+            player.drop(soul, false);
          }
 
          if (player instanceof ServerPlayer serverPlayer) {

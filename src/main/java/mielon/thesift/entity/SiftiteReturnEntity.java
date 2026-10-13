@@ -13,7 +13,6 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.InterpolationHandler;
-import net.minecraft.world.entity.LinearInterpolationHandler;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.projectile.ItemSupplier;
 import net.minecraft.world.item.ItemStack;
@@ -26,16 +25,17 @@ public final class SiftiteReturnEntity extends Entity implements ItemSupplier {
    private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(SiftiteReturnEntity.class, EntityDataSerializers.ITEM_STACK);
    private UUID ownerId;
    private long deliveryOrder;
+   private final InterpolationHandler interpolation = new InterpolationHandler(this, 3);
 
-   protected InterpolationHandler createInterpolationHandler() {
-      return LinearInterpolationHandler.create(this, 3);
+   public InterpolationHandler getInterpolation() {
+      return this.interpolation;
    }
 
    public SiftiteReturnEntity(EntityType<? extends SiftiteReturnEntity> type, Level level) {
       super(type, level);
       this.noPhysics = true;
       this.setNoGravity(true);
-      this.setPermanentlyInvulnerable(true);
+      this.setInvulnerable(true);
    }
 
    protected void defineSynchedData(Builder builder) {

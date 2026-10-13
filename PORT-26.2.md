@@ -61,3 +61,18 @@ Examples of real blockers:
 3. After a clean compile, validate JSON codecs on a disposable dedicated server and only then start a separate client. Do not use user worlds.
 
 The original 26.3 release, its stage, source/main, live profiles and IntoTheMaelstrom have not been modified.
+
+## F3a — Source API adaptation (checkpoint on 2026-10-13)
+
+**Completed as a separate, statically verified substage (not full compile):**
+
+- Overgrown Willow Sapling changed to the actual 26.2 \`BonemealableBlock\` 4-/3-argument methods, preserving the 45% bonemeal chance and existing tree placement/recovery logic.
+- Echo Golem soul handoff adapted from 26.3 \`Prediction.SERVER_ONLY\` to 26.2 \`Player.drop(item, false)\`, preserving the original delivery advancement and inventory flow.
+- Siftite return entity uses 26.2 \`new InterpolationHandler(this, 3)\` with \`getInterpolation()\` and \`setInvulnerable(true)\`. The existing item conservation/delivery queue is kept unchanged.
+- \`ServerClockManagerMixin\` uses MC26.2 boolean \`moveToTimeMarker\` return and \`getTotalTicks(clock)\` instead of 26.3 \`MoveResult\`/getInstance API; the time transition logic is unchanged, but exact runtime injection application still needs independent QA.
+- Removed the newer 26.3 \`DataComponents.COMPOSTABLE\` API from \`ModBlocks\` / \`ModItems\`. All **16** previously accepted compostable item contributions (30/50/65%) are now in NeoForge 26.2 native \`data/neoforge/data_maps/item/compostables.json\`. This is the official NeoForge data map \`neoforge:compostables\`, source: https://github.com/neoforged/NeoForge/blob/26.2.x/src/main/java/net/neoforged/neoforge/registries/datamaps/builtin/NeoForgeDataMaps.java . Previous \`modifyDefaultComponents\` hooks are preserved as no-ops to avoid destabilizing event bootstrap.
+- All six original Mielon MC26.2 affected core Java classes were inspected via pinned original Fabric 1.1.2 JAR, selectively decompiled (read-only) into \`backports/26.2-1.1.2-prep/research/original26.2-core-api-decompiled\`.
+
+**New evidence:** \`tools/tests/verify_phase3_core_api_262.py\` + \`logs/phase3-core-api-262-static.log\` PASS. \`logs/phase3-core-api-262-compile-01.log\` still reports compiler failure (capped 100 per javac pass, 200 visible over two passes), now led by **client RenderPearl/OIT** incompatibilities. No \`error:\` lines for the six F3a adapted Java files appear within visible first 100 errors per pass; this is **not** proof that all Java files compile. Must continue with F3b/F4 and rebuild.
+
+**Remaining F3 core work:** audit any additional 26.3-only server APIs revealed after fixing client compile. Do not suppress mixin or compilation failures. Full startup/gameplay not yet performed for 26.2.

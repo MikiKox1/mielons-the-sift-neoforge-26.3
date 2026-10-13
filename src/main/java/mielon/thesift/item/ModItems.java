@@ -39,14 +39,12 @@ import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.BlockItemStateProperties;
-import net.minecraft.world.item.component.Compostable;
 import net.minecraft.world.item.component.Consumables;
 import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.equipment.ArmorMaterials;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Constant;
 import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 
 public final class ModItems {
@@ -354,8 +352,8 @@ public final class ModItems {
    }
 
    public static void modifyDefaultComponents(ModifyDefaultComponentsEvent event) {
-      event.modify(SCULKFLOWER_SEEDS, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, new Compostable(new Constant(30))));
-      event.modify(ModBlocks.SCULKFLOWER_ITEM, (builder, context, item) -> builder.set(DataComponents.COMPOSTABLE, new Compostable(new Constant(65))));
+      // NeoForge MC26.2 composter data maps carry these registrations, as
+      // recorded in data/neoforge/data_maps/item/compostables.json.
    }
 
    public static void initialize() {
