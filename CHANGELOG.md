@@ -36,10 +36,10 @@
 
 ## Release assets
 
-- `mielon's-the-sift-1.1.2-mc26.3-neoforge-port.jar`
+- `mielons-the-sift-1.1.2-mc26.3-neoforge-port.jar`
 
   **SHA-256:** `56724D4A0F7E42A8D21D3D85447A945FAAE93A04BFB11D8E485C1FF5914BFD19`
-- `mielon's-the-sift-1.1.2-mc26.3-neoforge-port-sources.jar`
+- `mielons-the-sift-1.1.2-mc26.3-neoforge-port-sources.jar`
 
   **SHA-256:** `11E4AF34FF3BB0087FC0EE2007C977CCEFC901786E47B5E87CD63CF3636D2A10`
 
