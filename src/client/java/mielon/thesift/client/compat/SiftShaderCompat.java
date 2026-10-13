@@ -2,6 +2,7 @@ package mielon.thesift.client.compat;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import java.lang.reflect.Method;
+import java.util.Locale;
 import mielon.thesift.TheSiftMod;
 import net.neoforged.fml.ModList;
 
@@ -12,6 +13,7 @@ public final class SiftShaderCompat {
    private static Method isShaderPackInUse;
    private static Method assignPipeline;
    private static Class<?> irisProgramClass;
+   private static Method currentPackName;
 
    private SiftShaderCompat() {
    }
@@ -34,12 +36,36 @@ public final class SiftShaderCompat {
                   irisProgramClass = null;
                }
 
+               // Iris API v0 deliberately doesn't expose pack names. This
+               // guarded lookup routes ONLY the known Photon translucent
+               // gbuffer issue away from the non-sky shaderpack pipeline.
+               try {
+                  currentPackName = Class.forName("net.irisshaders.iris.Iris").getMethod("getCurrentPackName");
+               } catch (ReflectiveOperationException | LinkageError ignored) {
+                  currentPackName = null;
+               }
+
                TheSiftMod.LOGGER.info("Iris detected; The Sift shader compatibility is enabled.");
+               // ALPHA3 evidence: log only once at initial client setup so
+               // the experiment can prove Photon pack detection without
+               // reading or changing the user's shaderpack configuration.
+               if (currentPackName != null) {
+                  try {
+                     Object name = currentPackName.invoke(null);
+                     TheSiftMod.LOGGER.info(
+                        "The Sift ALPHA3 loaded Iris pack '{}'; Photon-specific native sky candidate: {}",
+                        name, isPhotonShaderPackSelected()
+                     );
+                  } catch (ReflectiveOperationException ignored) {
+                     TheSiftMod.LOGGER.debug("Iris shaderpack name not available during initial client setup.");
+                  }
+               }
             } catch (ReflectiveOperationException | LinkageError exception) {
                irisApi = null;
                isShaderPackInUse = null;
                assignPipeline = null;
                irisProgramClass = null;
+               currentPackName = null;
                TheSiftMod.LOGGER.warn("Iris was detected, but its compatibility API could not be initialized.", exception);
             }
          }
@@ -60,6 +86,32 @@ public final class SiftShaderCompat {
             return false;
          }
       } else {
+         return false;
+      }
+   }
+
+   /**
+    * Photon v1.3b routes gbuffers_textured through its lit translucent
+    * geometry pipeline, not a sky renderer, causing our six textured layers
+    * to appear as giant semitransparent surfaces over the landscape.
+    * The no-shader path and Complementary path retain the stable ALPHA2
+    * renderer. This experimental detection gracefully returns false if
+    * a future Iris build changes its internal class.
+    */
+   public static boolean isPhotonShaderPackSelected() {
+      initialize();
+      // Iris reports isShaderPackInUse=false in some lifecycle phases even
+      // after a valid Photon pack was selected and loaded. The renderer
+      // already independently checks shaderActive before choosing a GPU
+      // pipeline; do not gate pack identity detection a second time.
+      if (currentPackName == null) {
+         return false;
+      }
+      try {
+         Object value = currentPackName.invoke(null);
+         return value instanceof String name
+            && name.toLowerCase(Locale.ROOT).startsWith("photon");
+      } catch (ReflectiveOperationException | RuntimeException exception) {
          return false;
       }
    }

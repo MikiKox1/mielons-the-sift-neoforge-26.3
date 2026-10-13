@@ -17,6 +17,7 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import mielon.thesift.TheSiftMod;
 import mielon.thesift.client.compat.SiftShaderCompat;
 import mielon.thesift.world.SiftDayNightCycle;
 import net.minecraft.client.Minecraft;
@@ -61,6 +62,7 @@ public final class SiftProceduralSkyRenderer {
    // Share one position/UV vertex buffer among six shaderpack-only RGBA
    // textures. The original shaderless POSITION_COLOR buffers stay untouched.
    private static GpuBuffer TEXTURED_DOME_BUFFER;
+   private static int lastAlpha3RenderPath = -1;
    private static final Identifier[] SKY_TEXTURES = {
       texture("base_day"), texture("base_night"),
       texture("ribbons_far_day"), texture("ribbons_far_night"),
@@ -69,6 +71,20 @@ public final class SiftProceduralSkyRenderer {
    private static final RenderPipeline TEXTURED_SKY_PIPELINE =
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
          .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky_textured_alpha2"))
+         .withVertexShader("core/position_tex")
+         .withFragmentShader("core/position_tex")
+         .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+         .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+         .withCull(false)
+         .build();
+   // Photon v1.3b's Iris TEXTURED path sends output through its
+   // gbuffers_all_translucent world-material program to attachment 13.
+   // An intentionally UNMAPPED native Blaze3D fallback tests correct alpha
+   // compositing without that shaderpack's translucent material path.
+   // Other packs always retain the ALPHA2 mapped TEXTURED path.
+   private static final RenderPipeline PHOTON_NATIVE_SKY_PIPELINE =
+      RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
+         .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/photon_native_sky_alpha3"))
          .withVertexShader("core/position_tex")
          .withFragmentShader("core/position_tex")
          .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
@@ -94,10 +110,12 @@ public final class SiftProceduralSkyRenderer {
       // flat glColor in certain gbuffers_basic shaderpack programs. The actual
       // Photon/Complementary appearance still requires user in-world testing.
       SiftShaderCompat.assignPipeline(TEXTURED_SKY_PIPELINE, "TEXTURED");
+      // DO NOT assign the PHOTON_NATIVE_SKY_PIPELINE to any Iris shader key.
    }
 
    public static void registerPipelines(RegisterRenderPipelinesEvent event) {
       event.registerPipeline(TEXTURED_SKY_PIPELINE);
+      event.registerPipeline(PHOTON_NATIVE_SKY_PIPELINE);
    }
 
    // MC26.2 SkyRenderer owns its RenderTarget and creates an independent
@@ -105,6 +123,16 @@ public final class SiftProceduralSkyRenderer {
    // Preserve the Port 1.1.2 dual-density shader mesh and color corrections.
    public static void render(PoseStack poseStack, ClientLevel level, RenderTarget renderTarget, AutoStorageIndexBuffer quadIndices) {
       boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
+      boolean photonNative = shadersActive && SiftShaderCompat.isPhotonShaderPackSelected();
+      int renderPath = !shadersActive ? 0 : (photonNative ? 2 : 1);
+      if (renderPath != lastAlpha3RenderPath) {
+         lastAlpha3RenderPath = renderPath;
+         TheSiftMod.LOGGER.info(
+            "The Sift ALPHA3 active sky render path: {}",
+            renderPath == 0 ? "vanilla POSITION_COLOR"
+               : (renderPath == 2 ? "Photon native POSITION_TEX (experimental)" : "Iris TEXTURED (ALPHA2)")
+         );
+      }
       ensureBuffers(shadersActive);
       GpuBuffer[] buffers = BUFFERS;
       long ticks = level.getDefaultClockTime();
@@ -129,7 +157,9 @@ public final class SiftProceduralSkyRenderer {
          renderTarget.getDepthTextureView(),
          OptionalDouble.empty()
       )) {
-         pass.setPipeline(shadersActive ? TEXTURED_SKY_PIPELINE : RenderPipelines.DEBUG_QUADS);
+         pass.setPipeline(!shadersActive
+            ? RenderPipelines.DEBUG_QUADS
+            : (photonNative ? PHOTON_NATIVE_SKY_PIPELINE : TEXTURED_SKY_PIPELINE));
          RenderSystem.bindDefaultUniforms(pass);
          pass.setIndexBuffer(indexBuffer, quadIndices.type());
 
