@@ -1,6 +1,6 @@
 # Mielon's The Sift
 
-> **Unofficial NeoForge 26.3 port of Mielon's The Sift.** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. NeoForge port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
+> **Unofficial NeoForge port of Mielon's The Sift for newer Minecraft versions.** The current published port supports Minecraft 26.3; ports for 26.2 and 26.1.2 are planned. Original mod and creative work: **Mielon**. NeoForge port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
 >
 > The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). Additional project records: [source and credits](SOURCE_PROVENANCE.md) and [development disclosure](AI_DISCLOSURE.md).
 
@@ -10,7 +10,7 @@
 
 | Minecraft | Status | Source branch | Download |
 | --- | --- | --- | --- |
-| **26.3** | **Released — Port 1.1.1** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.1 for 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1) |
+| **26.3** | **Released — Port 1.1.1 26.3** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.1 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1) |
 | 26.2 | Planned — not available yet | `minecraft/26.2` (to be created when the port exists) | Not available |
 | 26.1.2 | Planned — not available yet | `minecraft/26.1.2` (to be created when the port exists) | Not available |
 
@@ -18,7 +18,7 @@
 
 ## NeoForge port — Minecraft 26.3
 
-- **Current 26.3 release:** **Port 1.1.1** — [fixed GitHub release for Minecraft 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1). See the [26.3 changelog](CHANGELOG.md) for the changes compared with the original Fabric mod.
+- **Current 26.3 release:** **Port 1.1.1 26.3** — [fixed GitHub release for Minecraft 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1). See the [26.3 changelog](CHANGELOG.md) for the changes compared with the original Fabric mod.
 - **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta or newer; **Java:** 25. Compiled against .64-beta and reported working with .69-beta. Compatibility with future loader builds is not guaranteed without further testing.
 - **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
@@ -27,7 +27,7 @@
 
 The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are adapted from the original project.
 
-**Versioning:** In the 26.3 release line, public names use `Port 1.1.1`, `Port 1.1.2`, `Port 1.1.3` for fixes and `Port 1.2.0` for larger additions. Each subsequent changelog describes only changes since the preceding release of that Minecraft-version line. Other Minecraft ports will be distinguished by their own branches, version-specific release information and assets; they have not been released yet. This is an unofficial port, not an original Mielon release.
+**Versioning:** The public release title includes its Minecraft target, starting with `Port 1.1.1 26.3`. Future 26.3 fixes may use `Port 1.1.2 26.3`, `Port 1.1.3 26.3`, and larger additions `Port 1.2.0 26.3`, with separate version labels for other Minecraft lines. Each subsequent changelog describes only changes since the preceding release of that Minecraft-version line. The existing internal version, Git tag and JAR filename are unchanged. This is an unofficial port, not an original Mielon release.
 
 **Source build:** Requires JDK 25; run `./gradlew build` (or `gradlew.bat build` on Windows). Easy Magic is optional.
 

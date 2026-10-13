@@ -1,0 +1,30 @@
+name: One-time The Sift 26.3 release title update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/rename-the-sift-26-3-release-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rename-existing-release:
+    if: github.repository == 'MikiKox1/mielons-the-sift-neoforge-26.3'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm exact existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh api repos/MikiKox1/mielons-the-sift-neoforge-26.3/releases/409335296 --jq '.tag_name')
+          title=$(gh api repos/MikiKox1/mielons-the-sift-neoforge-26.3/releases/409335296 --jq '.name')
+          test "$tag" = 'v1.1.1-neoforge.2-community.3-fix.1'
+          test "$title" = 'Port 1.1.1' -o "$title" = 'Port 1.1.1 26.3'
+      - name: Update only the release display title
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PATCH repos/MikiKox1/mielons-the-sift-neoforge-26.3/releases/409335296 -f name='Port 1.1.1 26.3' --jq '{name: .name, tag_name: .tag_name, asset_count: (.assets | length)}'
