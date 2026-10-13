@@ -9,6 +9,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.RenderSystem.AutoStorageIndexBuffer;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -18,8 +19,11 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import mielon.thesift.client.compat.SiftShaderCompat;
 import mielon.thesift.world.SiftDayNightCycle;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import org.joml.Matrix4f;
@@ -54,10 +58,21 @@ public final class SiftProceduralSkyRenderer {
    private static final int NEAR_DAY = 4;
    private static final int NEAR_NIGHT = 5;
    private static final GpuBuffer[] BUFFERS = new GpuBuffer[6];
-   private static final GpuBuffer[] SHADER_BUFFERS = new GpuBuffer[6];
-   private static final RenderPipeline SKY_PIPELINE =
+   // Share one position/UV vertex buffer among six shaderpack-only RGBA
+   // textures. The original shaderless POSITION_COLOR buffers stay untouched.
+   private static GpuBuffer TEXTURED_DOME_BUFFER;
+   private static final Identifier[] SKY_TEXTURES = {
+      texture("base_day"), texture("base_night"),
+      texture("ribbons_far_day"), texture("ribbons_far_night"),
+      texture("ribbons_near_day"), texture("ribbons_near_night")
+   };
+   private static final RenderPipeline TEXTURED_SKY_PIPELINE =
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
-         .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky"))
+         .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky_textured_alpha2"))
+         .withVertexShader("core/position_tex")
+         .withFragmentShader("core/position_tex")
+         .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+         .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
          .withCull(false)
          .build();
    private static final float[][] DAY_PALETTE = new float[][]{
@@ -70,17 +85,19 @@ public final class SiftProceduralSkyRenderer {
    private SiftProceduralSkyRenderer() {
    }
 
+   private static Identifier texture(String name) {
+      return Identifier.fromNamespaceAndPath("the_sift", "textures/sky/alpha2/" + name + ".png");
+   }
+
    public static void initialize() {
-      // Complementary Unbound's gbuffers_skybasic path computes its own sky
-      // color, discarding our POSITION_COLOR rainbow dome. The BASIC program
-      // starts from glColor instead. This mapping is only used by Iris; the
-      // vanilla/debug sky pipeline is unchanged. Visual parity still needs
-      // an actual shader-enabled client test before release.
-      SiftShaderCompat.assignPipeline(SKY_PIPELINE, "BASIC");
+      // Iris TEXTURED uses gbuffers_textured / interpolated UVs, bypassing the
+      // flat glColor in certain gbuffers_basic shaderpack programs. The actual
+      // Photon/Complementary appearance still requires user in-world testing.
+      SiftShaderCompat.assignPipeline(TEXTURED_SKY_PIPELINE, "TEXTURED");
    }
 
    public static void registerPipelines(RegisterRenderPipelinesEvent event) {
-      event.registerPipeline(SKY_PIPELINE);
+      event.registerPipeline(TEXTURED_SKY_PIPELINE);
    }
 
    // MC26.2 SkyRenderer owns its RenderTarget and creates an independent
@@ -89,7 +106,7 @@ public final class SiftProceduralSkyRenderer {
    public static void render(PoseStack poseStack, ClientLevel level, RenderTarget renderTarget, AutoStorageIndexBuffer quadIndices) {
       boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
       ensureBuffers(shadersActive);
-      GpuBuffer[] buffers = shadersActive ? SHADER_BUFFERS : BUFFERS;
+      GpuBuffer[] buffers = BUFFERS;
       long ticks = level.getDefaultClockTime();
       float night = SiftDayNightCycle.nightBlend(ticks);
       float day = 1.0F - night;
@@ -112,7 +129,7 @@ public final class SiftProceduralSkyRenderer {
          renderTarget.getDepthTextureView(),
          OptionalDouble.empty()
       )) {
-         pass.setPipeline(shadersActive ? SKY_PIPELINE : RenderPipelines.DEBUG_QUADS);
+         pass.setPipeline(shadersActive ? TEXTURED_SKY_PIPELINE : RenderPipelines.DEBUG_QUADS);
          RenderSystem.bindDefaultUniforms(pass);
          pass.setIndexBuffer(indexBuffer, quadIndices.type());
 
@@ -120,7 +137,19 @@ public final class SiftProceduralSkyRenderer {
             float alpha = layer == 0 ? 1.0F : (layer == 1 ? night : (layer % 2 == 0 ? day : night));
             if (!(alpha <= 0.001F)) {
                pass.setUniform("DynamicTransforms", transforms[layer]);
-               pass.setVertexBuffer(0, buffers[layer].slice());
+               if (shadersActive) {
+                  // SimpleTexture is owned and reloaded by TextureManager.
+                  // No image uploads, VRAM allocations or gradient computation
+                  // take place per frame in this code path.
+                  AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(SKY_TEXTURES[layer]);
+                  pass.bindTexture(
+                     "Sampler0", texture.getTextureView(),
+                     RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
+                  );
+                  pass.setVertexBuffer(0, TEXTURED_DOME_BUFFER.slice());
+               } else {
+                  pass.setVertexBuffer(0, buffers[layer].slice());
+               }
                pass.drawIndexed(indexCount, 1, 0, 0, 0);
             }
          }
@@ -129,7 +158,10 @@ public final class SiftProceduralSkyRenderer {
 
    public static void close() {
       closeBuffers(BUFFERS);
-      closeBuffers(SHADER_BUFFERS);
+      if (TEXTURED_DOME_BUFFER != null) {
+         TEXTURED_DOME_BUFFER.close();
+         TEXTURED_DOME_BUFFER = null;
+      }
    }
 
    private static void closeBuffers(GpuBuffer[] buffers) {
@@ -142,15 +174,58 @@ public final class SiftProceduralSkyRenderer {
    }
 
    private static void ensureBuffers(boolean shaderMesh) {
-      GpuBuffer[] buffers = shaderMesh ? SHADER_BUFFERS : BUFFERS;
-      if (buffers[0] == null) {
-         buffers[0] = buildDome(false, 0, shaderMesh);
-         buffers[1] = buildDome(true, 0, shaderMesh);
-         buffers[2] = buildDome(false, 1, shaderMesh);
-         buffers[3] = buildDome(true, 1, shaderMesh);
-         buffers[4] = buildDome(false, 2, shaderMesh);
-         buffers[5] = buildDome(true, 2, shaderMesh);
+      if (shaderMesh) {
+         if (TEXTURED_DOME_BUFFER == null) {
+            TEXTURED_DOME_BUFFER = buildTexturedDome();
+         }
+      } else if (BUFFERS[0] == null) {
+         BUFFERS[0] = buildDome(false, 0, false);
+         BUFFERS[1] = buildDome(true, 0, false);
+         BUFFERS[2] = buildDome(false, 1, false);
+         BUFFERS[3] = buildDome(true, 1, false);
+         BUFFERS[4] = buildDome(false, 2, false);
+         BUFFERS[5] = buildDome(true, 2, false);
       }
+   }
+
+   private static GpuBuffer buildTexturedDome() {
+      // Preserve the ALPHA1 high-density shader tessellation as control
+      // geometry. The six independent layers share a single UV mesh.
+      int byteCount = SHADER_VERTEX_COUNT * DefaultVertexFormat.POSITION_TEX.getVertexSize();
+      try (ByteBufferBuilder bytes = ByteBufferBuilder.exactlySized(byteCount)) {
+         BufferBuilder builder = new BufferBuilder(bytes, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
+         for (int y = 0; y < ELEVATION_SEGMENTS; y++) {
+            int subdivisions = shaderElevationSubdivisions(y);
+            for (int sub = 0; sub < subdivisions; sub++) {
+               float v0 = (y + sub / (float)subdivisions) / ELEVATION_SEGMENTS;
+               float v1 = (y + (sub + 1) / (float)subdivisions) / ELEVATION_SEGMENTS;
+               for (int x = 0; x < SHADER_AZIMUTH_SEGMENTS; x++) {
+                  float u0 = x / (float)SHADER_AZIMUTH_SEGMENTS;
+                  float u1 = (x + 1) / (float)SHADER_AZIMUTH_SEGMENTS;
+                  addTexturedVertex(builder, u0, v0);
+                  addTexturedVertex(builder, u1, v0);
+                  addTexturedVertex(builder, u1, v1);
+                  addTexturedVertex(builder, u0, v1);
+               }
+            }
+         }
+         try (MeshData mesh = builder.buildOrThrow()) {
+            return RenderSystem.getDevice().createBuffer(
+               () -> "The Sift ALPHA2 shared textured sky", 32, mesh.vertexBuffer()
+            );
+         }
+      }
+   }
+
+   private static void addTexturedVertex(BufferBuilder builder, float u, float v) {
+      float azimuth = u * TAU;
+      float elevation = (float)Math.toRadians(-90.0F + v * 180.0F);
+      float horizontal = (float)Math.cos(elevation) * RADIUS;
+      builder.addVertex(
+         (float)Math.sin(azimuth) * horizontal,
+         (float)Math.sin(elevation) * RADIUS,
+         (float)Math.cos(azimuth) * horizontal
+      ).setUv(u, v);
    }
 
    private static int shaderElevationSubdivisions(int row) {
