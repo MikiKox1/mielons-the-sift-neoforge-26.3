@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tomllib
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -71,6 +72,23 @@ def main() -> None:
         require("fabric.mod.json" not in current, "NeoForge-only JAR (no Fabric metadata)")
         require(b"1.1.2-neoforge.1-stage.1" in after.read("META-INF/neoforge.mods.toml"),
                 "stage version is encoded in NeoForge metadata")
+        metadata = tomllib.loads(after.read("META-INF/neoforge.mods.toml").decode("utf-8-sig"))
+        deps = metadata["dependencies"]["the_sift"]
+        neo_deps = [dep for dep in deps if dep["modId"] == "neoforge"]
+        require(len(neo_deps) == 1 and neo_deps[0]["type"] == "required",
+                "exactly one required NeoForge dependency")
+        require(neo_deps[0]["versionRange"] == "[26.3.0.64-beta,)",
+                "NeoForge range is >=26.3.0.64-beta WITHOUT upper version bound")
+        require(any(dep["modId"] == "minecraft" and dep["versionRange"] == "[26.3]" for dep in deps),
+                "Minecraft version remains scoped to MC 26.3")
+        properties = dict(
+            line.split("=", 1)
+            for line in source("gradle.properties").splitlines()
+            if "=" in line and not line.startswith("#")
+        )
+        require(properties["neo_min_version"] == "26.3.0.64-beta"
+                and properties["neo_version"] != properties["neo_min_version"],
+                "build/test version is separate from historical compatibility minimum")
         require("assets/the_sift/sounds.json" in current, "sound resources preserved")
 
         for name in sorted(changed & {

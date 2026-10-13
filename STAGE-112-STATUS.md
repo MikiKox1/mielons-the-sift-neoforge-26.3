@@ -1,5 +1,11 @@
 # The Sift — isolated upstream 1.1.2 NeoForge 26.3 stage
 
+**CURRENT TARGET / LATEST-LOADER UPDATE (2026-10-13):** `neo_version=26.3.0.76` (compile/test), `neo_min_version=26.3.0.64-beta` (advertised minimum). JAR's actual `neoforge.mods.toml` contains **`versionRange="[26.3.0.64-beta,)"`**, OPEN above. The latest-loader gate in `build.gradle` checks published Maven `26.3.x` before builds and runtime dev tests; it **does not** force the minimum to equal the latest. Java 25, GeckoLib 5.5.7.
+
+Latest **clean build/static/ZIP QA and dedicated server bootstrap PASS on NeoForge 26.3.0.76, FML 12.0.12**; runtime world `run/server-26.3.0.76/Sift112_NeoForge76_Disposable/` loaded with `the_sift:the_sift`; no ERROR/FATAL. After an earlier .76 boot the world was reloaded on the corrected `[.64-beta,)` JAR, reaching `Done (0.286s)!`. Client-menu smoke performed previously on .64-beta is **historical, not .76 client QA**. User gameplay/manual multiplayer still PENDING; no live install/publish/backports. Current stage artifact under `TheSift/artifacts/builds/TheSift-1.1.2-MC26.3-NeoForge-26.3.0.76-STAGEONLY.jar` SHA-256 `9742B48A30E44C7D6CB1317FD980561191E4C033CF00BD7C69FD7F4C9940931D`. Older results, paths and hashes below are historic; not the active candidate.
+
+Test receipt and instructions: `TheSift/reports/qa/TheSift-112-NeoForge76-OPEN-RANGE-SERVER-20261013.md` and `TheSift/reports/qa/MANUAL-TESTS-112-NEOFORGE-263-LATEST-20261013.md`. Old .64-specific temporary run folders and old stage-only JAR were removed; their logs and receipt were archived in `TheSift/reports/qa/archive/obsolete-loader64-stage/`. The original public 1.1.1 release and `source/main` stay unchanged.
+
 **Status (2026-10-13):** Source integration COMPLETE, static/build/client-menu/server-start smoke PASS; manual gameplay QA and user acceptance PENDING. This is **not** an accepted/public release. It must not be deployed to NeoPack, Steam, Modrinth, CurseForge or GitHub without separate approval.
 
 **Base:** clean `main` at commit `0516b95a26a725e41502b5ce4ab7a84133b4fe4e`. Independent Git worktree on branch `port/26.3-upstream-1.1.2` (local only, no push). Original published 1.1.1 release and separate `source/` checkout remain unchanged.
