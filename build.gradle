@@ -50,14 +50,14 @@ neoForge {
             client()
             // Standalone Prime 2 stage smoke; never the user's Modrinth profile.
             // A new loader release must never reuse a previous test world's directory.
-            gameDirectory = project.file("run/client-${project.neo_version}-photon-alpha3")
+            gameDirectory = project.file("run/client-${project.neo_version}-photon-alpha4")
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             // Must remain separate from the client and all player saves.
-            gameDirectory = project.file("run/server-${project.neo_version}-photon-alpha3")
+            gameDirectory = project.file("run/server-${project.neo_version}-photon-alpha4")
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }

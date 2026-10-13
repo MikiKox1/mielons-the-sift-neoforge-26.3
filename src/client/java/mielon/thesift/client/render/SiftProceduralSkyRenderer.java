@@ -3,12 +3,14 @@ package mielon.thesift.client.render;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.RenderSystem.AutoStorageIndexBuffer;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -62,7 +64,12 @@ public final class SiftProceduralSkyRenderer {
    // Share one position/UV vertex buffer among six shaderpack-only RGBA
    // textures. The original shaderless POSITION_COLOR buffers stay untouched.
    private static GpuBuffer TEXTURED_DOME_BUFFER;
-   private static int lastAlpha3RenderPath = -1;
+   private static int lastSkyRenderPath = -1;
+   private static boolean photonSkyQueued;
+   private static ClientLevel photonSkyLevel;
+   private static AutoStorageIndexBuffer photonSkyQuadIndices;
+   private static final Matrix4f PHOTON_SKY_POSE = new Matrix4f();
+   private static final Matrix4f PHOTON_SKY_MODELVIEW = new Matrix4f();
    private static final Identifier[] SKY_TEXTURES = {
       texture("base_day"), texture("base_night"),
       texture("ribbons_far_day"), texture("ribbons_far_night"),
@@ -77,18 +84,20 @@ public final class SiftProceduralSkyRenderer {
          .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
          .withCull(false)
          .build();
-   // Photon v1.3b's Iris TEXTURED path sends output through its
-   // gbuffers_all_translucent world-material program to attachment 13.
-   // An intentionally UNMAPPED native Blaze3D fallback tests correct alpha
-   // compositing without that shaderpack's translucent material path.
-   // Other packs always retain the ALPHA2 mapped TEXTURED path.
-   private static final RenderPipeline PHOTON_NATIVE_SKY_PIPELINE =
+   // In Photon, an unmapped native sky pass *before* Iris final composition
+   // (ALPHA3) was overwritten and invisible. ALPHA4 draws the same six baked
+   // UV textures AFTER Iris final composition, exclusively where the main
+   // depth buffer is still clear (reversed-Z depth == 0). This should preserve
+   // nearby terrain and Photon volumetric clouds. The backend retains depth
+   // from the world according to Iris FinalPassRenderer.
+   private static final RenderPipeline PHOTON_POST_FINAL_SKY_PIPELINE =
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
-         .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/photon_native_sky_alpha3"))
-         .withVertexShader("core/position_tex")
-         .withFragmentShader("core/position_tex")
+         .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/photon_post_final_sky_alpha4"))
+         .withVertexShader(Identifier.fromNamespaceAndPath("the_sift", "core/photon_sky_overlay"))
+         .withFragmentShader(Identifier.fromNamespaceAndPath("the_sift", "core/photon_sky_overlay"))
          .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
          .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+         .withDepthStencilState(new DepthStencilState(CompareOp.EQUAL, false))
          .withCull(false)
          .build();
    private static final float[][] DAY_PALETTE = new float[][]{
@@ -110,27 +119,76 @@ public final class SiftProceduralSkyRenderer {
       // flat glColor in certain gbuffers_basic shaderpack programs. The actual
       // Photon/Complementary appearance still requires user in-world testing.
       SiftShaderCompat.assignPipeline(TEXTURED_SKY_PIPELINE, "TEXTURED");
-      // DO NOT assign the PHOTON_NATIVE_SKY_PIPELINE to any Iris shader key.
+      // No Iris shader override for our Photon post-final native pipeline.
    }
 
    public static void registerPipelines(RegisterRenderPipelinesEvent event) {
       event.registerPipeline(TEXTURED_SKY_PIPELINE);
-      event.registerPipeline(PHOTON_NATIVE_SKY_PIPELINE);
+      event.registerPipeline(PHOTON_POST_FINAL_SKY_PIPELINE);
    }
 
    // MC26.2 SkyRenderer owns its RenderTarget and creates an independent
    // Blaze3D RenderPass. MC26.3 passed a RenderPearl pass from the caller.
    // Preserve the Port 1.1.2 dual-density shader mesh and color corrections.
    public static void render(PoseStack poseStack, ClientLevel level, RenderTarget renderTarget, AutoStorageIndexBuffer quadIndices) {
+      if (SiftShaderCompat.isShaderPackInUse() && SiftShaderCompat.isPhotonShaderPackSelected()) {
+         // The Iris final pass overwrites direct native draws made during
+         // SkyRenderer.renderSunMoonAndStars. Capture exact camera transforms
+         // and defer this frame's sky until after final composition.
+         photonSkyQueued = true;
+         photonSkyLevel = level;
+         photonSkyQuadIndices = quadIndices;
+         PHOTON_SKY_POSE.set(poseStack.last().pose());
+         PHOTON_SKY_MODELVIEW.set(RenderSystem.getModelViewStack());
+         return;
+      }
+      renderActual(poseStack, level, renderTarget, quadIndices, false);
+   }
+
+   /** Called only by an optional Iris @Pseudo mixin at final-pass TAIL. */
+   public static void renderAfterPhotonFinalPass() {
+      if (!photonSkyQueued) {
+         return;
+      }
+      photonSkyQueued = false;
+      ClientLevel level = Minecraft.getInstance().level;
+      if (level == null || level != photonSkyLevel
+         || !SiftShaderCompat.isShaderPackInUse()
+         || !SiftShaderCompat.isPhotonShaderPackSelected()) {
+         photonSkyLevel = null;
+         photonSkyQuadIndices = null;
+         return;
+      }
+
+      PoseStack pose = new PoseStack();
+      pose.last().pose().set(PHOTON_SKY_POSE);
+      Matrix4fStack modelView = RenderSystem.getModelViewStack();
+      modelView.pushMatrix();
+      modelView.set(PHOTON_SKY_MODELVIEW);
+      try {
+         renderActual(
+            pose, level, Minecraft.getInstance().gameRenderer.mainRenderTarget(),
+            photonSkyQuadIndices, true
+         );
+      } finally {
+         modelView.popMatrix();
+         photonSkyLevel = null;
+         photonSkyQuadIndices = null;
+      }
+   }
+
+   private static void renderActual(
+      PoseStack poseStack, ClientLevel level, RenderTarget renderTarget,
+      AutoStorageIndexBuffer quadIndices, boolean photonPostFinal
+   ) {
       boolean shadersActive = SiftShaderCompat.isShaderPackInUse();
-      boolean photonNative = shadersActive && SiftShaderCompat.isPhotonShaderPackSelected();
-      int renderPath = !shadersActive ? 0 : (photonNative ? 2 : 1);
-      if (renderPath != lastAlpha3RenderPath) {
-         lastAlpha3RenderPath = renderPath;
+      int renderPath = !shadersActive ? 0 : (photonPostFinal ? 4 : 1);
+      if (renderPath != lastSkyRenderPath) {
+         lastSkyRenderPath = renderPath;
          TheSiftMod.LOGGER.info(
-            "The Sift ALPHA3 active sky render path: {}",
+            "The Sift ALPHA4 active sky render path: {}",
             renderPath == 0 ? "vanilla POSITION_COLOR"
-               : (renderPath == 2 ? "Photon native POSITION_TEX (experimental)" : "Iris TEXTURED (ALPHA2)")
+               : (renderPath == 4 ? "Photon post-final depth-masked UV sky (experimental)" : "Iris TEXTURED (ALPHA2)")
          );
       }
       ensureBuffers(shadersActive);
@@ -140,9 +198,13 @@ public final class SiftProceduralSkyRenderer {
       float day = 1.0F - night;
       float weather = 1.0F - level.getRainLevel(1.0F) * 0.16F;
       float time = (float)ticks / 20.0F;
+      // After Photon has composited its own moon, stars and cloud layers,
+      // preserve some of that underlying information instead of painting a
+      // fully opaque replacement sky. The ribbons retain their original alpha.
+      float photonBaseBlend = photonPostFinal ? 0.72F : 1.0F;
       GpuBufferSlice[] transforms = new GpuBufferSlice[]{
-         transform(poseStack, time * 1.0E-4F, 0.0F, weather, 1.0F),
-         transform(poseStack, time * 1.0E-4F, 0.0F, weather, night),
+         transform(poseStack, time * 1.0E-4F, 0.0F, weather, photonBaseBlend),
+         transform(poseStack, time * 1.0E-4F, 0.0F, weather, night * photonBaseBlend),
          transform(poseStack, time * 0.00135F, (float)Math.sin(time * 0.004F) * 0.01F, weather, day * 0.96F),
          transform(poseStack, time * 0.00135F, (float)Math.sin(time * 0.004F) * 0.01F, weather, night * 0.96F),
          transform(poseStack, -time * 0.00205F, (float)Math.sin(time * 0.0065F + 1.8F) * 0.016F, weather, day * 0.78F),
@@ -159,7 +221,7 @@ public final class SiftProceduralSkyRenderer {
       )) {
          pass.setPipeline(!shadersActive
             ? RenderPipelines.DEBUG_QUADS
-            : (photonNative ? PHOTON_NATIVE_SKY_PIPELINE : TEXTURED_SKY_PIPELINE));
+            : (photonPostFinal ? PHOTON_POST_FINAL_SKY_PIPELINE : TEXTURED_SKY_PIPELINE));
          RenderSystem.bindDefaultUniforms(pass);
          pass.setIndexBuffer(indexBuffer, quadIndices.type());
 
@@ -187,6 +249,9 @@ public final class SiftProceduralSkyRenderer {
    }
 
    public static void close() {
+      photonSkyQueued = false;
+      photonSkyLevel = null;
+      photonSkyQuadIndices = null;
       closeBuffers(BUFFERS);
       if (TEXTURED_DOME_BUFFER != null) {
          TEXTURED_DOME_BUFFER.close();
