@@ -1,6 +1,6 @@
 # Mielon's The Sift
 
-> **WORKTREE WARNING — 26.2 DEVELOPMENT ALPHA:** This directory is an **unfinished independent NeoForge 26.2 backport**, NOT the accepted NeoForge 26.3 release. It currently FAILS Java compilation and is not ready to install. Read \`PORT-26.2.md\` and \`PHASE2-QA.md\` before any implementation. Preserve 26.3 release and source/main unchanged.
+> **MC26.2 — PORT 1.1.2 RELEASE CANDIDATE:** This is the separately built Minecraft 26.2 NeoForge port using the user-accepted Photon/Complementary/shaderless sky correction, **NOT** a failed development alpha. Java25 clean build, dedicated server and Iris/Photon client menu PASS. Read RELEASE-SKYFIX-1.1.2.md for accurate target version, release QA and dependencies. Historical MC26.3 instructions further below are inherited from the source baseline; follow these MC26.2 release notes instead. Prior ALPHA4 and MC26.3 release files remain unchanged.
 
 > **Unofficial NeoForge 26.3 port of Mielon's The Sift.** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. NeoForge port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
 >

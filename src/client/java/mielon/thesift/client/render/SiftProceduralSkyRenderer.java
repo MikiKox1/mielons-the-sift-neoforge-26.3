@@ -186,9 +186,9 @@ public final class SiftProceduralSkyRenderer {
       if (renderPath != lastSkyRenderPath) {
          lastSkyRenderPath = renderPath;
          TheSiftMod.LOGGER.info(
-            "The Sift ALPHA4 active sky render path: {}",
+            "The Sift MC26.2 active sky render path: {}",
             renderPath == 0 ? "vanilla POSITION_COLOR"
-               : (renderPath == 4 ? "Photon post-final depth-masked UV sky (experimental)" : "Iris TEXTURED (ALPHA2)")
+               : (renderPath == 4 ? "Photon post-final depth-masked UV sky" : "Iris TEXTURED sky")
          );
       }
       ensureBuffers(shadersActive);
