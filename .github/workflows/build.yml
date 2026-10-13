@@ -3,9 +3,7 @@ name: Build NeoForge port
 on:
   push:
     branches:
-      - main
-      - neoforge-26.3
-      - public/neoforge-26.3
+      - minecraft/26.2
   pull_request:
   workflow_dispatch:
 
@@ -42,5 +40,5 @@ jobs:
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
         with:
-          name: the-sift-neoforge-26.3
+          name: the-sift-neoforge-26.2
           path: build/libs/the_sift-*.jar
