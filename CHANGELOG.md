@@ -43,7 +43,7 @@
 
   **SHA-256:** `11E4AF34FF3BB0087FC0EE2007C977CCEFC901786E47B5E87CD63CF3636D2A10`
 
-**Validation:** Java 25 clean build, archive and metadata checks, regression test for the texture-upload crash, dedicated-server startup and shaderless client-menu launch passed. **The final in-world Photon/Complementary visual check after this RenderPass fix remains pending**; universal shaderpack compatibility is not claimed. Incompatible Sodium builds can fail independently on NeoForge 26.3.0.76.
+**Validation:** Java 25 clean build, archive and metadata checks, RenderPass crash regression, dedicated-server startup and shaderless client-menu launch passed. **Photon, Complementary and shaders-disabled rendering after the final fix were confirmed working by the user in-world.** Universal shaderpack compatibility is not claimed; incompatible Sodium builds can fail independently.
 
 **Original mod:** Mielon (MIT). **Unofficial NeoForge port:** MikiKox1. See `LICENSE`, `SOURCE_PROVENANCE.md` and `AI_DISCLOSURE.md`.
 

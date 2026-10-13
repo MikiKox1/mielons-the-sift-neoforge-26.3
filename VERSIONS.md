@@ -29,6 +29,6 @@ GitHub `/releases/latest` is repository-wide, **not version-specific**. For a sp
 
 ## Status, testing and provenance
 
-Minecraft 26.2 sky rendering was accepted by the user with ALPHA4 prior to final release labeling. Minecraft 26.3 received an additional RenderPass texture-preload correction; **in-world Photon/Complementary revalidation after that fix is still pending**. Shaderpack compatibility with every renderer combination is not guaranteed.
+Minecraft 26.2 shaderless, Complementary and Photon sky rendering was accepted by the user. For Minecraft 26.3, the additional RenderPass texture-preload correction was also tested in-world: **Photon, Complementary and shaders-disabled checks were confirmed working by the user** after the final fix. No blanket compatibility claim is made for every future shaderpack or renderer combination. See [consolidated 26.3 release notes](RELEASE-NOTES-1.1.2.md).
 
 This is an **unofficial** NeoForge port. **Mielon** created the original mod (MIT); the NeoForge port is maintained by **MikiKox1**. Keep [LICENSE](LICENSE), [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) and [AI_DISCLOSURE.md](AI_DISCLOSURE.md). All third-party assets retain their original attribution; do not claim new permissions that were not obtained.
