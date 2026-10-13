@@ -6,7 +6,7 @@ This repository contains the unofficial NeoForge port of Mielon's The Sift, main
 
 | Minecraft | Availability | Source | Binary |
 | --- | --- | --- | --- |
-| **26.3** | **Released: Port 1.1.1** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.1 GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1) |
+| **26.3** | **Released: Port 1.1.1 26.3** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.1 26.3 GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.1-neoforge.2-community.3-fix.1) |
 | 26.2 | Planned; no public build | `minecraft/26.2` will be added after the actual port is available | None |
 | 26.1.2 | Planned; no public build | `minecraft/26.1.2` will be added after the actual port is available | None |
 
@@ -21,7 +21,7 @@ Every future version branch must contain its **own correctly targeted** `gradle.
 
 ## GitHub releases and tags
 
-- The existing Minecraft 26.3 GitHub Release retains its public title **`Port 1.1.1`**, original tag **`v1.1.1-neoforge.2-community.3-fix.1`**, and unchanged uploaded JAR. CurseForge File ID **9124779** also remains unchanged.
+- The existing Minecraft 26.3 GitHub Release has public title **`Port 1.1.1 26.3`**, original tag **`v1.1.1-neoforge.2-community.3-fix.1`**, and unchanged uploaded JAR. CurseForge File ID **9124779** also remains unchanged.
 - GitHub's `/releases/latest` is repository-wide, **not specific to a Minecraft version**. Use the exact release/tag links in the table above when linking to a given Minecraft line.
 - When new versions are ready and explicitly approved for publication, each must have an unambiguous Minecraft target in its release description, tag and downloadable asset metadata/name. Never reuse or overwrite a published tag or binary from a different Minecraft line.
 - Release notes for later releases within a line should describe changes since that line's previous public release, rather than experimental build history.
