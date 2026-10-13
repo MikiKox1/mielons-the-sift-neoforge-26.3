@@ -50,10 +50,10 @@
 
 ## Release assets
 
-- `mielon's-the-sift-1.1.2-mc26.2-neoforge-port.jar`
+- `mielons-the-sift-1.1.2-mc26.2-neoforge-port.jar`
 
   **SHA-256:** `9740DA26B007C909B60716C78C90691409E30DB7BFF3A6FEF9321462C58A4A7D`
-- `mielon's-the-sift-1.1.2-mc26.2-neoforge-port-sources.jar`
+- `mielons-the-sift-1.1.2-mc26.2-neoforge-port-sources.jar`
 
   **SHA-256:** `43EB70A75A8EAA5309EDAD4A703E01DB7A8A63469A6E0547587F2BDC16B9A918`
 
