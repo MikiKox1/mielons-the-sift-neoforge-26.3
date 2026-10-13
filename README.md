@@ -22,7 +22,7 @@
 - **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta or newer (tested on .76); **Java:** 25. No upper loader bound is declared; future compatibility is not guaranteed without testing.
 - **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
-- **Optional visuals:** LambDynamicLights and Iris/Sodium integrations. For Complementary Unbound 5.9.3, see the known shader limitation in [PORT_STATUS.md](PORT_STATUS.md).
+- **Optional visuals:** LambDynamicLights and compatible Iris/Sodium integrations. Following the final sky and RenderPass fixes, Photon, Complementary and shaderless rendering were confirmed in-world by the user. See [combined 26.3 release notes](RELEASE-NOTES-1.1.2.md); not every shader/renderer combination is guaranteed.
 - Existing worlds retain the original `the_sift` mod ID; back up worlds before changing from another build of the mod.
 
 The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are adapted from the original project.
@@ -30,6 +30,15 @@ The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift re
 **Versioning:** Public titles include their Minecraft target, e.g. `Port 1.1.2 26.3` and `Port 1.1.2 26.2`. Branches, tags and assets remain separate for each Minecraft version. Later changelogs describe only changes since the preceding public release within the same Minecraft version line. This is an unofficial port, not an original Mielon release.
 
 **Source build:** Requires JDK 25; run `./gradlew build` (or `gradlew.bat build` on Windows). Easy Magic is optional.
+
+## NeoForge port — Minecraft 26.2
+
+- **Current 26.2 release:** **Port 1.1.2 26.2** — [GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge), [full changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.2/docs/releases/port-1.1.2-mc26.2.md), [separate 26.2 source branch](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.2).
+- **Minecraft:** 26.2; **NeoForge:** 26.2.0.90 or newer; **Java:** 25. This is a separately compiled port, not a renamed 26.3 JAR.
+- **Required:** GeckoLib 5.5.6 or compatible 5.x. The original `the_sift` mod ID, world data and progression remain supported.
+- **Optional integration:** Easy Magic 26.2.0 (requiring its own Puzzles Lib), LambDynamicLights and compatible Iris/Sodium and shaderpacks.
+- **Graphics:** The six-layer Sift sky was adapted to 26.2 Blaze3D. Photon, Complementary and shaderless sky rendering were accepted in the user's in-world tests; shaderpack ZIPs do not need modification.
+- **Compatibility:** Ichor regeneration, Sonic Sniff, weather, Ancient City portals/Rifts, willow growth and Charoite behavior are covered by the 26.2 release. Always use the version-specific JAR and back up existing worlds before upgrading.
 
 ## How to open the Ancient City Portal?
 
@@ -238,11 +247,10 @@ Added **20 advancements**, including a story path beginning in the Overworld and
 
 ## Requirements
 
-* **Minecraft 26.3**
-* **NeoForge 26.3.0.64-beta or newer** (Minecraft 26.3)
-* **GeckoLib 5.5.7+**, compatible 5.x
-* **Java 25+**
-* Client and dedicated server compatible
+| Minecraft | NeoForge minimum | Required GeckoLib | Java |
+| --- | --- | --- | --- |
+| **26.3** | 26.3.0.64-beta | 5.5.7 or compatible 5.x | 25 |
+| **26.2** | 26.2.0.90 | 5.5.6 or compatible 5.x | 25 |
 
-**Easy Magic 26.3.0** and **LambDynamicLights 4.13.0+** are optional. See the compatibility and validation notes above.
+The mod supports client and dedicated server. **Easy Magic** (26.3.0 for MC26.3; 26.2.0 for MC26.2), **LambDynamicLights**, and compatible **Iris/Sodium** combinations are optional. Easy Magic requires Puzzles Lib separately. The two Minecraft-specific JARs are not interchangeable.
 

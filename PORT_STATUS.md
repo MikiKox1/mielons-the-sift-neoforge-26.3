@@ -1,14 +1,14 @@
 # NeoForge 26.3 community port: scope and validation
 
-**Current public release:** **Port 1.1.1**, until Prime 3 publishes the separately prepared **Port 1.1.2**. See [CHANGELOG.md](CHANGELOG.md) and [RELEASE-NOTES-1.1.2.md](RELEASE-NOTES-1.1.2.md). The older sections below remain historical compatibility records.
+**Current public release:** **[Port 1.1.2 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.3-neoforge)**. The final sky/RenderPass fix was confirmed working in-world by the user with Photon, Complementary and shaders off. See [CHANGELOG.md](CHANGELOG.md) and the single [RELEASE-NOTES-1.1.2.md](RELEASE-NOTES-1.1.2.md), which now includes the prior sky compatibility and hotfix reports. Older sections below retain historical test context.
 
-## Port 1.1.2 — release handoff (2026-10-13)
+## Port 1.1.2 — published 26.3 update (2026-10-14)
 
-The original Fabric 1.1.2 Ichor-regeneration, Dark Sniffer Sonic Sniff and precipitation behavior was adapted to the independent NeoForge 26.3 port without replacing previously tested mod-specific fixes. The final release JAR uses mod version \`1.1.2-neoforge.1\`, native NeoForge metadata, and \`the_sift\` IDs. **Compiler/runtime latest at release preparation:** NeoForge 26.3.0.76; the independently supported metadata minimum remains **\`[26.3.0.64-beta,)\`** with no upper loader bound. GeckoLib 5.5.7 and Java 25 are required.
+The original Fabric 1.1.2 Ichor-regeneration, Dark Sniffer Sonic Sniff and precipitation behavior was adapted to the independent NeoForge 26.3 port without replacing previously tested mod-specific fixes. The published binary uses internal mod version `1.1.2-neoforge.3`, native NeoForge metadata and `the_sift` IDs. The shader sky and RenderPass fixes are included. **Tested loader at release preparation:** NeoForge 26.3.0.76; metadata minimum remains `[26.3.0.64-beta,)` with no upper loader bound. GeckoLib 5.5.7 and Java 25 are required.
 
-Source/build/static checks, dedicated-server boot and prior isolated client-menu tests are supported by Prime 2 QA records. The user reported **all of the provided gameplay and Charoite/Easy Magic manual checks passed** on their separate ModTest profile. The earlier ModTest boot crash was traced to Sodium \`0.9.3-alpha.1\` failing an internal mixin into \`LevelExtractor\` with NeoForge .76, not to The Sift; renderer compatibility requires a matching Sodium/Iris combination and was corrected by the user before final acceptance.
+Source/build/static checks, dedicated-server boot and isolated client-menu tests are supported by Prime 2 QA records and passing GitHub Actions. The user also confirmed gameplay, Charoite/Easy Magic and, **after the final RenderPass texture-preload fix**, in-world Photon/Complementary/shaders-disabled sky operation. A separate Sodium `LevelExtractorMixin` issue on an incompatible renderer stack is not a The Sift dependency or an outstanding defect in this release.
 
-**Publication status:** Final JAR prepared for **Prime 3** handoff; no publication, GitHub push, live installation or changes to other modpacks by Prime 2. The original public 1.1.1 release remains rollback. No independent FPS/MSPT benchmarking, exhaustive multiplayer stress test or formal proof of future NeoForge ABI compatibility is claimed.
+**Publication status:** Published on GitHub by Prime 3, with binary SHA-256 `56724D4A0F7E42A8D21D3D85447A945FAAE93A04BFB11D8E485C1FF5914BFD19`. The previous public Port 1.1.1 release remains available for rollback. This documentation update did not modify any released JAR or active modpack. No independent FPS/MSPT benchmarking, exhaustive multiplayer stress test or formal proof of all future NeoForge/shaderpack compatibility is claimed.
 
 ## NeoForge loader compatibility fix (`1.1.1-neoforge.2-community.3-fix.1`)
 
@@ -61,7 +61,7 @@ An equivalent-code local r4 JAR, changing only the loader version requirement, w
 
 Community Preview 1 (`1.1.1-neoforge.2-community.1`) passed `gradlew clean build` against NeoForge **26.3.0.64-beta** using JDK 25. ZIP integrity, mod metadata, and Easy Magic 26.3.0 binary checks (4/4) also passed. Gameplay on `.64-beta` was confirmed functional with one Singer lighting flicker, later resolved in `community.3`. Verification is specific to the tested installation and does not cover every shader or modpack combination.
 
-**Shader-specific limitation:** smooth Sift sky with *Complementary Unbound 5.9.3* required a separate user-selected `TheSiftSmoothSky` shaderpack variant that corrected shader-side flat color interpolation. That third-party shaderpack is not included in this source repository. Standard rendering and other shaderpack combinations do not receive a blanket visual guarantee.
+**Historical 1.1.1 shader limitation (superseded by Port 1.1.2):** Earlier smooth-sky testing with *Complementary Unbound 5.9.3* relied on a user-selected `TheSiftSmoothSky` shaderpack variant to correct flat-color interpolation. **Port 1.1.2 fixes this in the mod's own texture-backed renderer**; the final Photon, Complementary and shaderless sky checks were confirmed working in-world. No modified shaderpack ZIP is included or required for those tested setups, and untested combinations are not guaranteed.
 
 **Save-data limitation:** a legacy world that has already lost its original Ancient City return coordinates cannot retroactively recover the lost coordinates. The safe main-exit fallback prevents generating an unrelated Rift.
 
