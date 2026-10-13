@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
@@ -10,21 +9,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SiftMonolithFeature implements Feature {
-   public static final MapCodec<SiftMonolithFeature> LUSH_CODEC = MapCodec.unit(() -> new SiftMonolithFeature(true));
-   public static final MapCodec<SiftMonolithFeature> BARE_CODEC = MapCodec.unit(() -> new SiftMonolithFeature(false));
+public final class SiftMonolithFeature extends Feature<NoneFeatureConfiguration> {
    private final boolean lush;
 
    public SiftMonolithFeature(boolean lush) {
+      super(NoneFeatureConfiguration.CODEC);
       this.lush = lush;
    }
 
-   public MapCodec<SiftMonolithFeature> codec() {
-      return this.lush ? LUSH_CODEC : BARE_CODEC;
-   }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos placementOrigin) {
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos placementOrigin = context.origin();
       int centerX = (placementOrigin.getX() & -16) + 8 + random.nextInt(5) - 2;
       int centerZ = (placementOrigin.getZ() & -16) + 8 + random.nextInt(5) - 2;
       int centerY = findTerrainSurface(level, centerX, centerZ);

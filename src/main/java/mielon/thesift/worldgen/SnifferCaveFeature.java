@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -19,10 +18,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SnifferCaveFeature implements Feature {
-   public static final MapCodec<SnifferCaveFeature> OVERGROWN_CODEC = MapCodec.unit(() -> new SnifferCaveFeature(16, 6002815919507592773L, 4));
-   public static final MapCodec<SnifferCaveFeature> WASTES_CODEC = MapCodec.unit(() -> new SnifferCaveFeature(28, 6002815919508111699L, 3));
+public final class SnifferCaveFeature extends Feature<NoneFeatureConfiguration> {
    private static final Direction[] HORIZONTAL = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
    private static final Block[] NEST_PLANTS = new Block[]{
       ModBlocks.OVERGROWN_FRONDS,
@@ -37,16 +36,18 @@ public final class SnifferCaveFeature implements Feature {
    private final int candidateCount;
 
    public SnifferCaveFeature(int cellChunks, long placementSalt, int candidateCount) {
+      super(NoneFeatureConfiguration.CODEC);
       this.cellChunks = cellChunks;
       this.placementSalt = placementSalt;
       this.candidateCount = candidateCount;
    }
 
-   public MapCodec<SnifferCaveFeature> codec() {
-      return this.cellChunks == 16 && this.placementSalt == 6002815919507592773L && this.candidateCount == 4 ? OVERGROWN_CODEC : WASTES_CODEC;
-   }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       if (!SiftLandmarkPlacement.isSelectedChunk(level.getSeed(), origin, this.cellChunks, this.placementSalt, this.candidateCount)) {
          return false;
       }

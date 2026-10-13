@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
@@ -8,15 +7,21 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SiftDrySpikeFeature implements Feature {
-   public static final MapCodec<SiftDrySpikeFeature> CODEC = MapCodec.unit(SiftDrySpikeFeature::new);
-
-   public MapCodec<SiftDrySpikeFeature> codec() {
-      return CODEC;
+public final class SiftDrySpikeFeature extends Feature<NoneFeatureConfiguration> {
+   public SiftDrySpikeFeature() {
+      super(NoneFeatureConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+
+
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       BlockPos placementOrigin = origin;
       int centerX = (placementOrigin.getX() & -16) + 8 + random.nextInt(5) - 2;
       int centerZ = (placementOrigin.getZ() & -16) + 8 + random.nextInt(5) - 2;

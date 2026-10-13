@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -21,16 +20,22 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class IchorLakeFeature implements Feature {
-   public static final MapCodec<IchorLakeFeature> CODEC = MapCodec.unit(IchorLakeFeature::new);
-   private static final int MAX_SAFE_EXTENT = 24;
-
-   public MapCodec<IchorLakeFeature> codec() {
-      return CODEC;
+public final class IchorLakeFeature extends Feature<NoneFeatureConfiguration> {
+   public IchorLakeFeature() {
+      super(NoneFeatureConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   private static final int MAX_SAFE_EXTENT = 24;
+
+
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       BlockPos placementOrigin = origin;
       SiftWorldgenBounds bounds = SiftWorldgenBounds.aroundWithNeighbourMargin(placementOrigin);
       int centerX = (placementOrigin.getX() & -16) + 9;

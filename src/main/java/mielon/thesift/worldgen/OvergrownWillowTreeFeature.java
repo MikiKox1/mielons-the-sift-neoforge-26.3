@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,21 +27,27 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate.StructureBlockInfo;
 
-public final class OvergrownWillowTreeFeature implements Feature {
-   public static final MapCodec<OvergrownWillowTreeFeature> CODEC = MapCodec.unit(OvergrownWillowTreeFeature::new);
+public final class OvergrownWillowTreeFeature extends Feature<NoneFeatureConfiguration> {
+   public OvergrownWillowTreeFeature() {
+      super(NoneFeatureConfiguration.CODEC);
+   }
+
    private static final OvergrownWillowTreeFeature.TemplateChoice SMALL = template("overgrown_willow/small_01", 3, 6);
    private static final OvergrownWillowTreeFeature.TemplateChoice BIG = template("overgrown_willow/big_01", 7, 6);
    private static final Direction[] ROOT_DIRECTIONS = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
-   public MapCodec<OvergrownWillowTreeFeature> codec() {
-      return CODEC;
-   }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       BlockPos placementOrigin = origin;
       SiftWorldgenBounds bounds = SiftWorldgenBounds.aroundWithNeighbourMargin(placementOrigin);
       int minX = placementOrigin.getX() & -16;

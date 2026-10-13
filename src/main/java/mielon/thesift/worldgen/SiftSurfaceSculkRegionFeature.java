@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.List;
 import mielon.thesift.block.ModBlocks;
@@ -15,9 +14,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SiftSurfaceSculkRegionFeature implements Feature {
-   public static final MapCodec<SiftSurfaceSculkRegionFeature> CODEC = MapCodec.unit(SiftSurfaceSculkRegionFeature::new);
+public final class SiftSurfaceSculkRegionFeature extends Feature<NoneFeatureConfiguration> {
+   public SiftSurfaceSculkRegionFeature() {
+      super(NoneFeatureConfiguration.CODEC);
+   }
+
    private static final int CELL_SIZE = 512;
    private static final int MIN_DIAMETER = 50;
    private static final int MAX_DIAMETER = 120;
@@ -28,11 +32,12 @@ public final class SiftSurfaceSculkRegionFeature implements Feature {
    private static final long REGION_SALT = 5999732914757190983L;
    private static final long DARK_SNIFFER_SALT = 4918302751538956614L;
 
-   public MapCodec<SiftSurfaceSculkRegionFeature> codec() {
-      return CODEC;
-   }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       int chunkMinX = origin.getX() & -16;
       int chunkMinZ = origin.getZ() & -16;
       int chunkMaxX = chunkMinX + 15;

@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.ModBlocks;
 import mielon.thesift.block.SiftslateGrowthBlock;
 import mielon.thesift.world.TheSiftDimension;
@@ -13,17 +12,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SiftIchorSnowFeature implements Feature {
-   public static final MapCodec<SiftIchorSnowFeature> CODEC = MapCodec.unit(SiftIchorSnowFeature::new);
+public final class SiftIchorSnowFeature extends Feature<NoneFeatureConfiguration> {
+   public SiftIchorSnowFeature() {
+      super(NoneFeatureConfiguration.CODEC);
+   }
+
    private static final long SNOW_SALT = 5279142693729160783L;
    private static final long DETAIL_SALT = 6002822589557593153L;
 
-   public MapCodec<SiftIchorSnowFeature> codec() {
-      return CODEC;
-   }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       int minX = origin.getX() & -16;
       int minZ = origin.getZ() & -16;
       long seed = level.getSeed();

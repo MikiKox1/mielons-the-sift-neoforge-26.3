@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.ModBlocks;
 import mielon.thesift.block.SiftslateGrowthBlock;
 import mielon.thesift.fluid.ModFluids;
@@ -13,15 +12,21 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class CoveredGrowthCleanupFeature implements Feature {
-   public static final MapCodec<CoveredGrowthCleanupFeature> CODEC = MapCodec.unit(CoveredGrowthCleanupFeature::new);
-
-   public MapCodec<CoveredGrowthCleanupFeature> codec() {
-      return CODEC;
+public final class CoveredGrowthCleanupFeature extends Feature<NoneFeatureConfiguration> {
+   public CoveredGrowthCleanupFeature() {
+      super(NoneFeatureConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+
+
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       int minX = origin.getX() & -16;
       int minZ = origin.getZ() & -16;
       int maxY = level.getMaxY() - 1;

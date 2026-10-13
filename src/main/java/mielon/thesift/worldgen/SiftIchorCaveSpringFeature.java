@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.ModBlocks;
 import mielon.thesift.fluid.ModFluids;
 import net.minecraft.core.BlockPos;
@@ -11,16 +10,20 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.SpringConfiguration;
 
-public final class SiftIchorCaveSpringFeature implements Feature {
-   public static final MapCodec<SiftIchorCaveSpringFeature> CODEC = MapCodec.unit(SiftIchorCaveSpringFeature::new);
+public final class SiftIchorCaveSpringFeature extends Feature<SpringConfiguration> {
    private static final Direction[] POSSIBLE_OPENINGS = new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN};
 
-   public MapCodec<SiftIchorCaveSpringFeature> codec() {
-      return CODEC;
+   public SiftIchorCaveSpringFeature() {
+      super(SpringConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   @Override
+   public boolean place(FeaturePlaceContext<SpringConfiguration> context) {
+      WorldGenLevel level = context.level();
+      BlockPos origin = context.origin();
       for (Direction direction : POSSIBLE_OPENINGS) {
          BlockPos opening = origin.relative(direction);
          if (level.isEmptyBlock(opening)) {

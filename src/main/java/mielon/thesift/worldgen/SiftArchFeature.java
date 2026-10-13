@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.List;
 import mielon.thesift.block.ModBlocks;
@@ -12,16 +11,22 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SiftArchFeature implements Feature {
-   public static final MapCodec<SiftArchFeature> CODEC = MapCodec.unit(SiftArchFeature::new);
-   private static final int[][] AXES = new int[][]{{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-   public MapCodec<SiftArchFeature> codec() {
-      return CODEC;
+public final class SiftArchFeature extends Feature<NoneFeatureConfiguration> {
+   public SiftArchFeature() {
+      super(NoneFeatureConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   private static final int[][] AXES = new int[][]{{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       BlockPos placementOrigin = origin;
       SiftWorldgenBounds bounds = SiftWorldgenBounds.aroundWithNeighbourMargin(placementOrigin);
       int centerX = (placementOrigin.getX() & -16) + 8 + random.nextInt(3) - 1;

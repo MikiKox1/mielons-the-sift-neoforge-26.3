@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,15 +18,21 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SoulCanyonFeature implements Feature {
-   public static final MapCodec<SoulCanyonFeature> CODEC = MapCodec.unit(SoulCanyonFeature::new);
-
-   public MapCodec<SoulCanyonFeature> codec() {
-      return CODEC;
+public final class SoulCanyonFeature extends Feature<NoneFeatureConfiguration> {
+   public SoulCanyonFeature() {
+      super(NoneFeatureConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+
+
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       if (!SiftLandmarkPlacement.isSelectedChunk(level.getSeed(), origin, 12, 6003110614342389337L, 1)) {
          return false;
       }

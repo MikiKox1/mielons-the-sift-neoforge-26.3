@@ -1,5 +1,7 @@
 # Mielon's The Sift
 
+> **WORKTREE WARNING — 26.2 DEVELOPMENT ALPHA:** This directory is an **unfinished independent NeoForge 26.2 backport**, NOT the accepted NeoForge 26.3 release. It currently FAILS Java compilation and is not ready to install. Read \`PORT-26.2.md\` and \`PHASE2-QA.md\` before any implementation. Preserve 26.3 release and source/main unchanged.
+
 > **Unofficial NeoForge 26.3 port of Mielon's The Sift.** Adapted [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) for Minecraft 26.3 and NeoForge. Original mod and creative work: **Mielon**. NeoForge port maintained by **MikiKox1**, based on a [public source snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift).
 >
 > The original MIT license and copyright notice are preserved in [LICENSE](LICENSE). Additional project records: [source and credits](SOURCE_PROVENANCE.md) and [development disclosure](AI_DISCLOSURE.md).

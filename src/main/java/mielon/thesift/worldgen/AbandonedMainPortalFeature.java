@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -17,24 +16,30 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockIgnoreProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate.StructureBlockInfo;
 
-public final class AbandonedMainPortalFeature implements Feature {
-   public static final MapCodec<AbandonedMainPortalFeature> CODEC = MapCodec.unit(AbandonedMainPortalFeature::new);
+public final class AbandonedMainPortalFeature extends Feature<NoneFeatureConfiguration> {
+   public AbandonedMainPortalFeature() {
+      super(NoneFeatureConfiguration.CODEC);
+   }
+
    private static final String[] OVERGROWN_TEMPLATES = templateIds("abandoned_portal_overgrown_");
    private static final String[] WASTES_TEMPLATES = templateIds("abandoned_portal_wastes_");
    private static final int MAX_RELIEF = 18;
    private static final int FOUNDATION_BLEND_RADIUS = 12;
    private static final int MAX_EARTHWORK = 8;
 
-   public MapCodec<AbandonedMainPortalFeature> codec() {
-      return CODEC;
-   }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       if (!SiftLandmarkPlacement.isSelectedChunk(level.getSeed(), origin, 20, 4702392765337521733L, 1)) {
          return false;
       }

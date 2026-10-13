@@ -1,6 +1,5 @@
 package mielon.thesift.worldgen;
 
-import com.mojang.serialization.MapCodec;
 import mielon.thesift.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -9,15 +8,21 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public final class SnifferPlantPatchFeature implements Feature {
-   public static final MapCodec<SnifferPlantPatchFeature> CODEC = MapCodec.unit(SnifferPlantPatchFeature::new);
-
-   public MapCodec<SnifferPlantPatchFeature> codec() {
-      return CODEC;
+public final class SnifferPlantPatchFeature extends Feature<NoneFeatureConfiguration> {
+   public SnifferPlantPatchFeature() {
+      super(NoneFeatureConfiguration.CODEC);
    }
 
-   public boolean place(WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin) {
+
+
+   public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+      WorldGenLevel level = context.level();
+      ChunkGenerator generator = context.chunkGenerator();
+      RandomSource random = context.random();
+      BlockPos origin = context.origin();
       int centerX = (origin.getX() & -16) + 8;
       int centerZ = (origin.getZ() & -16) + 8;
       int target = 5 + random.nextInt(5);
