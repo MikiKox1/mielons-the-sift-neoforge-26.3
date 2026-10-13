@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed static and packaging regression checks for the isolated 1.1.2 stage.
+"""Fail-closed static and packaging regression checks for the 1.1.2 NeoForge port.
 
 This is NOT a gameplay or mixin-injection runtime test.
 Only built-in Python modules are required.
@@ -17,7 +17,8 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[2]
 SIFT = ROOT.parent.parent
 OLD = SIFT / "releases/v1.1.1-neoforge.2-community.3-fix.1/the_sift-1.1.1-neoforge.2-community.3-fix.1.jar"
-NEW = ROOT / "build/libs/the_sift-1.1.2-neoforge.1-stage.1.jar"
+RELEASE_VERSION = "1.1.2-neoforge.1"
+NEW = ROOT / "build/libs" / f"the_sift-{RELEASE_VERSION}.jar"
 ADDED_CLASSES = {
     "mielon/thesift/entity/SonicSniffMotionAccess.class",
     "mielon/thesift/fluid/IchorRegeneration.class",
@@ -70,8 +71,8 @@ def main() -> None:
         require("assets/the_sift/textures/textures.zip" not in current,
                 "upstream duplicate textures.zip excluded")
         require("fabric.mod.json" not in current, "NeoForge-only JAR (no Fabric metadata)")
-        require(b"1.1.2-neoforge.1-stage.1" in after.read("META-INF/neoforge.mods.toml"),
-                "stage version is encoded in NeoForge metadata")
+        require(RELEASE_VERSION.encode("utf-8") in after.read("META-INF/neoforge.mods.toml"),
+                "official port version without staging suffix is in NeoForge metadata")
         metadata = tomllib.loads(after.read("META-INF/neoforge.mods.toml").decode("utf-8-sig"))
         deps = metadata["dependencies"]["the_sift"]
         neo_deps = [dep for dep in deps if dep["modId"] == "neoforge"]
@@ -89,6 +90,7 @@ def main() -> None:
         require(properties["neo_min_version"] == "26.3.0.64-beta"
                 and properties["neo_version"] != properties["neo_min_version"],
                 "build/test version is separate from historical compatibility minimum")
+        require(properties["mod_version"] == RELEASE_VERSION, "release properties match the official mod version")
         require("assets/the_sift/sounds.json" in current, "sound resources preserved")
 
         for name in sorted(changed & {
@@ -113,7 +115,7 @@ def main() -> None:
                 "all textures, GeckoLib files, NBT structures and gameplay data remain byte-identical")
 
         print(f"ARCHIVE_DELTA old={len(former)} new={len(current)} added={len(added)} removed={len(removed)} changed={len(changed)}")
-        print("STAGE_SHA256=" + hashlib.sha256(NEW.read_bytes()).hexdigest().upper())
+        print("RELEASE_BUILD_SHA256=" + hashlib.sha256(NEW.read_bytes()).hexdigest().upper())
 
     fluid = source("src/main/java/mielon/thesift/fluid/IchorFluid.java")
     regen = source("src/main/java/mielon/thesift/fluid/IchorRegeneration.java")
@@ -132,7 +134,7 @@ def main() -> None:
             and "@Local MutableBlockPos pos" in weather
             and "theSift$restrictSnowColumns" in weather,
             "upstream weather extraction interception is present")
-    print("STATIC_STAGE_QA_PASS")
+    print("STATIC_112_RELEASE_QA_PASS")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,14 @@
 # NeoForge 26.3 community port: scope and validation
 
-**Current stable release:** **Port 1.1.1**. Its consolidated changes relative to the original Fabric mod are listed in [CHANGELOG.md](CHANGELOG.md). The following sections are historical compatibility records, not public release notes.
+**Current public release:** **Port 1.1.1**, until Prime 3 publishes the separately prepared **Port 1.1.2**. See [CHANGELOG.md](CHANGELOG.md) and [RELEASE-NOTES-1.1.2.md](RELEASE-NOTES-1.1.2.md). The older sections below remain historical compatibility records.
+
+## Port 1.1.2 — release handoff (2026-10-13)
+
+The original Fabric 1.1.2 Ichor-regeneration, Dark Sniffer Sonic Sniff and precipitation behavior was adapted to the independent NeoForge 26.3 port without replacing previously tested mod-specific fixes. The final release JAR uses mod version \`1.1.2-neoforge.1\`, native NeoForge metadata, and \`the_sift\` IDs. **Compiler/runtime latest at release preparation:** NeoForge 26.3.0.76; the independently supported metadata minimum remains **\`[26.3.0.64-beta,)\`** with no upper loader bound. GeckoLib 5.5.7 and Java 25 are required.
+
+Source/build/static checks, dedicated-server boot and prior isolated client-menu tests are supported by Prime 2 QA records. The user reported **all of the provided gameplay and Charoite/Easy Magic manual checks passed** on their separate ModTest profile. The earlier ModTest boot crash was traced to Sodium \`0.9.3-alpha.1\` failing an internal mixin into \`LevelExtractor\` with NeoForge .76, not to The Sift; renderer compatibility requires a matching Sodium/Iris combination and was corrected by the user before final acceptance.
+
+**Publication status:** Final JAR prepared for **Prime 3** handoff; no publication, GitHub push, live installation or changes to other modpacks by Prime 2. The original public 1.1.1 release remains rollback. No independent FPS/MSPT benchmarking, exhaustive multiplayer stress test or formal proof of future NeoForge ABI compatibility is claimed.
 
 ## NeoForge loader compatibility fix (`1.1.1-neoforge.2-community.3-fix.1`)
 

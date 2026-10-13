@@ -6,14 +6,16 @@
 
 ## NeoForge port
 
-- **Latest release:** **Port 1.1.1** — [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest). See the [changelog](CHANGELOG.md) for the changes compared with the original Fabric mod.
-- **Minecraft:** 26.3; **NeoForge:** 26.3.0.64-beta or newer; **Java:** 25. Compiled against .64-beta and reported working with .69-beta. Compatibility with future loader builds is not guaranteed without further testing.
+- **Port 1.1.2:** independently prepared and user-accepted for publication by Prime 3. **Existing GitHub release remains Port 1.1.1 until publication.** [GitHub Releases](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/latest), [changelog](CHANGELOG.md), and [release notes](RELEASE-NOTES-1.1.2.md).
+- **Minecraft:** 26.3; **NeoForge:** **26.3.0.64-beta minimum, NO upper loader bound** (metadata range \`[26.3.0.64-beta,)\`); **Java:** 25. Built and server-smoke-tested on **NeoForge 26.3.0.76**; the full 1.1.2 gameplay checklist was confirmed by the user on a separate ModTest profile on 2026-10-13. The open loader range does not guarantee behavior on untested future builds.
 - **Required:** GeckoLib 5.5.7 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.3.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
 - **Optional visuals:** LambDynamicLights and Iris/Sodium integrations. For Complementary Unbound 5.9.3, see the known shader limitation in [PORT_STATUS.md](PORT_STATUS.md).
 - Existing worlds retain the original `the_sift` mod ID; back up worlds before changing from another build of the mod.
 
 The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are adapted from the original project.
+
+**Port 1.1.2 updates:** Ichor Regeneration I contact and cauldron refresh, Dark Sniffer Sonic Sniff UUID hit tracking and saved-motion correction, and weather/precipitation mixin stability. Retains the independent fixes from Port 1.1.1. The user confirmed the complete gameplay checklist; release binaries are kept separate from live modpack profiles. **Known renderer-mod caveat:** an unpatched Sodium \`0.9.3-alpha.1\` can crash on NeoForge 26.3.0.76 due to its own \`LevelExtractorMixin\`, independently of The Sift. Use a compatible Sodium/Iris combination or test The Sift without them.
 
 **Versioning:** Public releases use `Port 1.1.1`, `Port 1.1.2`, `Port 1.1.3` for fixes and `Port 1.2.0` for larger additions. Each subsequent changelog lists only changes since the preceding public port release. This is an unofficial port, not an original Mielon release.
 
