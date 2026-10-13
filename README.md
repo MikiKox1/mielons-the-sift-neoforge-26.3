@@ -10,15 +10,15 @@
 
 | Minecraft | Status | Source branch | Download |
 | --- | --- | --- | --- |
-| **26.3** | **Released — Port 1.1.2 26.3** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.3) | [Port 1.1.2 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.2-mc26.3-neoforge) |
-| **26.2** | **Released — Port 1.1.2 26.2** | [`minecraft/26.2`](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/tree/minecraft/26.2) | [Port 1.1.2 26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.2-mc26.2-neoforge) |
+| **26.3** | **Released — Port 1.1.2 26.3** | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.3) | [Port 1.1.2 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.3-neoforge) |
+| **26.2** | **Released — Port 1.1.2 26.2** | [`minecraft/26.2`](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.2) | [Port 1.1.2 26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge) |
 | 26.1.2 | Planned — not available yet | `minecraft/26.1.2` (to be created when the port exists) | Not available |
 
 **Each Minecraft version has a separate source branch and release artifacts. Do not use a JAR built for one Minecraft version on another.** See [version support and branch policy](VERSIONS.md).
 
 ## NeoForge port — Minecraft 26.2
 
-- **Current 26.2 release:** **Port 1.1.2 26.2** — [GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-26.3/releases/tag/v1.1.2-mc26.2-neoforge), [changelog](docs/releases/port-1.1.2-mc26.2.md). The older 26.3 Port 1.1.1 remains available separately.
+- **Current 26.2 release:** **Port 1.1.2 26.2** — [GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge), [changelog](docs/releases/port-1.1.2-mc26.2.md). The older 26.3 Port 1.1.1 remains available separately.
 - **Minecraft:** 26.2; **NeoForge:** 26.2.0.90 or newer (tested on .90); **Java:** 25. No upper loader bound is declared; future compatibility is not guaranteed without testing.
 - **Required:** GeckoLib 5.5.6 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
 - **Optional integration:** [Easy Magic 26.2.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
