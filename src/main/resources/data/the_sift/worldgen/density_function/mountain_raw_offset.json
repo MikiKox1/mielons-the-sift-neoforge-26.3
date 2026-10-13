@@ -1,13 +1,13 @@
 {
   "type": "minecraft:add",
-  "left": "the_sift:mountain_foothill_mask",
-  "right": {
+  "argument1": "the_sift:mountain_foothill_mask",
+  "argument2": {
     "type": "minecraft:add",
-    "left": "the_sift:mountain_slope_mask",
-    "right": {
+    "argument1": "the_sift:mountain_slope_mask",
+    "argument2": {
       "type": "minecraft:mul",
-      "left": "the_sift:mountain_mask",
-      "right": "the_sift:mountain_peak_shape"
+      "argument1": "the_sift:mountain_mask",
+      "argument2": "the_sift:mountain_peak_shape"
     }
   }
 }

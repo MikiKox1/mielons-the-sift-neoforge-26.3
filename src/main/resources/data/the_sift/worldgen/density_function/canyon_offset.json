@@ -2,16 +2,16 @@
   "type": "minecraft:range_choice",
   "input": {
     "type": "minecraft:add",
-    "left": {
+    "argument1": {
       "type": "minecraft:noise",
       "noise": "the_sift:canyon_selector",
       "xz_scale": 0.61,
       "y_scale": 0.0
     },
-    "right": {
+    "argument2": {
       "type": "minecraft:mul",
-      "left": 0.115,
-      "right": {
+      "argument1": 0.115,
+      "argument2": {
         "type": "minecraft:noise",
         "noise": "the_sift:terrace_warp",
         "xz_scale": 1.05,
@@ -25,16 +25,16 @@
     "type": "minecraft:range_choice",
     "input": {
       "type": "minecraft:add",
-      "left": {
+      "argument1": {
         "type": "minecraft:noise",
         "noise": "the_sift:canyon_selector",
         "xz_scale": 0.61,
         "y_scale": 0.0
       },
-      "right": {
+      "argument2": {
         "type": "minecraft:mul",
-        "left": 0.115,
-        "right": {
+        "argument1": 0.115,
+        "argument2": {
           "type": "minecraft:noise",
           "noise": "the_sift:terrace_warp",
           "xz_scale": 1.05,
@@ -48,16 +48,16 @@
       "type": "minecraft:range_choice",
       "input": {
         "type": "minecraft:add",
-        "left": {
+        "argument1": {
           "type": "minecraft:noise",
           "noise": "the_sift:canyon_selector",
           "xz_scale": 0.61,
           "y_scale": 0.0
         },
-        "right": {
+        "argument2": {
           "type": "minecraft:mul",
-          "left": 0.115,
-          "right": {
+          "argument1": 0.115,
+          "argument2": {
             "type": "minecraft:noise",
             "noise": "the_sift:terrace_warp",
             "xz_scale": 1.05,
@@ -69,11 +69,11 @@
       "max_exclusive": 0.046,
       "when_in_range": {
         "type": "minecraft:add",
-        "left": -0.385,
-        "right": {
+        "argument1": -0.385,
+        "argument2": {
           "type": "minecraft:mul",
-          "left": 0.045,
-          "right": {
+          "argument1": 0.045,
+          "argument2": {
             "type": "minecraft:noise",
             "noise": "the_sift:terrain_detail",
             "xz_scale": 0.72,

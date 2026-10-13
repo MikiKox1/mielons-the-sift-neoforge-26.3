@@ -2,14 +2,14 @@
   "type": "minecraft:clamp",
   "input": {
     "type": "minecraft:add",
-    "left": "the_sift:mountain_climate",
-    "right": {
+    "argument1": "the_sift:mountain_climate",
+    "argument2": {
       "type": "minecraft:mul",
-      "left": 0.25,
-      "right": {
+      "argument1": 0.25,
+      "argument2": {
         "type": "minecraft:mul",
-        "left": "the_sift:mountain_mask",
-        "right": "the_sift:mountain_ridge_shape"
+        "argument1": "the_sift:mountain_mask",
+        "argument2": "the_sift:mountain_ridge_shape"
       }
     }
   },

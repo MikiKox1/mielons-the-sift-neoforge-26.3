@@ -5,26 +5,28 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "the_sift:cobbled_siftslate_slab",
-          "modifier": [
+          "functions": [
             {
-              "count": 2,
-              "type": "minecraft:set_count",
-              "condition": {
-                "type": "minecraft:match_block",
-                "blocks": "the_sift:cobbled_siftslate_slab",
-                "state": {
-                  "type": "double"
+              "conditions": [
+                {
+                  "block": "the_sift:cobbled_siftslate_slab",
+                  "condition": "minecraft:block_state_property",
+                  "properties": {
+                    "type": "double"
+                  }
                 }
-              }
+              ],
+              "count": 2.0,
+              "function": "minecraft:set_count"
             },
             {
-              "type": "minecraft:explosion_decay"
+              "function": "minecraft:explosion_decay"
             }
-          ]
+          ],
+          "name": "the_sift:cobbled_siftslate_slab"
         }
       ],
-      "rolls": 1
+      "rolls": 1.0
     }
   ],
   "random_sequence": "the_sift:blocks/cobbled_siftslate_slab"

@@ -5,16 +5,16 @@
   "max_exclusive": 0.01,
   "when_in_range": {
     "type": "minecraft:mul",
-    "left": {
+    "argument1": {
       "type": "minecraft:add",
-      "left": 0.72,
-      "right": {
+      "argument1": 0.72,
+      "argument2": {
         "type": "minecraft:mul",
-        "left": 0.28,
-        "right": "the_sift:terrain_intensity"
+        "argument1": 0.28,
+        "argument2": "the_sift:terrain_intensity"
       }
     },
-    "right": {
+    "argument2": {
       "type": "minecraft:range_choice",
       "input": "the_sift:shelf_region_field",
       "min_inclusive": 0.74,
@@ -26,11 +26,11 @@
         "max_exclusive": 0.81,
         "when_in_range": {
           "type": "minecraft:add",
-          "left": 0.115,
-          "right": {
+          "argument1": 0.115,
+          "argument2": {
             "type": "minecraft:mul",
-            "left": 0.016,
-            "right": {
+            "argument1": 0.016,
+            "argument2": {
               "type": "minecraft:noise",
               "noise": "the_sift:terrain_detail",
               "xz_scale": 0.44,
@@ -45,11 +45,11 @@
           "max_exclusive": 0.87,
           "when_in_range": {
             "type": "minecraft:add",
-            "left": 0.255,
-            "right": {
+            "argument1": 0.255,
+            "argument2": {
               "type": "minecraft:mul",
-              "left": 0.02,
-              "right": {
+              "argument1": 0.02,
+              "argument2": {
                 "type": "minecraft:noise",
                 "noise": "the_sift:terrain_detail",
                 "xz_scale": 0.38,
@@ -59,11 +59,11 @@
           },
           "when_out_of_range": {
             "type": "minecraft:add",
-            "left": 0.42,
-            "right": {
+            "argument1": 0.42,
+            "argument2": {
               "type": "minecraft:mul",
-              "left": 0.024,
-              "right": {
+              "argument1": 0.024,
+              "argument2": {
                 "type": "minecraft:noise",
                 "noise": "the_sift:terrain_detail",
                 "xz_scale": 0.33,

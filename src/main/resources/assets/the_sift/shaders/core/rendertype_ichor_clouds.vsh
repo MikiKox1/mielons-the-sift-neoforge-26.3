@@ -1,10 +1,9 @@
 #version 330
-#extension GL_ARB_separate_shader_objects : require
 
-#include <minecraft:fog.glsl>
-#include <minecraft:dynamictransforms.glsl>
-#include <minecraft:projection.glsl>
-#include <minecraft:globals.glsl>
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:projection.glsl>
+#moj_import <minecraft:globals.glsl>
 
 const int FLAG_MASK_DIR = 7;
 const int FLAG_INSIDE_FACE = 1 << 4;
@@ -20,8 +19,8 @@ layout(std140) uniform CloudInfo {
 
 uniform isamplerBuffer CloudFaces;
 
-layout(location = 0) out float vertexDistance;
-layout(location = 1) out vec4 vertexColor;
+out float vertexDistance;
+out vec4 vertexColor;
 
 const vec3[] vertices = vec3[](
     vec3(1, 0, 0), vec3(1, 0, 1), vec3(0, 0, 1), vec3(0, 0, 0),
@@ -62,8 +61,8 @@ vec3 ichor_cloud_color(vec2 worldXZ) {
 }
 
 void main() {
-    int quadVertex = gl_VertexIndex % 4;
-    int index = (gl_VertexIndex / 4) * 3;
+    int quadVertex = gl_VertexID % 4;
+    int index = (gl_VertexID / 4) * 3;
     int cellX = texelFetch(CloudFaces, index).r;
     int cellZ = texelFetch(CloudFaces, index + 1).r;
     int dirAndFlags = texelFetch(CloudFaces, index + 2).r;

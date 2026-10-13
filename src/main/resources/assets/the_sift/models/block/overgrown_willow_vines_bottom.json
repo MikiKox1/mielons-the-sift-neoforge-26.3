@@ -17,6 +17,7 @@
         16,
         0.8
       ],
+      "shade": false,
       "faces": {
         "north": {
           "uv": [
@@ -36,8 +37,7 @@
           ],
           "texture": "#vine"
         }
-      },
-      "shade_direction_override": "up"
+      }
     }
   ]
 }

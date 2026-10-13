@@ -11,6 +11,7 @@
   },
   "elements": [
     {
+      "shade": false,
       "from": [
         4,
         0,
@@ -86,10 +87,10 @@
           ],
           "texture": "#0"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         4,
         0,
@@ -165,10 +166,10 @@
           ],
           "texture": "#0"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         9,
         0,
@@ -243,10 +244,10 @@
           ],
           "texture": "#1"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         5,
         0,
@@ -322,10 +323,10 @@
           ],
           "texture": "#2"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         5,
         0,
@@ -401,10 +402,10 @@
           ],
           "texture": "#2"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         6,
         0,
@@ -480,10 +481,10 @@
           ],
           "texture": "#2"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         7,
         0,
@@ -559,10 +560,10 @@
           ],
           "texture": "#2"
         }
-      },
-      "shade_direction_override": "up"
+      }
     },
     {
+      "shade": false,
       "from": [
         6,
         0,
@@ -638,8 +639,7 @@
           ],
           "texture": "#2"
         }
-      },
-      "shade_direction_override": "up"
+      }
     }
   ],
   "display": {

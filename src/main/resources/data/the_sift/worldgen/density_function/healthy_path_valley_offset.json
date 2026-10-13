@@ -10,18 +10,18 @@
   "max_exclusive": 0.72,
   "when_in_range": {
     "type": "minecraft:mul",
-    "left": -0.94,
-    "right": {
+    "argument1": -0.94,
+    "argument2": {
       "type": "minecraft:clamp",
       "input": {
         "type": "minecraft:add",
-        "left": 0.036,
-        "right": {
+        "argument1": 0.036,
+        "argument2": {
           "type": "minecraft:mul",
-          "left": -1.0,
-          "right": {
+          "argument1": -1.0,
+          "argument2": {
             "type": "minecraft:abs",
-            "input": {
+            "argument": {
               "type": "minecraft:noise",
               "noise": "the_sift:healthy_paths",
               "xz_scale": 1.0,

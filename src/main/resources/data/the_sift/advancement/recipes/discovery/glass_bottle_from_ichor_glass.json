@@ -14,7 +14,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": "the_sift:glass_bottle_from_ichor_glass"
+        "recipe": "the_sift:glass_bottle_from_ichor_glass"
       }
     }
   },

@@ -2,16 +2,18 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "rolls": 1,
+      "rolls": 1.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
       "entries": [
         {
           "type": "minecraft:item",
           "name": "the_sift:sculkflower"
         }
-      ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      ]
     }
   ],
   "random_sequence": "the_sift:blocks/sculkflower"

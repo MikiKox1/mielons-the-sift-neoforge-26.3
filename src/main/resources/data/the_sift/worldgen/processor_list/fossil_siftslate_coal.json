@@ -15,7 +15,9 @@
           "location_predicate": {
             "predicate_type": "minecraft:always_true"
           },
-          "output_state": "the_sift:siftslate_coal_ore"
+          "output_state": {
+            "Name": "the_sift:siftslate_coal_ore"
+          }
         }
       ]
     },

@@ -1,64 +1,21 @@
 {
   "attributes": {
     "minecraft:visual/sky_color": "#ffffff",
-    "minecraft:visual/ambient_particles": {
-      "argument": [
-        {
-          "particle": {
-            "type": "the_sift:sift_note"
-          },
-          "probability": 0.000144
-        }
-      ],
-      "modifier": "append"
-    },
-    "minecraft:gameplay/natural_mob_spawns": {
-      "argument": {
-        "spawn_costs": {},
-        "spawns_by_category": {
-          "ambient": [],
-          "axolotls": [],
-          "creature": [
-            {
-              "type": "the_sift:echo_golem",
-              "count": 1,
-              "weight": 1
-            },
-            {
-              "type": "minecraft:sniffer",
-              "count": {
-                "type": "minecraft:uniform",
-                "min_inclusive": 2,
-                "max_inclusive": 3
-              },
-              "weight": 3
-            },
-            {
-              "type": "the_sift:blub",
-              "count": {
-                "type": "minecraft:uniform",
-                "min_inclusive": 1,
-                "max_inclusive": 3
-              },
-              "weight": 3
-            }
-          ],
-          "misc": [],
-          "monster": [],
-          "underground_water_creature": [],
-          "water_ambient": [],
-          "water_creature": []
-        }
-      },
-      "modifier": "overlay"
-    },
-    "minecraft:gameplay/creature_world_gen_spawn_probability": 0.025
+    "minecraft:visual/ambient_particles": [
+      {
+        "particle": {
+          "type": "the_sift:sift_note"
+        },
+        "probability": 0.000144
+      }
+    ]
   },
   "carvers": [
     "the_sift:cave",
     "the_sift:cave_extra_underground",
     "the_sift:canyon"
   ],
+  "creature_spawn_probability": 0.025,
   "downfall": 0.32,
   "effects": {
     "water_color": "#4adce8"
@@ -124,5 +81,35 @@
     ]
   ],
   "has_precipitation": true,
+  "spawn_costs": {},
+  "spawners": {
+    "ambient": [],
+    "axolotls": [],
+    "creature": [
+      {
+        "type": "the_sift:echo_golem",
+        "maxCount": 1,
+        "minCount": 1,
+        "weight": 1
+      },
+      {
+        "type": "minecraft:sniffer",
+        "maxCount": 3,
+        "minCount": 2,
+        "weight": 3
+      },
+      {
+        "type": "the_sift:blub",
+        "maxCount": 3,
+        "minCount": 1,
+        "weight": 3
+      }
+    ],
+    "misc": [],
+    "monster": [],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "water_creature": []
+  },
   "temperature": 0.46
 }

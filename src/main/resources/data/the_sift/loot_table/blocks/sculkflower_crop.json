@@ -2,40 +2,39 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "rolls": 1,
+      "rolls": 1.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
       "entries": [
         {
           "type": "minecraft:item",
           "name": "the_sift:sculkflower_seeds"
         }
-      ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      ]
     },
     {
-      "rolls": 1,
+      "rolls": 1.0,
+      "conditions": [
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "the_sift:sculkflower_crop",
+          "properties": {
+            "age": "2"
+          }
+        },
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
       "entries": [
         {
           "type": "minecraft:item",
           "name": "the_sift:sculkflower"
         }
-      ],
-      "condition": {
-        "type": "minecraft:all_of",
-        "terms": [
-          {
-            "type": "minecraft:match_block",
-            "blocks": "the_sift:sculkflower_crop",
-            "state": {
-              "age": "2"
-            }
-          },
-          {
-            "type": "minecraft:survives_explosion"
-          }
-        ]
-      }
+      ]
     }
   ],
   "random_sequence": "the_sift:blocks/sculkflower_crop"

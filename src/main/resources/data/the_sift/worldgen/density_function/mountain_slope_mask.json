@@ -2,12 +2,12 @@
   "type": "minecraft:clamp",
   "input": {
     "type": "minecraft:add",
-    "left": {
+    "argument1": {
       "type": "minecraft:mul",
-      "left": 1.6666667,
-      "right": "the_sift:mountain_climate"
+      "argument1": 1.6666667,
+      "argument2": "the_sift:mountain_climate"
     },
-    "right": -0.9666667
+    "argument2": -0.9666667
   },
   "min": 0.0,
   "max": 0.3

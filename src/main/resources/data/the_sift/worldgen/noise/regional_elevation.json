@@ -1,8 +1,6 @@
 {
-  "base_octave": -10,
-  "octave_count": 3,
-  "normalize": "legacy",
-  "amplitude_modifiers": [
+  "firstOctave": -10,
+  "amplitudes": [
     1.0,
     0.52,
     0.24

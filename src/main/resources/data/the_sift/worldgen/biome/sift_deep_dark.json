@@ -8,50 +8,21 @@
       }
     },
     "minecraft:visual/sky_color": "#ffffff",
-    "minecraft:visual/ambient_particles": {
-      "argument": [
-        {
-          "particle": {
-            "type": "the_sift:sift_note"
-          },
-          "probability": 0.000032
-        }
-      ],
-      "modifier": "append"
-    },
-    "minecraft:gameplay/natural_mob_spawns": {
-      "argument": {
-        "spawn_costs": {},
-        "spawns_by_category": {
-          "ambient": [],
-          "axolotls": [],
-          "creature": [
-            {
-              "type": "the_sift:blub",
-              "count": {
-                "type": "minecraft:uniform",
-                "min_inclusive": 1,
-                "max_inclusive": 3
-              },
-              "weight": 2
-            }
-          ],
-          "misc": [],
-          "monster": [],
-          "underground_water_creature": [],
-          "water_ambient": [],
-          "water_creature": []
-        }
-      },
-      "modifier": "overlay"
-    },
-    "minecraft:gameplay/creature_world_gen_spawn_probability": 0.012
+    "minecraft:visual/ambient_particles": [
+      {
+        "particle": {
+          "type": "the_sift:sift_note"
+        },
+        "probability": 0.000032
+      }
+    ]
   },
   "carvers": [
     "the_sift:cave",
     "the_sift:cave_extra_underground",
     "the_sift:canyon"
   ],
+  "creature_spawn_probability": 0.012,
   "downfall": 0.4,
   "effects": {
     "water_color": "#4adce8"
@@ -93,5 +64,23 @@
     ]
   ],
   "has_precipitation": false,
+  "spawn_costs": {},
+  "spawners": {
+    "ambient": [],
+    "axolotls": [],
+    "creature": [
+      {
+        "type": "the_sift:blub",
+        "maxCount": 3,
+        "minCount": 1,
+        "weight": 2
+      }
+    ],
+    "misc": [],
+    "monster": [],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "water_creature": []
+  },
   "temperature": 0.8
 }

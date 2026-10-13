@@ -1,16 +1,15 @@
 #version 330
-#extension GL_ARB_separate_shader_objects : require
 
-#include <minecraft:fog.glsl>
-#include <minecraft:projection.glsl>
-#include <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:projection.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
 
-layout(location = 0) in vec3 Position;
+in vec3 Position;
 
-layout(location = 0) out vec4 texProj0;
-layout(location = 1) out vec3 viewPosition;
-layout(location = 2) out float sphericalVertexDistance;
-layout(location = 3) out float cylindricalVertexDistance;
+out vec4 texProj0;
+out vec3 viewPosition;
+out float sphericalVertexDistance;
+out float cylindricalVertexDistance;
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);

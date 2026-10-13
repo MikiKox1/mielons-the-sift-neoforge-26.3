@@ -2,11 +2,11 @@
   "type": "minecraft:clamp",
   "input": {
     "type": "minecraft:add",
-    "left": 0.5,
-    "right": {
+    "argument1": 0.5,
+    "argument2": {
       "type": "minecraft:mul",
-      "left": 0.85,
-      "right": {
+      "argument1": 0.85,
+      "argument2": {
         "type": "minecraft:noise",
         "noise": "the_sift:terrace_warp",
         "xz_scale": 0.48,

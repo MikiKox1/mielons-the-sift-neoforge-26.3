@@ -1,17 +1,12 @@
 #version 330
-#extension GL_ARB_separate_shader_objects : require
-
-#include <minecraft:globals.glsl>
-#include <the_sift:portal_fields.glsl>
-
+#moj_import <minecraft:globals.glsl>
+#moj_import <the_sift:portal_fields.glsl>
 uniform sampler2D Sampler0;
-
-layout(location = 0) in vec2 texCoord0;
-layout(location = 1) in vec4 vertexColor;
-
-layout(location = 0) out vec4 fragColor;
-
+in vec2 texCoord0;
+in vec4 vertexColor;
+out vec4 fragColor;
 void main() {
+    // Wall-clock encoded in vertex tint: animation continues while server worldgen waits.
     float t=dot(round(vertexColor.rgb*255.0),vec3(65536,256,1))/60.0;
     vec2 uv=texCoord0;
     uv.x=(uv.x-.5)*ScreenSize.x/max(ScreenSize.y,1.0)*.65+.5;

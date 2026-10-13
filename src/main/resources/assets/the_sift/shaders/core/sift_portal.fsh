@@ -1,20 +1,14 @@
 #version 330
-#extension GL_ARB_separate_shader_objects : require
-
-#include <minecraft:fog.glsl>
-#include <minecraft:globals.glsl>
-#include <the_sift:portal_fields.glsl>
-
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:globals.glsl>
+#moj_import <the_sift:portal_fields.glsl>
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler1;
-
-layout(location = 0) in vec4 texProj0;
-layout(location = 1) in vec3 viewPosition;
-layout(location = 2) in float sphericalVertexDistance;
-layout(location = 3) in float cylindricalVertexDistance;
-
-layout(location = 0) out vec4 fragColor;
-
+in vec4 texProj0;
+in vec3 viewPosition;
+in float sphericalVertexDistance;
+in float cylindricalVertexDistance;
+out vec4 fragColor;
 void main() {
     vec2 uv=texProj0.xy/max(texProj0.w,.0001);
     uv.x=(uv.x-.5)*ScreenSize.x/max(ScreenSize.y,1.0)*.65+.5;

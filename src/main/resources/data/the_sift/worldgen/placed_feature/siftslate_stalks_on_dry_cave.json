@@ -37,10 +37,9 @@
       }
     },
     {
-      "type": "minecraft:offset",
-      "x": 0,
-      "y": 1,
-      "z": 0
+      "type": "minecraft:random_offset",
+      "xz_spread": 0,
+      "y_spread": 1
     },
     {
       "type": "minecraft:surface_relative_threshold_filter",
@@ -55,23 +54,17 @@
       "count": 9
     },
     {
-      "type": "minecraft:offset",
-      "x": {
+      "type": "minecraft:random_offset",
+      "xz_spread": {
         "type": "minecraft:trapezoid",
         "max": 2,
         "min": -2,
         "plateau": 0
       },
-      "y": {
+      "y_spread": {
         "type": "minecraft:trapezoid",
         "max": 1,
         "min": -1,
-        "plateau": 0
-      },
-      "z": {
-        "type": "minecraft:trapezoid",
-        "max": 2,
-        "min": -2,
         "plateau": 0
       }
     },

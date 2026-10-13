@@ -14,7 +14,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": "the_sift:siftslate_brick_wall_from_cobbled_siftslate_stonecutting"
+        "recipe": "the_sift:siftslate_brick_wall_from_cobbled_siftslate_stonecutting"
       }
     }
   },

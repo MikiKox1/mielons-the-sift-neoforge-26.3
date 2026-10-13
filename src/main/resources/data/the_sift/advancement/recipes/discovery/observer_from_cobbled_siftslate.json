@@ -14,7 +14,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": "the_sift:observer_from_cobbled_siftslate"
+        "recipe": "the_sift:observer_from_cobbled_siftslate"
       }
     }
   },

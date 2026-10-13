@@ -1,16 +1,16 @@
 {
   "type": "minecraft:square",
-  "input": {
+  "argument": {
     "type": "minecraft:clamp",
     "input": {
       "type": "minecraft:add",
-      "left": 1.0,
-      "right": {
+      "argument1": 1.0,
+      "argument2": {
         "type": "minecraft:mul",
-        "left": -1.9,
-        "right": {
+        "argument1": -1.9,
+        "argument2": {
           "type": "minecraft:abs",
-          "input": {
+          "argument": {
             "type": "minecraft:noise",
             "noise": "the_sift:mountain_ridges",
             "xz_scale": 1.05,
