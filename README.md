@@ -29,7 +29,7 @@ The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift re
 
 **Versioning:** Public titles include their Minecraft target, e.g. `Port 1.1.2 26.3` and `Port 1.1.2 26.2`. Branches, tags and assets remain separate for each Minecraft version. Later changelogs describe only changes since the preceding public release within the same Minecraft version line. This is an unofficial port, not an original Mielon release.
 
-**Source build:** Requires JDK 25; run `./gradlew build` (or `gradlew.bat build` on Windows). Easy Magic is optional.
+**Source build:** Requires JDK 25; run `./gradlew build` (or `gradlew.bat build` on Windows).
 
 ## NeoForge port — Minecraft 26.2
 
