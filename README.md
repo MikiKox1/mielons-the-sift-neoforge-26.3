@@ -29,7 +29,7 @@ Both Minecraft versions have separate builds, source branches and downloads. **C
 | Required GeckoLib | 5.5.7 or compatible 5.x | 5.5.6 or compatible 5.x |
 | Java | 25 | 25 |
 | Optional Easy Magic | 26.3.0 | 26.2.0 |
-| In-world sky tests | Photon, Complementary, shaders off — user confirmed after RenderPass fix | Photon, Complementary, shaders off — user confirmed |
+| In-world sky tests | Photon, Complementary shaders compatibility| Photon, Complementary shaders compatibility |
 
 **Shared features:** Ichor regeneration, Dark Sniffer Sonic Sniff, corrected Sift weather, Ancient City portals and Rift return travel, Charoite enchanting, Singer lighting and Sonorous beams. The six-layer animated sky includes improvements for Photon, Complementary and rendering without shaders. Shaderpack ZIP modifications are not required in the tested setups.
 
