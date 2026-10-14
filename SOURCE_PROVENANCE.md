@@ -2,7 +2,7 @@
 
 **Original mod:** [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) by **Mielon** — © 2026, MIT License. The original work is also available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/mielons-the-sift).
 
-**Unofficial NeoForge port:** **MikiKox1**, for Minecraft **26.2 and 26.3**.
+**Unofficial NeoForge port:** **MikiKox1**, for Minecraft **26.1.2, 26.2 and 26.3**.
 
 **Public source snapshot:** [Arta48/Mielons-The-Sift](https://github.com/Arta48/Mielons-The-Sift).
 
