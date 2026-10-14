@@ -49,15 +49,14 @@ neoForge {
     runs {
         client {
             client()
-            // Standalone Prime 2 stage smoke; never the user's Modrinth profile.
-            // A new loader release must never reuse a previous test world's directory.
+            // Client run data is isolated from regular player worlds.
             gameDirectory = project.file("run/client-${project.neo_version}-hotfix-pass-preload-112")
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
-            // Must remain separate from the client and all player saves.
+            // Server run data remains separate from client data and player worlds.
             gameDirectory = project.file("run/server-${project.neo_version}-hotfix-pass-preload-112")
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -88,13 +87,8 @@ dependencies {
     compileOnly "dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:${project.lambdynlights_version}+${project.minecraft_version}"
 }
 
-// Prime 2 invariant: build/test on the latest published NeoForge for this
-// Minecraft line, while keeping the independent, OPEN-ENDED mod dependency
-// range [neo_min_version,) (currently >=26.3.0.64-beta).
-// Keep the compile/test loader pinned for reproducibility and refuse tests
-// if that pin becomes stale. Do not conflate this pin with minimum support.
-// If the metadata endpoint is unreachable, fail closed rather than claim the
-// tested loader is current. This task does not install any application.
+// The NeoForge toolchain version is distinct from the open-ended mod
+// dependency minimum [neo_min_version,).
 def pinnedNeoForge = project.neo_version.toString()
 def pinnedNeoMinimum = project.neo_min_version.toString()
 tasks.register('verifyLatestNeoForge') {
