@@ -1,0 +1,159 @@
+name: One-time The Sift 26.1.2 release asset cleanup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/the-sift-mc2612-assets-cleanup-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-mc2612-release:
+    if: github.repository == 'MikiKox1/mielons-the-sift-neoforge-port'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate exact release and prepare updated description
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/MikiKox1/mielons-the-sift-neoforge-port/releases/413145392 > "$RUNNER_TEMP/release-before.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"])
+          release = json.loads((root / "release-before.json").read_text())
+          assert release["id"] == 413145392
+          assert release["name"] == "Port 1.1.2 26.1.2"
+          assert release["tag_name"] == "v1.1.2-neoforge.1-mc26.1.2"
+          assert not release["draft"] and not release["prerelease"]
+          expected = {
+              641547089: ("mielons-the-sift-1.1.2-mc26.1.2-neoforge-port-sources.jar", 14503576, "sha256:a3df5a647cb0566d69d908f29650a8520dc1385a2c0f5f6da01c6e2add194255"),
+              641547011: ("mielons-the-sift-1.1.2-mc26.1.2-neoforge-port.jar", 14944310, "sha256:3a008f77999717047885bce0954a2b95bd7b219189faff11bc1ce5dae3cfb16a"),
+              641547260: ("SHA256SUMS.txt", 357, "sha256:6cde1b34c06469edb560c54cb0d27e100ed9fa812fd57c47e8b9fbd368d4cf3a"),
+              641547172: ("TheSift-1.1.2-MC26.1.2-NeoForge-git-tag-source.zip", 23683145, "sha256:d062adfdd82bd5a4d0595cf3e4c7afbea84ce38eb182efe9737203bc37280844"),
+          }
+          assets = {asset["id"]: asset for asset in release["assets"]}
+          assert set(assets) == set(expected), "Unexpected asset list; stop"
+          for asset_id, (name, size, digest) in expected.items():
+              asset = assets[asset_id]
+              assert asset["name"] == name and asset["size"] == size and asset["digest"] == digest
+              assert asset["state"] == "uploaded"
+          body = release["body"].replace("\r\n", "\n")
+          marker = "## Downloads\n"
+          assert body.count(marker) == 1
+          start = body.index(marker)
+          end = body.index("**Original mod:**", start)
+          removed = body[start:end]
+          for phrase in ("**Mod:**", "**Sources:**", "**Source snapshot:**", "**Checksums:**", "**Mod JAR SHA-256:**"):
+              assert phrase in removed, "Unexpected Downloads section; stop"
+          clean = body[:start].rstrip() + "\n\n" + body[end:]
+          assert "## Downloads" not in clean and "SHA256SUMS.txt" not in clean
+          assert "Mod JAR SHA-256" not in clean and "git-tag-source.zip" not in clean
+          assert "## Requirements" in clean and "**Original mod:**" in clean
+          (root / "release-clean-body.json").write_text(
+              json.dumps({
+                  "name": release["name"],
+                  "tag_name": release["tag_name"],
+                  "body": clean
+              }, ensure_ascii=False),
+              encoding="utf-8",
+          )
+          print("Release metadata, four original asset digests and body section verified.")
+          PY
+
+      - name: Label the two retained JARs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api -X PATCH repos/MikiKox1/mielons-the-sift-neoforge-port/releases/assets/641547089 \
+            -f name='mielons-the-sift-1.1.2-mc26.1.2-neoforge-port-sources.jar' \
+            -f label='Minecraft 26.1.2 - source JAR' --jq '{id,name,label,digest}'
+          gh api -X PATCH repos/MikiKox1/mielons-the-sift-neoforge-port/releases/assets/641547011 \
+            -f name='mielons-the-sift-1.1.2-mc26.1.2-neoforge-port.jar' \
+            -f label='Minecraft 26.1.2 - NeoForge mod JAR' --jq '{id,name,label,digest}'
+
+      - name: Remove Downloads block from release description
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api -X PATCH repos/MikiKox1/mielons-the-sift-neoforge-port/releases/413145392 \
+            --input "$RUNNER_TEMP/release-clean-body.json" \
+            --jq '{id,name,tag_name,asset_count:(.assets|length)}'
+
+      - name: Verify remaining assets before deleting duplicates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/MikiKox1/mielons-the-sift-neoforge-port/releases/413145392 > "$RUNNER_TEMP/release-middle.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"])
+          release = json.loads((root / "release-middle.json").read_text())
+          expected_body = json.loads((root / "release-clean-body.json").read_text())["body"]
+          assert release["body"].rstrip() == expected_body.rstrip()
+          assert release["name"] == "Port 1.1.2 26.1.2"
+          assert release["tag_name"] == "v1.1.2-neoforge.1-mc26.1.2"
+          assert not release["draft"] and not release["prerelease"]
+          assert len(release["assets"]) == 4
+          assets = {asset["id"]: asset for asset in release["assets"]}
+          assert assets[641547089]["label"] == "Minecraft 26.1.2 - source JAR"
+          assert assets[641547011]["label"] == "Minecraft 26.1.2 - NeoForge mod JAR"
+          assert assets[641547089]["digest"] == "sha256:a3df5a647cb0566d69d908f29650a8520dc1385a2c0f5f6da01c6e2add194255"
+          assert assets[641547011]["digest"] == "sha256:3a008f77999717047885bce0954a2b95bd7b219189faff11bc1ce5dae3cfb16a"
+          assert assets[641547260]["digest"] == "sha256:6cde1b34c06469edb560c54cb0d27e100ed9fa812fd57c47e8b9fbd368d4cf3a"
+          assert assets[641547172]["digest"] == "sha256:d062adfdd82bd5a4d0595cf3e4c7afbea84ce38eb182efe9737203bc37280844"
+          print("Body, labels and unchanged JAR digests verified before deletion.")
+          PY
+
+      - name: Delete only the two locally backed-up duplicate uploads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api -X DELETE repos/MikiKox1/mielons-the-sift-neoforge-port/releases/assets/641547260 --silent
+          gh api -X DELETE repos/MikiKox1/mielons-the-sift-neoforge-port/releases/assets/641547172 --silent
+
+      - name: Verify final release and GitHub-generated source archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/MikiKox1/mielons-the-sift-neoforge-port/releases/413145392 > "$RUNNER_TEMP/release-final.json"
+          gh api repos/MikiKox1/mielons-the-sift-neoforge-port/releases/latest > "$RUNNER_TEMP/release-latest.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"])
+          r = json.loads((root / "release-final.json").read_text())
+          latest = json.loads((root / "release-latest.json").read_text())
+          assert r["id"] == 413145392
+          assert r["name"] == "Port 1.1.2 26.1.2"
+          assert r["tag_name"] == "v1.1.2-neoforge.1-mc26.1.2"
+          assert not r["draft"] and not r["prerelease"]
+          assert len(r["assets"]) == 2
+          assets = {a["id"]: a for a in r["assets"]}
+          assert set(assets) == {641547089, 641547011}
+          assert assets[641547089]["label"] == "Minecraft 26.1.2 - source JAR"
+          assert assets[641547011]["label"] == "Minecraft 26.1.2 - NeoForge mod JAR"
+          assert assets[641547089]["digest"] == "sha256:a3df5a647cb0566d69d908f29650a8520dc1385a2c0f5f6da01c6e2add194255"
+          assert assets[641547011]["digest"] == "sha256:3a008f77999717047885bce0954a2b95bd7b219189faff11bc1ce5dae3cfb16a"
+          assert "## Downloads" not in r["body"] and "Mod JAR SHA-256" not in r["body"]
+          assert "## Requirements" in r["body"] and "**Original mod:**" in r["body"]
+          assert r["zipball_url"] and r["tarball_url"], "GitHub source archives must remain"
+          assert latest["id"] == 412196887, "Latest 26.3 release must stay unchanged"
+          print("PASS: two labeled JARs, two automatic source archives, clean body, stable Latest.")
+          PY
