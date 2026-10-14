@@ -1,11 +1,7 @@
 # AI assistance disclosure
 
-This repository contains an **AI-assisted community port** of Mielon's The Sift from Fabric to NeoForge for Minecraft 26.3.
+This unofficial NeoForge port of **Mielon's The Sift** for Minecraft **26.2 and 26.3** includes substantial AI-assisted Java code, mixins, compatibility integrations and documentation, including contributions made with OpenAI language models. It must not be described as entirely human-written.
 
-During this port, OpenAI language models were used extensively to help investigate the released upstream implementation and current Minecraft/NeoForge APIs, propose and edit Java code and mixins, troubleshoot compatibility, prepare test and audit scripts, and draft technical documentation. This includes work on the optional Easy Magic/Charoite compatibility layer and later NeoPack compatibility repairs. The port should therefore **not** be presented as entirely human-written code.
+**Original creator and copyright:** Mielon (MIT). **Unofficial NeoForge port maintainer:** MikiKox1. Original assets, identities and contributor credits belong to their respective creators and are not attributed to AI or the port maintainer.
 
-Human oversight determined the port target and behavior requirements, guided debugging and reviewed changes. The maintainer ran build/static/runtime checks, and the NeoPack user manually tested and accepted eight targeted gameplay repair categories on the earlier NeoForge 26.3.0.43-beta build. Those results do not constitute an independent code audit or full compatibility guarantee for all modpacks and shaders. See [PORT_STATUS.md](PORT_STATUS.md) for exact scope.
-
-**Authorship and attribution:** Mielon is the creator of the original mod. The original mod's work, identity and credits must not be attributed to the AI or to the port maintainer. This repository retains Mielon's 2026 MIT copyright notice and preserves the existing credits for external contributors and assets. Fork changes are separately identified in Git history and the port documentation.
-
-**Project relationship:** Independently maintained as an unofficial community port. Original mod published by Mielon on [Modrinth](https://modrinth.com/mod/mielons-the-sift) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods/mielons-the-sift). Port source based on a [public snapshot hosted by Arta48](https://github.com/Arta48/Mielons-The-Sift). Original creator and other contributors remain credited in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md).
+The original source and contributor attribution appear in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md), and the copyright notice appears in [LICENSE](LICENSE).
