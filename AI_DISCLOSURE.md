@@ -1,10 +1,10 @@
 # AI assistance disclosure
 
-This repository contains an **AI-assisted community port** of Mielon's The Sift from Fabric to NeoForge for Minecraft 26.3.
+This branch contains an **AI-assisted community port** of Mielon's The Sift from Fabric to NeoForge for **Minecraft 26.2**. The Minecraft 26.3 port is maintained on a separate branch.
 
-During this port, OpenAI language models were used extensively to help investigate the released upstream implementation and current Minecraft/NeoForge APIs, propose and edit Java code and mixins, troubleshoot compatibility, prepare test and audit scripts, and draft technical documentation. This includes work on the optional Easy Magic/Charoite compatibility layer and later NeoPack compatibility repairs. The port should therefore **not** be presented as entirely human-written code.
+During the NeoForge adaptations, OpenAI language models were used extensively to help investigate the released upstream implementation and Minecraft/NeoForge APIs, propose and edit Java code and mixins, troubleshoot compatibility, prepare tests and review build results. This includes Minecraft 26.2 world generation, rendering and optional Easy Magic/Charoite compatibility. The port should therefore **not** be presented as entirely human-written code.
 
-Human oversight determined the port target and behavior requirements, guided debugging and reviewed changes. The maintainer ran build/static/runtime checks, and the NeoPack user manually tested and accepted eight targeted gameplay repair categories on the earlier NeoForge 26.3.0.43-beta build. Those results do not constitute an independent code audit or full compatibility guarantee for all modpacks and shaders. See [PORT_STATUS.md](PORT_STATUS.md) for exact scope.
+Human oversight determined the port target, behavior requirements and acceptance criteria. Java 25 builds, static/archive checks, dedicated-server and client startup checks are described in [the Minecraft 26.2 release notes](RELEASE-NOTES-1.1.2.md). The user manually accepted the tested Photon, Complementary and shaderless sky behavior. This does not constitute an independent code audit or guarantee every modpack and shader combination.
 
 **Authorship and attribution:** Mielon is the creator of the original mod. The original mod's work, identity and credits must not be attributed to the AI or to the port maintainer. This repository retains Mielon's 2026 MIT copyright notice and preserves the existing credits for external contributors and assets. Fork changes are separately identified in Git history and the port documentation.
 
