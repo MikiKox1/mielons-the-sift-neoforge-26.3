@@ -3,9 +3,7 @@ name: Build NeoForge port
 on:
   push:
     branches:
-      - main
-      - neoforge-26.3
-      - public/neoforge-26.3
+      - minecraft/26.1.2
   pull_request:
   workflow_dispatch:
 
@@ -28,6 +26,9 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Validate NeoForge build compatibility policy
+        run: python3 tools/tests/neoforge_build_policy_test.py -v
+
       - name: Build production JAR
         run: |
           chmod +x gradlew
@@ -42,5 +43,5 @@ jobs:
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
         with:
-          name: the-sift-neoforge-26.3
+          name: the-sift-neoforge-26.1.2
           path: build/libs/the_sift-*.jar

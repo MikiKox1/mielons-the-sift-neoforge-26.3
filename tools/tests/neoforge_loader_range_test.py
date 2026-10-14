@@ -14,8 +14,8 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MINIMUM_NEOFORGE = "26.3.0.64-beta"
-MINECRAFT_VERSION = "26.3"
+MINIMUM_NEOFORGE = "26.1.2.100"
+MINECRAFT_VERSION = "26.1.2"
 
 
 def production_jar() -> Path:

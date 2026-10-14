@@ -1,22 +1,16 @@
 # Source and credits
 
-## Original mod
+**Original mod:** [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) by **Mielon** — © 2026, MIT License. The original work is also available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/mielons-the-sift).
 
-**Mielon's The Sift**, created by Mielon, is available through:
+**Unofficial NeoForge port:** **MikiKox1**, for Minecraft **26.1.2, 26.2 and 26.3**.
 
-- [Modrinth — Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift)
-- [CurseForge — Mielon's The Sift](https://www.curseforge.com/minecraft/mc-mods/mielons-the-sift)
+**Public source snapshot:** [Arta48/Mielons-The-Sift](https://github.com/Arta48/Mielons-The-Sift).
 
-The original project is distributed under the MIT license. Copyright © 2026 Mielon and the credits for original assets and contributors have been retained.
+## Additional original contributors
 
-## Port source
+- **ImpSteve** — Dark Sniffer texture.
+- **Fuzja Jądrowa** — Rift music disc.
+- **StrawberrySushi_** — Korean localization.
+- **Echo_Dev** — Wellspring remix.
 
-Ported from the publicly available source snapshot at [Arta48/Mielons-The-Sift](https://github.com/Arta48/Mielons-The-Sift), with the source history preserved in Git.
-
-Original mod attribution: **Mielon**. Public source snapshot: **Arta48**. NeoForge adaptation and maintenance: **MikiKox1**.
-
-Adaptation and repair commits are attributed separately in Git. The NeoForge port is an independent community project.
-
-## AI assistance
-
-AI-assisted development, testing and documentation are disclosed in [AI_DISCLOSURE.md](AI_DISCLOSURE.md).
+The port preserves original copyright notices and applicable credits. See [LICENSE](LICENSE) and [AI_DISCLOSURE.md](AI_DISCLOSURE.md). No separate rights beyond those applicable to the original material are claimed.

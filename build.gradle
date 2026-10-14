@@ -94,55 +94,64 @@ dependencies {
     compileOnly "dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:${project.lambdynlights_version}+${project.minecraft_version}"
 }
 
-// Prime 2 invariant: build/test on the latest published NeoForge for this
-// Minecraft line, while keeping the independent, OPEN-ENDED mod dependency
-// range [neo_min_version,) (tested >=26.1.2.100, unbounded above).
-// Keep the compile/test loader pinned for reproducibility and refuse tests
-// if that pin becomes stale. Do not conflate this pin with minimum support.
-// If the metadata endpoint is unreachable, fail closed rather than claim the
-// tested loader is current. This task does not install any application.
+// NeoForge compilation is valid when it matches this Minecraft series and
+// meets the minimum supported loader. A newer Maven release is not required.
 def pinnedNeoForge = project.neo_version.toString()
 def pinnedNeoMinimum = project.neo_min_version.toString()
-def targetMcVersion = project.minecraft_version.toString()
-tasks.register('verifyLatestNeoForge') {
+def targetMinecraft = project.minecraft_version.toString()
+def targetMinecraftRange = project.minecraft_version_range.toString()
+tasks.register('verifyNeoForgeCompatibility') {
     group = 'verification'
-    description = 'Confirm the pinned MC 26.1.2 NeoForge version is still the latest official Maven release.'
+    description = 'Validate target Minecraft series and the minimum supported NeoForge version.'
     inputs.property('neo_version', pinnedNeoForge)
     inputs.property('neo_min_version', pinnedNeoMinimum)
-    inputs.property('minecraft_version', targetMcVersion)
+    inputs.property('minecraft_version', targetMinecraft)
+    inputs.property('minecraft_version_range', targetMinecraftRange)
     doLast {
-        def metadataUrl = 'https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml'
-        def connection = new URI(metadataUrl).toURL().openConnection()
-        connection.setUseCaches(false)
-        connection.setConnectTimeout(15000)
-        connection.setReadTimeout(15000)
-        connection.setRequestProperty('Cache-Control', 'no-cache')
-        def metadata = connection.inputStream.withCloseable { it.getText('UTF-8') }
-        def matcher = metadata =~ /<version>(26\.1\.2\.(\d+)(?:-[^<]+)?)<\/version>/
-        def candidates = []
-        matcher.each { match ->
-            candidates << [version: match[1], build: Integer.parseInt(match[2])]
+        if (targetMinecraftRange != '[' + targetMinecraft + ']') {
+            throw new GradleException('Minecraft version range must be [' +
+                targetMinecraft + '], found ' + targetMinecraftRange)
         }
-        if (candidates.isEmpty()) {
-            throw new GradleException('Cannot verify latest NeoForge 26.1.2 in official Maven metadata; test blocked.')
+
+        def parseNeoForgeVersion = { String version ->
+            def matcher = version =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)(?:-([A-Za-z0-9.-]+))?$/
+            if (!matcher.matches()) {
+                throw new GradleException('Invalid NeoForge version: ' + version)
+            }
+            return [
+                minecraft: matcher.group(1) + '.' + matcher.group(2) + '.' + matcher.group(3),
+                build: matcher.group(4).toInteger(),
+                qualifier: matcher.group(5)
+            ]
         }
-        def latest = candidates.max { a, b ->
-            (a.build <=> b.build) ?: ((a.version.contains('-') ? 0 : 1) <=> (b.version.contains('-') ? 0 : 1))
-        }.version
-        if (pinnedNeoForge != latest) {
-            throw new GradleException(
-                "NeoForge BUILD/TEST pin is outdated. Latest official MC 26.1.2: ${latest}; " +
-                "neo_version=${pinnedNeoForge}. Update only neo_version for testing. " +
-                'Keep independent neo_min_version and the open-ended [minimum,) dependency.'
-            )
+
+        def expectedComponents = targetMinecraft.tokenize('.')
+        if (expectedComponents.size() == 2) {
+            expectedComponents << '0'
         }
-        if (!pinnedNeoMinimum.startsWith('26.1.2.')) {
-            throw new GradleException(
-                "The Sift 26.1.2 provisional minimum must belong to the target MC series, found ${pinnedNeoMinimum}"
-            )
+        if (expectedComponents.size() != 3 ||
+            !expectedComponents.every { it ==~ /\d+/ }) {
+            throw new GradleException('Unsupported Minecraft version: ' + targetMinecraft)
         }
-        logger.lifecycle("Verified latest NeoForge for MC ${targetMcVersion} build/tests: ${latest}; " +
-            "packaged minimum: ${pinnedNeoMinimum}, no upper bound")
+        def expectedSeries = expectedComponents.join('.')
+        def compiled = parseNeoForgeVersion(pinnedNeoForge)
+        def minimum = parseNeoForgeVersion(pinnedNeoMinimum)
+        if (compiled.minecraft != expectedSeries ||
+            minimum.minecraft != expectedSeries) {
+            throw new GradleException('NeoForge compiler ' + pinnedNeoForge +
+                ' and minimum ' + pinnedNeoMinimum +
+                ' must target Minecraft ' + targetMinecraft)
+        }
+        if (compiled.build < minimum.build ||
+            (compiled.build == minimum.build && compiled.qualifier != null &&
+            (minimum.qualifier == null || compiled.qualifier != minimum.qualifier))) {
+            throw new GradleException('NeoForge compiler ' + pinnedNeoForge +
+                ' is below declared supported minimum ' + pinnedNeoMinimum)
+        }
+
+        logger.lifecycle('NeoForge compiler ' + pinnedNeoForge +
+            ' supports Minecraft ' + targetMinecraft + ' at loader minimum ' +
+            pinnedNeoMinimum + ' (without latest-version requirement)')
     }
 }
 
@@ -150,7 +159,7 @@ tasks.matching {
     it.name in ['build', 'check', 'test', 'compileJava', 'compileTestJava', 'runData', 'runServer', 'runClient'] ||
         it.name.startsWith('runGameTest')
 }.configureEach {
-    dependsOn tasks.named('verifyLatestNeoForge')
+    dependsOn tasks.named('verifyNeoForgeCompatibility')
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
