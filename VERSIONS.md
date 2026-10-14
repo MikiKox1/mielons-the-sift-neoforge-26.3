@@ -21,8 +21,8 @@ The two supported Minecraft versions have **different source code, dependencies,
 
 ## Public releases
 
-- **Port 1.1.2 26.3:** tag `v1.1.2-mc26.3-neoforge`; game binary and sources JAR explicitly include `mc26.3` in their names. Notes: [26.3 release changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/docs/releases/port-1.1.2-mc26.3.md).
-- **Port 1.1.2 26.2:** tag `v1.1.2-mc26.2-neoforge`; game binary and sources JAR explicitly include `mc26.2` in their names. Notes: [26.2 release changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.2/docs/releases/port-1.1.2-mc26.2.md).
+- **Port 1.1.2 26.3:** tag `v1.1.2-mc26.3-neoforge`; game binary and sources JAR explicitly include `mc26.3` in their names. Notes: [26.3 release notes](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/RELEASE-NOTES-1.1.2.md).
+- **Port 1.1.2 26.2:** tag `v1.1.2-mc26.2-neoforge`; game binary and sources JAR explicitly include `mc26.2` in their names. Notes: [26.2 release notes](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.2/RELEASE-NOTES-1.1.2.md).
 - **Previous 26.3 Port 1.1.1:** unchanged at [its existing tag](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.1-neoforge.2-community.3-fix.1). Its historical GitHub release and CurseForge File ID 9124779 remain untouched.
 
 GitHub `/releases/latest` is repository-wide, **not version-specific**. For a specific Minecraft version, follow its exact release link above. Each update should list changes relative to the previous public release **on that Minecraft version line**.
