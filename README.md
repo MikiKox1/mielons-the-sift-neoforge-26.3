@@ -24,17 +24,19 @@ Both Minecraft versions have separate builds, source branches and downloads. **C
 | --- | --- | --- |
 | Current release | [Port 1.1.2 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.3-neoforge) | [Port 1.1.2 26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge) |
 | Source branch | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.3) | [`minecraft/26.2`](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.2) |
-| Release notes | [26.3 changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/docs/releases/port-1.1.2-mc26.3.md) | [26.2 changelog](docs/releases/port-1.1.2-mc26.2.md) |
+| Release notes | [26.3 release notes](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/RELEASE-NOTES-1.1.2.md) | [26.2 release notes](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.2/RELEASE-NOTES-1.1.2.md) |
 | NeoForge minimum | 26.3.0.64-beta | 26.2.0.90 |
 | Required GeckoLib | 5.5.7 or compatible 5.x | 5.5.6 or compatible 5.x |
 | Java | 25 | 25 |
 | Optional Easy Magic | 26.3.0 | 26.2.0 |
+| In-world sky tests | Photon, Complementary, shaders off — user confirmed after RenderPass fix | Photon, Complementary, shaders off — user confirmed |
 
 **Shared features:** Ichor regeneration, Dark Sniffer Sonic Sniff, corrected Sift weather, Ancient City portals and Rift return travel, Charoite enchanting, Singer lighting and Sonorous beams. The six-layer animated sky includes improvements for Photon, Complementary and rendering without shaders. Shaderpack ZIP modifications are not required in the tested setups.
 
 **Optional integrations:** Easy Magic (with its own Puzzles Lib dependency), LambDynamicLights, Iris and compatible Sodium. Without Easy Magic, vanilla enchanting remains available. Not every renderer combination is guaranteed.
 
 **Source build:** JDK 25 and `./gradlew build` (or `gradlew.bat build` on Windows). The checked-out Minecraft-version branch determines which build is produced.
+
 ## How to open the Ancient City Portal?
 
 Portal activation requires **Note Blocks placed on Sonorous Deepslate in Note mode**.

@@ -21,14 +21,14 @@ The two supported Minecraft versions have **different source code, dependencies,
 
 ## Public releases
 
-- **Port 1.1.2 26.3:** tag `v1.1.2-mc26.3-neoforge`; game binary and sources JAR explicitly include `mc26.3` in their names. Notes: [26.3 release changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/docs/releases/port-1.1.2-mc26.3.md).
-- **Port 1.1.2 26.2:** tag `v1.1.2-mc26.2-neoforge`; game binary and sources JAR explicitly include `mc26.2` in their names. Notes: [26.2 release changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.2/docs/releases/port-1.1.2-mc26.2.md).
+- **Port 1.1.2 26.3:** tag `v1.1.2-mc26.3-neoforge`; game binary and sources JAR explicitly include `mc26.3` in their names. Notes: [26.3 release notes](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/RELEASE-NOTES-1.1.2.md).
+- **Port 1.1.2 26.2:** tag `v1.1.2-mc26.2-neoforge`; game binary and sources JAR explicitly include `mc26.2` in their names. Notes: [26.2 release notes](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.2/RELEASE-NOTES-1.1.2.md).
 - **Previous 26.3 Port 1.1.1:** unchanged at [its existing tag](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.1-neoforge.2-community.3-fix.1). Its historical GitHub release and CurseForge File ID 9124779 remain untouched.
 
 GitHub `/releases/latest` is repository-wide, **not version-specific**. For a specific Minecraft version, follow its exact release link above. Each update should list changes relative to the previous public release **on that Minecraft version line**.
 
 ## Status, testing and provenance
 
-Minecraft 26.2 sky rendering was accepted by the user with ALPHA4 prior to final release labeling. Minecraft 26.3 received an additional RenderPass texture-preload correction; **in-world Photon/Complementary revalidation after that fix is still pending**. Shaderpack compatibility with every renderer combination is not guaranteed.
+For Minecraft 26.2, the user accepted Photon, Complementary and shaders-disabled sky rendering in-world. For Minecraft 26.3, the user also confirmed those three render paths working after the final RenderPass texture-preload correction. Compatibility with every possible future shader or renderer combination is not guaranteed.
 
 This is an **unofficial** NeoForge port. **Mielon** created the original mod (MIT); the NeoForge port is maintained by **MikiKox1**. Keep [LICENSE](LICENSE), [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) and [AI_DISCLOSURE.md](AI_DISCLOSURE.md). All third-party assets retain their original attribution; do not claim new permissions that were not obtained.
