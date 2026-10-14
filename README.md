@@ -13,7 +13,7 @@ An unofficial NeoForge port of **Mielon's The Sift** for **Minecraft 26.2 and 26
 
 **Java:** 25. **Loader:** NeoForge. **Required:** GeckoLib for the matching Minecraft version. Each Minecraft version has its own source branch ([26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.2) · [26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.3)) and a separate JAR. Do not install both builds or combine this port with the original Fabric mod.
 
-**Complete release history:** [CHANGELOG.md](CHANGELOG.md), ordered from Port 1.1.1 to Port 1.1.2.
+**Release history:** [Minecraft 26.2](CHANGELOG-26.2.md) · [Minecraft 26.3](CHANGELOG-26.3.md). Each changelog shows the newest version first.
 
 ## The Sift dimension
 
