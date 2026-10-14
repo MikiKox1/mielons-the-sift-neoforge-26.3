@@ -25,7 +25,7 @@ public final class SiftIntroClient {
          }
 
          if (!reported) {
-            if (minecraft.gui.screen() == null && !SiftLoadingScreenState.isActive() && hasGroundBelow(minecraft)) {
+            if (minecraft.screen == null && !SiftLoadingScreenState.isActive() && hasGroundBelow(minecraft)) {
                if (++readyTicks >= 20) {
                   reported = true;
                   if (minecraft.getConnection() != null && minecraft.getConnection().hasChannel(SiftIntroReadyPayload.TYPE)) {

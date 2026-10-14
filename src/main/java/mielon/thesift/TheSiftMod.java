@@ -40,7 +40,7 @@ import mielon.thesift.worldgen.SiftFeaturePlacementGuard;
 import mielon.thesift.worldgen.SiftLandmarkTracker;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.SpawnPlacementTypes;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.neoforged.bus.api.IEventBus;
@@ -137,7 +137,7 @@ public final class TheSiftMod {
       // Restrict to solid ground and collision-safe mob spawn rules; avoid
       // NO_RESTRICTIONS, which would allow spawning midair or inside blocks.
       event.register(
-         EntityTypes.SNIFFER, SpawnPlacementTypes.ON_GROUND,
+         EntityType.SNIFFER, SpawnPlacementTypes.ON_GROUND,
          Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules, Operation.REPLACE
       );
       event.register(

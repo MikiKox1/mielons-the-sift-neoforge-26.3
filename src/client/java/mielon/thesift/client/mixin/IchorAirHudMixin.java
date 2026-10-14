@@ -2,7 +2,7 @@ package mielon.thesift.client.mixin;
 
 import mielon.thesift.fluid.ModFluids;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Hud;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-@Mixin(Hud.class)
+@Mixin(Gui.class)
 public abstract class IchorAirHudMixin {
    private static final Identifier VANILLA_AIR = Identifier.withDefaultNamespace("hud/air");
    private static final Identifier VANILLA_BURSTING = Identifier.withDefaultNamespace("hud/air_bursting");

@@ -59,7 +59,7 @@ public final class ClientModEvents {
    private ClientModEvents() {
    }
 
-   // NeoForge 26.2 keeps RenderPipelines.register private. Register every
+   // NeoForge 26.1.2 keeps RenderPipelines.register private. Register every
    // mod-specific Blaze3D pipeline through the official client mod event,
    // including the source's own pipelines which Fabric could register directly.
    @SubscribeEvent

@@ -16,7 +16,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class SingerBarter {
-   private static final Item[] WOOL = Blocks.WOOL.asList().stream().map(block -> block.asItem()).toArray(Item[]::new);
+   // MC26.2 added the Blocks.WOOL grouped collection. Preserve the exact
+   // 16 dye colors on MC26.1.2 instead of reducing the Singer barter pool.
+   private static final Item[] WOOL = new Item[] {
+      Items.WHITE_WOOL, Items.ORANGE_WOOL, Items.MAGENTA_WOOL, Items.LIGHT_BLUE_WOOL,
+      Items.YELLOW_WOOL, Items.LIME_WOOL, Items.PINK_WOOL, Items.GRAY_WOOL,
+      Items.LIGHT_GRAY_WOOL, Items.CYAN_WOOL, Items.PURPLE_WOOL, Items.BLUE_WOOL,
+      Items.BROWN_WOOL, Items.GREEN_WOOL, Items.RED_WOOL, Items.BLACK_WOOL
+   };
 
    private SingerBarter() {
    }

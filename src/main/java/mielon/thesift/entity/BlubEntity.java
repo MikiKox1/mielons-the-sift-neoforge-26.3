@@ -553,7 +553,7 @@ public final class BlubEntity extends TamableAnimal implements GeoEntity {
       }
    }
 
-   private static final class BlubMoveControl extends MoveControl<BlubEntity> {
+   private static final class BlubMoveControl extends MoveControl {
       private double nextJumpSpeed;
 
       private BlubMoveControl(BlubEntity blub) {

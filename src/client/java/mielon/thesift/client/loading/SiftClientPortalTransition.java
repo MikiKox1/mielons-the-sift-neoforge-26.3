@@ -33,14 +33,14 @@ public final class SiftClientPortalTransition {
          }
 
          SiftLoadingScreenState.begin(minecraft.player.level().dimension(), payload.rift());
-         if (!(minecraft.gui.screen() instanceof LevelLoadingScreen) && !(minecraft.gui.screen() instanceof SiftTransitionScreen)) {
-            minecraft.gui.setScreen(new SiftTransitionScreen());
+         if (!(minecraft.screen instanceof LevelLoadingScreen) && !(minecraft.screen instanceof SiftTransitionScreen)) {
+            minecraft.setScreen(new SiftTransitionScreen());
          }
-      } else if (minecraft.gui.screen() instanceof SiftTransitionScreen) {
+      } else if (minecraft.screen instanceof SiftTransitionScreen) {
          awaitingServer = false;
          SiftLoadingScreenState.clear();
-         minecraft.gui.setScreen(null);
-      } else if (!(minecraft.gui.screen() instanceof LevelLoadingScreen)) {
+         minecraft.setScreen(null);
+      } else if (!(minecraft.screen instanceof LevelLoadingScreen)) {
          SiftLoadingScreenState.clear();
       }
    }
@@ -50,7 +50,7 @@ public final class SiftClientPortalTransition {
       checkPortalContact(minecraft);
       SiftIntroClient.tick();
       if (SiftLoadingScreenState.isActive()) {
-         Screen screen = minecraft.gui.screen();
+         Screen screen = minecraft.screen;
          if (!(screen instanceof SiftTransitionScreen) && !(screen instanceof LevelLoadingScreen)) {
             SiftLoadingScreenState.clear();
          } else if (SiftLoadingScreenState.isOlderThanSeconds(35.0)) {
@@ -79,23 +79,23 @@ public final class SiftClientPortalTransition {
                contactLatched = false;
             }
 
-            if (awaitingServer && System.nanoTime() - contactStartedAtNanos > 2000000000L && minecraft.gui.screen() instanceof SiftTransitionScreen) {
+            if (awaitingServer && System.nanoTime() - contactStartedAtNanos > 2000000000L && minecraft.screen instanceof SiftTransitionScreen) {
                awaitingServer = false;
                SiftLoadingScreenState.clear();
-               minecraft.gui.setScreen(null);
+               minecraft.setScreen(null);
             }
 
-            if (touching && !contactLatched && minecraft.gui.screen() == null && !SiftLoadingScreenState.isActive()) {
+            if (touching && !contactLatched && minecraft.screen == null && !SiftLoadingScreenState.isActive()) {
                contactLatched = true;
                awaitingServer = true;
                contactStartedAtNanos = System.nanoTime();
                SiftLoadingScreenState.begin(dimension, false);
-               minecraft.gui.setScreen(new SiftTransitionScreen());
+               minecraft.setScreen(new SiftTransitionScreen());
             }
          } else {
             if (touching
                || !minecraft.level.hasChunkAt(minecraft.player.blockPosition())
-               || minecraft.gui.screen() != null
+               || minecraft.screen != null
                || SiftLoadingScreenState.isActive()) {
                clearContactTicks = 0;
             } else if (++clearContactTicks >= 5) {

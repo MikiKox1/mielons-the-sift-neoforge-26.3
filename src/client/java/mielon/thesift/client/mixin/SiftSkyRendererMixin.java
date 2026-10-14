@@ -1,6 +1,5 @@
 package mielon.thesift.client.mixin;
 
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem.AutoStorageIndexBuffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mielon.thesift.client.render.SiftProceduralSkyRenderer;
@@ -20,9 +19,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SiftSkyRendererMixin {
    @Shadow
    @Final
-   private RenderTarget renderTarget;
-   @Shadow
-   @Final
    private AutoStorageIndexBuffer quadIndices;
 
    @Inject(method = "renderSunMoonAndStars", at = @At("HEAD"), cancellable = true)
@@ -31,7 +27,9 @@ public abstract class SiftSkyRendererMixin {
    ) {
       ClientLevel level = Minecraft.getInstance().level;
       if (level != null && level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
-         SiftProceduralSkyRenderer.render(poseStack, level, this.renderTarget, this.quadIndices);
+         // MC26.1.2 SkyRenderer does not own a RenderTarget field. Vanilla
+         // draws against the Minecraft main target directly in every sky pass.
+         SiftProceduralSkyRenderer.render(poseStack, level, Minecraft.getInstance().getMainRenderTarget(), this.quadIndices);
          ci.cancel();
       }
    }

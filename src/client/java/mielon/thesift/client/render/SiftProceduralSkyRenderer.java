@@ -1,6 +1,5 @@
 package mielon.thesift.client.render;
 
-import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
@@ -12,25 +11,29 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.RenderSystem.AutoStorageIndexBuffer;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalDouble;
 import mielon.thesift.TheSiftMod;
 import mielon.thesift.client.compat.SiftShaderCompat;
 import mielon.thesift.world.SiftDayNightCycle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 public final class SiftProceduralSkyRenderer {
@@ -80,23 +83,23 @@ public final class SiftProceduralSkyRenderer {
          .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/procedural_sky_textured_alpha2"))
          .withVertexShader("core/position_tex")
          .withFragmentShader("core/position_tex")
-         .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-         .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+         .withSampler("Sampler0")
+         .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS)
          .withCull(false)
          .build();
    // In Photon, an unmapped native sky pass *before* Iris final composition
    // (ALPHA3) was overwritten and invisible. ALPHA4 draws the same six baked
    // UV textures AFTER Iris final composition, exclusively where the main
-   // depth buffer is still clear (reversed-Z depth == 0). This should preserve
-   // nearby terrain and Photon volumetric clouds. The backend retains depth
-   // from the world according to Iris FinalPassRenderer.
+   // depth buffer is at the clear far value (MC26.1.2 forward-Z depth == 1).
+   // Nearby terrain and Photon clouds must remain visible; actual Iris final
+   // pass depth compatibility is subject to in-world visual acceptance.
    private static final RenderPipeline PHOTON_POST_FINAL_SKY_PIPELINE =
       RenderPipeline.builder(new Snippet[]{RenderPipelines.DEBUG_FILLED_SNIPPET})
          .withLocation(Identifier.fromNamespaceAndPath("the_sift", "pipeline/photon_post_final_sky_alpha4"))
          .withVertexShader(Identifier.fromNamespaceAndPath("the_sift", "core/photon_sky_overlay"))
          .withFragmentShader(Identifier.fromNamespaceAndPath("the_sift", "core/photon_sky_overlay"))
-         .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-         .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+         .withSampler("Sampler0")
+         .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS)
          .withDepthStencilState(new DepthStencilState(CompareOp.EQUAL, false))
          .withCull(false)
          .build();
@@ -127,9 +130,9 @@ public final class SiftProceduralSkyRenderer {
       event.registerPipeline(PHOTON_POST_FINAL_SKY_PIPELINE);
    }
 
-   // MC26.2 SkyRenderer owns its RenderTarget and creates an independent
-   // Blaze3D RenderPass. MC26.3 passed a RenderPearl pass from the caller.
-   // Preserve the Port 1.1.2 dual-density shader mesh and color corrections.
+   // MC26.1.2 SkyRenderer renders directly to Minecraft.getMainRenderTarget().
+   // This path owns its own legacy Blaze3D RenderPass and preserves the six
+   // accepted 1.1.2 sky textures, animations and color corrections.
    public static void render(PoseStack poseStack, ClientLevel level, RenderTarget renderTarget, AutoStorageIndexBuffer quadIndices) {
       if (SiftShaderCompat.isShaderPackInUse() && SiftShaderCompat.isPhotonShaderPackSelected()) {
          // The Iris final pass overwrites direct native draws made during
@@ -167,7 +170,7 @@ public final class SiftProceduralSkyRenderer {
       modelView.set(PHOTON_SKY_MODELVIEW);
       try {
          renderActual(
-            pose, level, Minecraft.getInstance().gameRenderer.mainRenderTarget(),
+            pose, level, Minecraft.getInstance().getMainRenderTarget(),
             photonSkyQuadIndices, true
          );
       } finally {
@@ -186,7 +189,7 @@ public final class SiftProceduralSkyRenderer {
       if (renderPath != lastSkyRenderPath) {
          lastSkyRenderPath = renderPath;
          TheSiftMod.LOGGER.info(
-            "The Sift MC26.2 active sky render path: {}",
+            "The Sift MC26.1.2 active sky render path: {}",
             renderPath == 0 ? "vanilla POSITION_COLOR"
                : (renderPath == 4 ? "Photon post-final depth-masked UV sky" : "Iris TEXTURED sky")
          );
@@ -210,12 +213,26 @@ public final class SiftProceduralSkyRenderer {
          transform(poseStack, -time * 0.00205F, (float)Math.sin(time * 0.0065F + 1.8F) * 0.016F, weather, day * 0.78F),
          transform(poseStack, -time * 0.00205F, (float)Math.sin(time * 0.0065F + 1.8F) * 0.016F, weather, night * 0.82F)
       };
-      int indexCount = PrimitiveTopology.QUADS.indexCount(shadersActive ? SHADER_VERTEX_COUNT : VERTEX_COUNT);
+      int indexCount = VertexFormat.Mode.QUADS.indexCount(shadersActive ? SHADER_VERTEX_COUNT : VERTEX_COUNT);
       GpuBuffer indexBuffer = quadIndices.getBuffer(indexCount);
+      // MC26.1.2 still owns GPU textures through TextureManager. Resolve all
+      // six texture views and the sampler BEFORE opening the render pass.
+      // A lazy texture upload from getTexture() inside a pass may disrupt the
+      // active backend's state (particularly on a shaderpack reload).
+      GpuTextureView[] textureViews = null;
+      GpuSampler skySampler = null;
+      if (shadersActive) {
+         textureViews = new GpuTextureView[SKY_TEXTURES.length];
+         for (int i = 0; i < SKY_TEXTURES.length; i++) {
+            AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(SKY_TEXTURES[i]);
+            textureViews[i] = texture.getTextureView();
+         }
+         skySampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+      }
       try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
          () -> "The Sift procedural sky",
          renderTarget.getColorTextureView(),
-         Optional.empty(),
+         OptionalInt.empty(),
          renderTarget.getDepthTextureView(),
          OptionalDouble.empty()
       )) {
@@ -230,19 +247,14 @@ public final class SiftProceduralSkyRenderer {
             if (!(alpha <= 0.001F)) {
                pass.setUniform("DynamicTransforms", transforms[layer]);
                if (shadersActive) {
-                  // SimpleTexture is owned and reloaded by TextureManager.
-                  // No image uploads, VRAM allocations or gradient computation
-                  // take place per frame in this code path.
-                  AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(SKY_TEXTURES[layer]);
-                  pass.bindTexture(
-                     "Sampler0", texture.getTextureView(),
-                     RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
-                  );
-                  pass.setVertexBuffer(0, TEXTURED_DOME_BUFFER.slice());
+                  // The active pass only binds prepared resources. TextureManager
+                  // can safely supply fresh views on every resource reload.
+                  pass.bindTexture("Sampler0", textureViews[layer], skySampler);
+                  pass.setVertexBuffer(0, TEXTURED_DOME_BUFFER);
                } else {
-                  pass.setVertexBuffer(0, buffers[layer].slice());
+                  pass.setVertexBuffer(0, buffers[layer]);
                }
-               pass.drawIndexed(indexCount, 1, 0, 0, 0);
+               pass.drawIndexed(0, 0, indexCount, 1);
             }
          }
       }
@@ -288,7 +300,7 @@ public final class SiftProceduralSkyRenderer {
       // geometry. The six independent layers share a single UV mesh.
       int byteCount = SHADER_VERTEX_COUNT * DefaultVertexFormat.POSITION_TEX.getVertexSize();
       try (ByteBufferBuilder bytes = ByteBufferBuilder.exactlySized(byteCount)) {
-         BufferBuilder builder = new BufferBuilder(bytes, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
+         BufferBuilder builder = new BufferBuilder(bytes, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
          for (int y = 0; y < ELEVATION_SEGMENTS; y++) {
             int subdivisions = shaderElevationSubdivisions(y);
             for (int sub = 0; sub < subdivisions; sub++) {
@@ -343,7 +355,7 @@ public final class SiftProceduralSkyRenderer {
 
       GpuBuffer var16;
       try {
-         BufferBuilder builder = new BufferBuilder(bytes, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+         BufferBuilder builder = new BufferBuilder(bytes, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
          for (int y = 0; y < ELEVATION_SEGMENTS; y++) {
             int azimuth = shaderMesh ? SHADER_AZIMUTH_SEGMENTS : AZIMUTH_SEGMENTS;
@@ -499,7 +511,8 @@ public final class SiftProceduralSkyRenderer {
       modelView.rotateY(yaw);
       modelView.rotateZ(roll);
       GpuBufferSlice result = RenderSystem.getDynamicUniforms()
-         .writeTransform(new Matrix4f(modelView), new Vector4f(brightness, brightness, brightness, alpha));
+         .writeTransform(new Matrix4f(modelView), new Vector4f(brightness, brightness, brightness, alpha),
+            new Vector3f(), new Matrix4f());
       modelView.popMatrix();
       return result;
    }

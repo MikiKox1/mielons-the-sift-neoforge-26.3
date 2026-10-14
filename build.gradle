@@ -35,7 +35,7 @@ repositories {
         }
     }
 
-    // LambDynamicLights API is optional at runtime; 26.2 requires own target ABI.
+    // LambDynamicLights API is optional at runtime; 26.1.2 requires its own target ABI.
     maven {
         name = 'Gegy'
         url = uri('https://maven.gegy.dev')
@@ -45,19 +45,26 @@ repositories {
 neoForge {
     version = project.neo_version
 
+    // Select a fresh disposable server directory for isolated compatibility
+    // tests without touching or unlocking a previous test world's session.lock.
+    def qaServerLabel = providers.gradleProperty('qaServerLabel').getOrElse('test')
+    if (!(qaServerLabel ==~ /[a-z0-9][a-z0-9-]{0,30}/)) {
+        throw new GradleException('Invalid isolated QA server label')
+    }
+
     runs {
         client {
             client()
             // Standalone Prime 2 stage smoke; never the user's Modrinth profile.
             // A new loader release must never reuse a previous test world's directory.
-            gameDirectory = project.file("run/client-${project.neo_version}-release-1.1.2")
+            gameDirectory = project.file("run/client-${project.neo_version}-port-2612-test")
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             // Must remain separate from the client and all player saves.
-            gameDirectory = project.file("run/server-${project.neo_version}-release-1.1.2")
+            gameDirectory = project.file("run/server-${project.neo_version}-port-2612-${qaServerLabel}")
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
@@ -80,16 +87,16 @@ configurations {
 }
 
 dependencies {
-    implementation "com.geckolib:geckolib-neoforge-26.2:${project.geckolib_version}"
+    implementation "com.geckolib:geckolib-neoforge-26.1.2:${project.geckolib_version}"
     // GeckoLib's runtime client mixins add GeoRenderState to vanilla render states.
     // Consume its published sidecar so ModDevGradle exposes the same interface at compile time.
-    interfaceInjectionData "com.geckolib:geckolib-neoforge-26.2:${project.geckolib_version}"
+    interfaceInjectionData "com.geckolib:geckolib-neoforge-26.1.2:${project.geckolib_version}"
     compileOnly "dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:${project.lambdynlights_version}+${project.minecraft_version}"
 }
 
 // Prime 2 invariant: build/test on the latest published NeoForge for this
 // Minecraft line, while keeping the independent, OPEN-ENDED mod dependency
-// range [neo_min_version,) (provisionally >=26.2.0.90).
+// range [neo_min_version,) (provisionally >=26.1.2.117).
 // Keep the compile/test loader pinned for reproducibility and refuse tests
 // if that pin becomes stale. Do not conflate this pin with minimum support.
 // If the metadata endpoint is unreachable, fail closed rather than claim the
@@ -99,7 +106,7 @@ def pinnedNeoMinimum = project.neo_min_version.toString()
 def targetMcVersion = project.minecraft_version.toString()
 tasks.register('verifyLatestNeoForge') {
     group = 'verification'
-    description = 'Confirm the pinned MC 26.2 NeoForge version is still the latest official Maven release.'
+    description = 'Confirm the pinned MC 26.1.2 NeoForge version is still the latest official Maven release.'
     inputs.property('neo_version', pinnedNeoForge)
     inputs.property('neo_min_version', pinnedNeoMinimum)
     inputs.property('minecraft_version', targetMcVersion)
@@ -111,27 +118,27 @@ tasks.register('verifyLatestNeoForge') {
         connection.setReadTimeout(15000)
         connection.setRequestProperty('Cache-Control', 'no-cache')
         def metadata = connection.inputStream.withCloseable { it.getText('UTF-8') }
-        def matcher = metadata =~ /<version>(26\.2\.0\.(\d+)(?:-[^<]+)?)<\/version>/
+        def matcher = metadata =~ /<version>(26\.1\.2\.(\d+)(?:-[^<]+)?)<\/version>/
         def candidates = []
         matcher.each { match ->
             candidates << [version: match[1], build: Integer.parseInt(match[2])]
         }
         if (candidates.isEmpty()) {
-            throw new GradleException('Cannot verify latest NeoForge 26.2 in official Maven metadata; test blocked.')
+            throw new GradleException('Cannot verify latest NeoForge 26.1.2 in official Maven metadata; test blocked.')
         }
         def latest = candidates.max { a, b ->
             (a.build <=> b.build) ?: ((a.version.contains('-') ? 0 : 1) <=> (b.version.contains('-') ? 0 : 1))
         }.version
         if (pinnedNeoForge != latest) {
             throw new GradleException(
-                "NeoForge BUILD/TEST pin is outdated. Latest official MC 26.2: ${latest}; " +
+                "NeoForge BUILD/TEST pin is outdated. Latest official MC 26.1.2: ${latest}; " +
                 "neo_version=${pinnedNeoForge}. Update only neo_version for testing. " +
                 'Keep independent neo_min_version and the open-ended [minimum,) dependency.'
             )
         }
-        if (!pinnedNeoMinimum.startsWith('26.2.0.')) {
+        if (!pinnedNeoMinimum.startsWith('26.1.2.')) {
             throw new GradleException(
-                "The Sift 26.2 provisional minimum must belong to the target MC series, found ${pinnedNeoMinimum}"
+                "The Sift 26.1.2 provisional minimum must belong to the target MC series, found ${pinnedNeoMinimum}"
             )
         }
         logger.lifecycle("Verified latest NeoForge for MC ${targetMcVersion} build/tests: ${latest}; " +

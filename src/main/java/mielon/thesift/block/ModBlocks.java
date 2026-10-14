@@ -41,7 +41,7 @@ import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.WallHangingSignBlock;
 import net.minecraft.world.level.block.WallSignBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.entity.BlockEntityTypes;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
@@ -488,9 +488,9 @@ public class ModBlocks {
    }
 
    public static void addVanillaBlockEntityBlocks(BlockEntityTypeAddBlocksEvent event) {
-      event.modify(BlockEntityTypes.SIGN, OVERGROWN_WILLOW_SIGN, OVERGROWN_WILLOW_WALL_SIGN);
-      event.modify(BlockEntityTypes.HANGING_SIGN, OVERGROWN_WILLOW_HANGING_SIGN, OVERGROWN_WILLOW_WALL_HANGING_SIGN);
-      event.modify(BlockEntityTypes.SHELF, OVERGROWN_WILLOW_SHELF);
+      event.modify(BlockEntityType.SIGN, OVERGROWN_WILLOW_SIGN, OVERGROWN_WILLOW_WALL_SIGN);
+      event.modify(BlockEntityType.HANGING_SIGN, OVERGROWN_WILLOW_HANGING_SIGN, OVERGROWN_WILLOW_WALL_HANGING_SIGN);
+      event.modify(BlockEntityType.SHELF, OVERGROWN_WILLOW_SHELF);
    }
 
    public static void bootstrap() {

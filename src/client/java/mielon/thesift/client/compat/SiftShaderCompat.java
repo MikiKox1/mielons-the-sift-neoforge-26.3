@@ -53,7 +53,7 @@ public final class SiftShaderCompat {
                   try {
                      Object name = currentPackName.invoke(null);
                      TheSiftMod.LOGGER.info(
-                        "The Sift MC26.2 loaded Iris pack '{}'; Photon-specific sky compositing: {}",
+                        "The Sift MC26.1.2 loaded Iris pack '{}'; Photon-specific sky compositing: {}",
                         name, isPhotonShaderPackSelected()
                      );
                   } catch (ReflectiveOperationException ignored) {

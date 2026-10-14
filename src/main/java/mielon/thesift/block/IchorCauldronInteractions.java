@@ -5,6 +5,7 @@ import mielon.thesift.fluid.ModFluids;
 import mielon.thesift.item.IchorBottleItem;
 import mielon.thesift.item.ModItems;
 import mielon.thesift.mixin.CauldronDispatcherAccessor;
+import mielon.thesift.mixin.CauldronInteractionsInvoker;
 import mielon.thesift.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.cauldron.CauldronInteraction;
@@ -34,7 +35,9 @@ final class IchorCauldronInteractions {
       if (!registered) {
          registered = true;
          Dispatcher ichor = IchorCauldronBlock.INTERACTIONS;
-         CauldronInteractions.addDefaultInteractions(ichor);
+         // MC26.1.2 keeps this vanilla helper package-private; preserve its exact three
+         // bucket handlers via a targeted invoker rather than approximating interactions.
+         CauldronInteractionsInvoker.theSift$addDefaultInteractions(ichor);
          itemInteractions(CauldronInteractions.EMPTY)
             .put(
                ModFluids.ICHOR_BUCKET,

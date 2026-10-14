@@ -1,6 +1,5 @@
 package mielon.thesift.client.render;
 
-import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
@@ -8,8 +7,9 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import mielon.thesift.client.compat.SiftShaderCompat;
-import net.minecraft.client.renderer.BindGroupLayouts;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
@@ -17,28 +17,24 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
 public final class SonorousBeamRenderTypes {
    private static final Identifier BEAM_TEXTURE = id("textures/block/sonorous_deepslate_beam.png");
-   private static final RenderPipeline BEAM_PIPELINE = RenderPipeline.builder(new Snippet[0])
+   private static final RenderPipeline BEAM_PIPELINE = RenderPipeline.builder(
+      RenderPipelines.MATRICES_PROJECTION_SNIPPET, RenderPipelines.GLOBALS_SNIPPET)
       .withLocation(id("pipeline/sonorous_beam_depth"))
       .withVertexShader(id("core/sonorous_beam"))
       .withFragmentShader(id("core/sonorous_beam"))
-      .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-      .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
-      .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-      .withVertexBinding(0, DefaultVertexFormat.BLOCK)
-      .withPrimitiveTopology(PrimitiveTopology.QUADS)
+      .withSampler("Sampler0")
+      .withVertexFormat(DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS)
       .withDepthStencilState(new DepthStencilState(DepthStencilState.DEFAULT.depthTest(), true))
       .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
       .withCull(false)
       .build();
-   private static final RenderPipeline WATER_OVERLAY_PIPELINE = RenderPipeline.builder(new Snippet[0])
+   private static final RenderPipeline WATER_OVERLAY_PIPELINE = RenderPipeline.builder(
+      RenderPipelines.MATRICES_PROJECTION_SNIPPET, RenderPipelines.GLOBALS_SNIPPET)
       .withLocation(id("pipeline/sonorous_beam_water_overlay"))
       .withVertexShader(id("core/sonorous_beam"))
       .withFragmentShader(id("core/sonorous_beam"))
-      .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-      .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
-      .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-      .withVertexBinding(0, DefaultVertexFormat.BLOCK)
-      .withPrimitiveTopology(PrimitiveTopology.QUADS)
+      .withSampler("Sampler0")
+      .withVertexFormat(DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS)
       .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
       .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
       .withCull(false)

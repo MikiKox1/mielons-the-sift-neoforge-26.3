@@ -13,6 +13,7 @@
     "SnifferStateAccess",
     "IchorWaterloggedPickupMixin",
     "CauldronDispatcherAccessor",
+    "CauldronInteractionsInvoker",
     "EmptyCauldronIchorMixin",
     "PointedDripstoneIchorMixin",
     "PointedDripstoneInvoker",

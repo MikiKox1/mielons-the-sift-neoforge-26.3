@@ -5,3 +5,6 @@ run-data/
 /logs/
 .idea/
 *.iml
+tools/tests/__pycache__/
+tools/tests/_qa_vendor/
+tools/__pycache__/

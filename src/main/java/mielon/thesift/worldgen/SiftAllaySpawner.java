@@ -6,7 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.phys.AABB;
@@ -85,7 +85,7 @@ public final class SiftAllaySpawner {
          }
 
          if (feet != null) {
-            Allay allay = (Allay)EntityTypes.ALLAY.create(level, EntitySpawnReason.NATURAL);
+            Allay allay = (Allay)EntityType.ALLAY.create(level, EntitySpawnReason.NATURAL);
             if (allay != null) {
                allay.snapTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5, level.getRandom().nextFloat() * 360.0F, 0.0F);
                if (level.noCollision(allay) && level.addFreshEntity(allay)) {

@@ -10,7 +10,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.sniffer.Sniffer;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.material.Fluid;
@@ -109,7 +109,7 @@ public final class SiftDeferredSnifferSpawner {
          BlockPos pos = BlockPos.of(nest[(start + offset) % nest.length]).above();
          if (level.isEmptyBlock(pos) && level.isEmptyBlock(pos.above()) && !isIchor(level, pos) && !isIchor(level, pos.below())) {
             EntitySpawnReason reason = request.dark() ? EntitySpawnReason.CHUNK_GENERATION : EntitySpawnReason.STRUCTURE;
-            Sniffer sniffer = request.dark() ? (Sniffer)ModEntities.DARK_SNIFFER.create(level, reason) : (Sniffer)EntityTypes.SNIFFER.create(level, reason);
+            Sniffer sniffer = request.dark() ? (Sniffer)ModEntities.DARK_SNIFFER.create(level, reason) : (Sniffer)EntityType.SNIFFER.create(level, reason);
             if (sniffer == null) {
                return true;
             }

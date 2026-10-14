@@ -30,8 +30,8 @@ public final class SiftTransitionScreen extends Screen {
    public void tick() {
       if (!SiftLoadingScreenState.isActive() || System.nanoTime() - this.createdAtNanos > 30000000000L) {
          SiftLoadingScreenState.clear();
-         if (this.minecraft.gui.screen() == this) {
-            this.minecraft.gui.setScreen(null);
+         if (this.minecraft.screen == this) {
+            this.minecraft.setScreen(null);
          }
       }
    }
