@@ -1,5 +1,6 @@
 package mielon.thesift.advancement;
 
+import java.util.Map;
 import mielon.thesift.block.ModBlocks;
 import mielon.thesift.entity.BlubEntity;
 import mielon.thesift.entity.DarkSnifferEntity;
@@ -9,13 +10,17 @@ import mielon.thesift.platform.NeoEvents.PlayerBlockBreakEvents;
 import mielon.thesift.platform.NeoEvents.PlayerBlockBreakEvents.After;
 import mielon.thesift.platform.NeoEvents.ServerLivingEntityEvents;
 import mielon.thesift.platform.NeoEvents.ServerLivingEntityEvents.AfterDeath;
+import mielon.thesift.platform.NeoEvents.ServerTickEvents;
+import mielon.thesift.platform.NeoEvents.ServerTickEvents.EndTick;
 import mielon.thesift.platform.NeoEvents.UseBlockCallback;
 import mielon.thesift.world.RiftDirectory;
 import mielon.thesift.world.TheSiftDimension;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -26,11 +31,29 @@ import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class ModAdvancements {
    public static final String SONG_OF_THE_PAST = "story/song_of_the_past";
+   public static final String FALLEN_CIVILIZATION = "story/fallen_civilization";
+   public static final String CERTIFIED_SIFTER = "the_sift/certified_sifter";
+   // The original NeoForge 1.21.1 The Sift 1.1.2 awards each visited Sift
+   // biome using a server tick hook and impossible criteria. Preserve that
+   // logic instead of depending on unvalidated JSON location predicates.
+   private static final Map<Identifier, String> CERTIFIED_SIFTER_BIOMES = Map.ofEntries(
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "sift_wastes"), "sift_wastes"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "sift_deep_dark"), "sift_deep_dark"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "ichor_snowy_peaks"), "ichor_snowy_peaks"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "siftslate_slopes"), "siftslate_slopes"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "siftslate_peaks"), "siftslate_peaks"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "overgrown_slopes"), "overgrown_slopes"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "overgrown_peaks"), "overgrown_peaks"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "overgrown_forest_slopes"), "overgrown_forest_slopes"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "overgrown_forest"), "overgrown_forest"),
+      Map.entry(Identifier.fromNamespaceAndPath("the_sift", "overgrown_clearing"), "overgrown_clearing")
+   );
    public static final String SPICEWOOD = "the_sift/spicewood";
    public static final String LIKE_FATHER_AND_SON = "the_sift/like_father_and_son";
    public static final String PITCH_PERFECT = "the_sift/pitch_perfect";
@@ -53,6 +76,7 @@ public final class ModAdvancements {
    public static void register() {
       if (!registered) {
          registered = true;
+         ServerTickEvents.END_SERVER_TICK.register((EndTick)ModAdvancements::tickLocationAdvancements);
          UseBlockCallback.EVENT
             .register(
                (UseBlockCallback)(player, level, hand, hit) -> {
@@ -110,6 +134,44 @@ public final class ModAdvancements {
                   }
                }
             );
+      }
+   }
+
+   private static void tickLocationAdvancements(MinecraftServer server) {
+      // Match original upstream's every-16-ticks check, not every frame.
+      if ((server.getTickCount() & 15) != 0) {
+         return;
+      }
+      for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+         updateLocationAdvancements(player);
+      }
+   }
+
+   private static void updateLocationAdvancements(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level) || player.isSpectator()) {
+         return;
+      }
+      level.registryAccess().lookupOrThrow(Registries.STRUCTURE)
+         .get(BuiltinStructures.ANCIENT_CITY)
+         .ifPresent(ancientCity -> {
+            if (level.structureManager().getStructureWithPieceAt(player.blockPosition(), ancientCity.value()).isValid()) {
+               awardCriterion(player, FALLEN_CIVILIZATION, "ancient_city");
+            }
+         });
+      if (level.dimension().equals(TheSiftDimension.LEVEL_KEY)) {
+         level.getBiome(player.blockPosition()).unwrapKey().ifPresent(biomeKey -> {
+            String criterion = CERTIFIED_SIFTER_BIOMES.get(biomeKey.identifier());
+            if (criterion != null) {
+               awardCriterion(player, CERTIFIED_SIFTER, criterion);
+            }
+         });
+      }
+   }
+
+   private static void awardCriterion(ServerPlayer player, String path, String criterion) {
+      AdvancementHolder advancement = player.level().getServer().getAdvancements().get(Identifier.fromNamespaceAndPath("the_sift", path));
+      if (advancement != null) {
+         player.getAdvancements().award(advancement, criterion);
       }
    }
 

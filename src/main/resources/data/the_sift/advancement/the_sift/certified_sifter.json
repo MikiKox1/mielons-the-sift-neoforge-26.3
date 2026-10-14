@@ -14,164 +14,34 @@
   },
   "criteria": {
     "sift_wastes": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:sift_wastes"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "sift_deep_dark": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:sift_deep_dark"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "ichor_snowy_peaks": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:ichor_snowy_peaks"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "siftslate_slopes": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:siftslate_slopes"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "siftslate_peaks": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:siftslate_peaks"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "overgrown_slopes": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:overgrown_slopes"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "overgrown_peaks": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:overgrown_peaks"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "overgrown_forest_slopes": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:overgrown_forest_slopes"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "overgrown_forest": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:overgrown_forest"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     },
     "overgrown_clearing": {
-      "trigger": "minecraft:location",
-      "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:location": {
-                "biomes": "the_sift:overgrown_clearing"
-              }
-            }
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
