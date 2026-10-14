@@ -65,4 +65,4 @@ Community Preview 1 (`1.1.1-neoforge.2-community.1`) passed `gradlew clean build
 
 **Save-data limitation:** a legacy world that has already lost its original Ancient City return coordinates cannot retroactively recover the lost coordinates. The safe main-exit fallback prevents generating an unrelated Rift.
 
-Additional records: [porting history](PORTING.md), [sources and credits](SOURCE_PROVENANCE.md), [optional Easy Magic integration](EASY_MAGIC_COMPAT.md), and [AI assistance disclosure](AI_DISCLOSURE.md).
+Additional records: [sources and credits](SOURCE_PROVENANCE.md), [optional Easy Magic integration](EASY_MAGIC_COMPAT.md), and [AI assistance disclosure](AI_DISCLOSURE.md).

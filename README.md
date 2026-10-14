@@ -16,21 +16,25 @@
 
 **Each Minecraft version has a separate source branch and release artifacts. Do not use a JAR built for one Minecraft version on another.** See [version support and branch policy](VERSIONS.md).
 
-## NeoForge port — Minecraft 26.2
+## NeoForge releases — Minecraft 26.3 and 26.2
 
-- **Current 26.2 release:** **Port 1.1.2 26.2** — [GitHub release](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge), [changelog](docs/releases/port-1.1.2-mc26.2.md). The older 26.3 Port 1.1.1 remains available separately.
-- **Minecraft:** 26.2; **NeoForge:** 26.2.0.90 or newer (tested on .90); **Java:** 25. No upper loader bound is declared; future compatibility is not guaranteed without testing.
-- **Required:** GeckoLib 5.5.6 or a compatible 5.x version. No Fabric Loader or Fabric API is required.
-- **Optional integration:** [Easy Magic 26.2.0](EASY_MAGIC_COMPAT.md) (with its own required Puzzles Lib dependency). Charoite works with Easy Magic's enchanting menu, its +20 level surcharge, improved enchantments, advancements and anvil restrictions. Without Easy Magic, the standard enchantment table remains supported.
-- **Optional visuals:** LambDynamicLights and compatible Iris/Sodium integrations. Shaderless, Complementary and Photon sky rendering were addressed in Port 1.1.2; not every renderer combination has been tested.
-- Existing worlds retain the original `the_sift` mod ID; back up worlds before changing from another build of the mod.
+Both Minecraft versions have separate builds, source branches and downloads. **Choose the JAR matching the installed Minecraft version.** The original `the_sift` mod ID is preserved; back up existing worlds before upgrading.
 
-The NeoForge port includes fixes to Ichor fluid behavior, Ancient City / Rift return routes, Charoite enchanting, Singer lighting, Sift plant water removal, Sonorous beam visibility and Echo Golem audio. See [PORT_STATUS.md](PORT_STATUS.md) for the exact validation scope. The gameplay descriptions below are adapted from the original project.
+| | **Minecraft 26.3** | **Minecraft 26.2** |
+| --- | --- | --- |
+| Current release | [Port 1.1.2 26.3](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.3-neoforge) | [Port 1.1.2 26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge) |
+| Source branch | [`minecraft/26.3`](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.3) | [`minecraft/26.2`](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/tree/minecraft/26.2) |
+| Release notes | [26.3 changelog](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/blob/minecraft/26.3/docs/releases/port-1.1.2-mc26.3.md) | [26.2 changelog](docs/releases/port-1.1.2-mc26.2.md) |
+| NeoForge minimum | 26.3.0.64-beta | 26.2.0.90 |
+| Required GeckoLib | 5.5.7 or compatible 5.x | 5.5.6 or compatible 5.x |
+| Java | 25 | 25 |
+| Optional Easy Magic | 26.3.0 | 26.2.0 |
 
-**Versioning:** Public titles include their Minecraft target, e.g. `Port 1.1.2 26.3` and `Port 1.1.2 26.2`. Branches, tags and assets remain separate for each Minecraft version. Later changelogs describe only changes since the preceding public release within the same Minecraft version line. This is an unofficial port, not an original Mielon release.
+**Shared features:** Ichor regeneration, Dark Sniffer Sonic Sniff, corrected Sift weather, Ancient City portals and Rift return travel, Charoite enchanting, Singer lighting and Sonorous beams. The six-layer animated sky includes improvements for Photon, Complementary and rendering without shaders. Shaderpack ZIP modifications are not required in the tested setups.
 
-**Source build:** Requires JDK 25; run `./gradlew build` (or `gradlew.bat build` on Windows). Easy Magic is optional.
+**Optional integrations:** Easy Magic (with its own Puzzles Lib dependency), LambDynamicLights, Iris and compatible Sodium. Without Easy Magic, vanilla enchanting remains available. Not every renderer combination is guaranteed.
 
+**Source build:** JDK 25 and `./gradlew build` (or `gradlew.bat build` on Windows). The checked-out Minecraft-version branch determines which build is produced.
 ## How to open the Ancient City Portal?
 
 Portal activation requires **Note Blocks placed on Sonorous Deepslate in Note mode**.
@@ -238,11 +242,4 @@ Added **20 advancements**, including a story path beginning in the Overworld and
 
 ## Requirements
 
-* **Minecraft 26.2**
-* **NeoForge 26.2.0.90 or newer** (Minecraft 26.2)
-* **GeckoLib 5.5.6+**, compatible 5.x
-* **Java 25+**
-* Client and dedicated server compatible
-
-**Easy Magic 26.2.0** and **LambDynamicLights 4.12.4+** are optional. See the compatibility and validation notes above.
-
+Select the matching Minecraft version and required GeckoLib release from the [version comparison](#neoforge-releases--minecraft-263-and-262) above. NeoForge and Java 25 are required. Easy Magic, LambDynamicLights, Iris and compatible Sodium are optional; Easy Magic requires Puzzles Lib separately.
