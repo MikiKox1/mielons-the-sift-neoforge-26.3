@@ -71,7 +71,7 @@ The port includes adapted block and entity registration, world generation, struc
 - **Dark Sniffer:** UUID-based Sonic Sniff target tracking and saved player movement handling.
 - **Weather:** Correct Ichor rain and snow rendering in their respective biomes.
 - **Visuals and sounds:** Singer lighting, Sonorous beams, water-sensitive plants, Echo Golem audio and the six-layer animated Sift sky.
-- **Photon and Complementary Shaders:** Smooth sky gradients and depth-masked composition without editing shaderpack ZIPs. The native sky remains available without shaders.
+- **Photon and Complementary Shaders:** Smooth sky gradients and depth-masked composition. The native sky remains available without shaders.
 
 ## Optional integrations
 

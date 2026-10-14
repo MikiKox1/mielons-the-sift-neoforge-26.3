@@ -9,12 +9,12 @@ A distinct NeoForge implementation of Mielon's The Sift 1.1.2 for Minecraft 26.2
 - Adapted the original 26.2 dimension, **biomes, world generation, features, carvers, structure templates, entities, fluids, networking, menus and registries** to NeoForge.
 - Preserved the original `the_sift` content, advancement progression, blocks, mobs, structures and loot.
 - Adapted portal, Rift, Sonorous beam, Singer and animated-sky rendering to the Minecraft 26.2 graphics APIs.
-- Updated **Ichor Regeneration I** contact and refresh behavior, including cauldrons and blocks containing Ichor.
-- Updated **Dark Sniffer Sonic Sniff** to track targets by UUID, preventing repeated pulls within a wave and preserving affected player movement across save/rejoin.
-- Corrected **Ichor rain and snow** rendering, including Ichor-Snowy Peaks.
+- **Ichor** provides contact-based Regeneration I for fluid, Ichor-containing blocks and cauldrons.
+- **Dark Sniffer Sonic Sniff** affects each target once per wave and retains player movement across save/rejoin.
+- **Ichor rain and snow** appear in their respective biomes, including Ichor-Snowy Peaks.
 - Preserved **Ancient City portals, Rift return travel, Charoite enchanting and anvil restrictions**; adapted willow growth, bonemeal, stripping and composting.
-- Reworked the **six-layer animated Sift sky** with RGBA gradient textures and interpolated UVs, reducing color banding and geometric artifacts with **Complementary Shaders**.
-- Added **Photon Shaders** depth-masked sky composition after Iris's final pass, without drawing sky layers over terrain or altering shaderpack ZIPs.
+- The **six-layer animated Sift sky** uses smooth RGBA gradient textures and interpolated UVs, including **Complementary Shaders** compatibility.
+- **Photon Shaders** depth-masked sky composition runs after Iris's final pass and keeps sky layers behind terrain.
 - Preserved the native shaderless sky, and added optional **Easy Magic 26.2.0** integration.
 
 [Port 1.1.2 — Minecraft 26.2](https://github.com/MikiKox1/mielons-the-sift-neoforge-port/releases/tag/v1.1.2-mc26.2-neoforge)
