@@ -29,6 +29,9 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Validate NeoForge build compatibility policy
+        run: python3 tools/tests/neoforge_build_policy_test.py -v
+
       - name: Build production JAR
         run: |
           chmod +x gradlew
