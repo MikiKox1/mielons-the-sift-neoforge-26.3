@@ -96,7 +96,7 @@ dependencies {
 
 // Prime 2 invariant: build/test on the latest published NeoForge for this
 // Minecraft line, while keeping the independent, OPEN-ENDED mod dependency
-// range [neo_min_version,) (provisionally >=26.1.2.117).
+// range [neo_min_version,) (tested >=26.1.2.100, unbounded above).
 // Keep the compile/test loader pinned for reproducibility and refuse tests
 // if that pin becomes stale. Do not conflate this pin with minimum support.
 // If the metadata endpoint is unreachable, fail closed rather than claim the
