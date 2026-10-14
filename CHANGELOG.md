@@ -57,6 +57,6 @@
 
   **SHA-256:** `43EB70A75A8EAA5309EDAD4A703E01DB7A8A63469A6E0547587F2BDC16B9A918`
 
-**Validation:** Java 25 clean build, archive/metadata checks, isolated dedicated server and Iris/Photon client menu passed. The MC26.2 ALPHA4 sky was accepted by the user in-world; universal shaderpack compatibility and new multiplayer stress tests are not claimed.
+**Validation:** Java 25 clean build, archive/metadata checks, isolated dedicated server and Iris/Photon client menu passed. The shaderless, Complementary and Photon sky configurations were accepted in-world by the user. Universal shaderpack compatibility and new multiplayer stress tests are not claimed.
 
 **Original mod:** Mielon (MIT). **Unofficial NeoForge port:** MikiKox1. See `LICENSE`, `SOURCE_PROVENANCE.md` and `AI_DISCLOSURE.md`.
